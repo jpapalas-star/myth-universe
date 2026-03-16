@@ -1,125 +1,270 @@
-console.log("INDEX NEW 999")
 <!DOCTYPE html>
-<html>
+<html lang="el">
 <head>
-<meta charset="UTF-8">
-<title>Myth Universe FIX</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Greek Mythology Orbit System</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <style>
-html,body{margin:0;overflow:hidden;background:black}
-canvas{width:100%;height:100%;display:block}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02040a;font-family:Arial,sans-serif}
+#renderCanvas{width:100%;height:100%;display:block}
+#hud{position:fixed;top:10px;left:10px;z-index:10;color:#fff;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;backdrop-filter:blur(6px)}
+#info{position:fixed;right:10px;top:10px;width:min(360px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow:auto;z-index:10;color:#fff;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;backdrop-filter:blur(6px)}
+#info h2{margin:0 0 6px 0;font-size:22px}
+#info .sub{opacity:.75;font-size:13px;margin-bottom:10px}
+#info .sec{color:#8fd3ff;margin:10px 0 4px 0;font-weight:bold;font-size:13px}
+#info .txt{font-size:13px;line-height:1.5;white-space:pre-wrap}
+@media (max-width:900px){#info{top:auto;bottom:10px;left:10px;width:auto;max-height:40vh}}
 </style>
 </head>
 <body>
+<div id="hud">
+  <div><b>Greek Mythology Orbit System</b></div>
+  <div>Blue = parent / child</div>
+  <div>Red = partners</div>
+  <div>Drag = rotate · Wheel = zoom</div>
+</div>
+<div id="info">
+  <h2>Orbit Universe</h2>
+  <div class="sub">Chaos center · rings by generation/type</div>
+  <div class="txt">Πάτα σε μια σφαίρα για όνομα και λεπτομέρειες.</div>
+</div>
 <canvas id="renderCanvas"></canvas>
 <script>
+const canvas=document.getElementById("renderCanvas");
+const engine=new BABYLON.Engine(canvas,true);
+const scene=new BABYLON.Scene(engine);
+scene.clearColor=new BABYLON.Color4(0.01,0.02,0.05,1);
 
-const canvas=document.getElementById("renderCanvas")
-const engine=new BABYLON.Engine(canvas,true)
-const scene=new BABYLON.Scene(engine)
+const camera=new BABYLON.ArcRotateCamera("cam",-Math.PI/2,Math.PI/2.7,430,new BABYLON.Vector3(0,0,0),scene);
+camera.lowerRadiusLimit=60;
+camera.upperRadiusLimit=2500;
+camera.wheelDeltaPercentage=0.01;
+camera.attachControl(canvas,true);
 
-scene.clearColor=new BABYLON.Color3(0,0,0)
+const hemi=new BABYLON.HemisphericLight("hemi",new BABYLON.Vector3(0,1,0),scene);
+hemi.intensity=0.95;
+const point=new BABYLON.PointLight("point",new BABYLON.Vector3(0,120,0),scene);
+point.intensity=0.6;
+const glowLayer=new BABYLON.GlowLayer("glow",scene);
+glowLayer.intensity=0.6;
 
-const camera=new BABYLON.ArcRotateCamera(
-"cam",
-Math.PI/2,
-Math.PI/3,
-200,
-new BABYLON.Vector3(0,0,0),
-scene
-)
+const nodes={};
+const rawMap={};
+const lineDone=new Set();
 
-camera.attachControl(canvas,true)
+function color3(hex){return BABYLON.Color3.FromHexString(hex)}
+function typeColor(d){
+  const cat=String(d.Category||"");
+  const model=String(d.ModelType||"");
+  const id=String(d.id||"");
+  if(id==="PRIM_CHAOS_001") return color3("#ffffff");
+  if(model==="group"||d.Shape==="group") return color3("#6aa8ff");
+  if(model==="energy") return color3("#b26cff");
+  if(model==="giant") return color3("#ffbf5e");
+  if(model==="spirit") return color3("#ff6b6b");
+  if(model==="human") return color3("#d6a86f");
+  if(model==="goddess") return color3("#ffd3f0");
+  if(model==="god") return color3("#ffe680");
+  if(cat.includes("Πρωτογεν")) return color3("#c084ff");
+  if(cat.includes("Τιτά")) return color3("#ffbf5e");
+  if(cat.includes("Ολύμπ")) return color3("#ffe680");
+  if(cat.includes("Ήρω")) return color3("#d6a86f");
+  if(cat.includes("Θεά")) return color3("#ffd3f0");
+  if(cat.includes("Δαίμο")) return color3("#ff6b6b");
+  return color3("#b8c5ff");
+}
+function spriteFile(d){
+  const sprite=String(d.sprite||"");
+  const model=String(d.ModelType||"");
+  const gender=String(d.Gender||"");
+  if(sprite==="orb-group") return "group.png";
+  if(sprite==="energy-neutral"||sprite==="energy-female") return "energy.png";
+  if(sprite==="titan-male") return "titan_male.png";
+  if(sprite==="titan-female") return "titan_female.png";
+  if(sprite==="god") return gender==="female"?"god_female.png":"god_male.png";
+  if(sprite==="goddess") return "god_female.png";
+  if(sprite==="hero") return "hero_male.png";
+  if(sprite==="heroine") return "hero_female.png";
+  if(sprite==="monster") return gender==="female"?"monster_female.png":"monster_male.png";
+  if(sprite==="spirit") return "spirit.png";
+  if(sprite==="cosmic") return "cosmic.png";
+  if(model==="group") return "group.png";
+  if(model==="energy") return "energy.png";
+  if(model==="giant") return gender==="female"?"titan_female.png":"titan_male.png";
+  if(model==="spirit") return "spirit.png";
+  if(model==="human") return gender==="female"?"hero_female.png":"hero_male.png";
+  if(model==="goddess") return "god_female.png";
+  if(model==="god") return gender==="female"?"god_female.png":"god_male.png";
+  return "default.png";
+}
+function sizeFor(d){
+  const model=String(d.ModelType||"");
+  const id=String(d.id||"");
+  if(id==="PRIM_CHAOS_001") return 20;
+  if(model==="group") return 11;
+  if(model==="energy") return 14;
+  if(model==="giant") return 12;
+  if(model==="god"||model==="goddess") return 10;
+  if(model==="human") return 9;
+  if(model==="spirit") return 8;
+  return 9;
+}
+function safeArrayIds(s){
+  if(!s||s==="-" ) return [];
+  return String(s).split(";").map(v=>v.trim()).filter(Boolean).filter(v=>v!=="-");
+}
+function createLabel(text,position,colorHex){
+  const dt=new BABYLON.DynamicTexture("label_"+Math.random(),{width:1024,height:256},scene,true);
+  dt.hasAlpha=true;
+  dt.drawText(text,null,160,"bold 90px Arial",colorHex||"white","transparent",true);
+  const plane=BABYLON.MeshBuilder.CreatePlane("label_plane_"+Math.random(),{width:18,height:4.5},scene);
+  const mat=new BABYLON.StandardMaterial("label_mat_"+Math.random(),scene);
+  mat.diffuseTexture=dt;
+  mat.opacityTexture=dt;
+  mat.emissiveColor=BABYLON.Color3.White();
+  mat.backFaceCulling=false;
+  plane.material=mat;
+  plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+  plane.position=position.clone();
+  return plane;
+}
+function addRing(nodeMesh,color,diameter){
+  const ring=BABYLON.MeshBuilder.CreateTorus("ring_"+nodeMesh.name+"_"+Math.random(),{diameter:diameter,thickness:0.18,tessellation:64},scene);
+  ring.rotation.x=Math.PI/2;
+  ring.position=nodeMesh.position.clone();
+  const rm=new BABYLON.StandardMaterial("ring_mat_"+Math.random(),scene);
+  rm.emissiveColor=color;
+  rm.alpha=0.85;
+  ring.material=rm;
+  return ring;
+}
+function createNode(d,x,y,z){
+  const size=sizeFor(d);
+  const color=typeColor(d);
+  const sphere=BABYLON.MeshBuilder.CreateSphere("sphere_"+d.id,{diameter:size,segments:32},scene);
+  sphere.position=new BABYLON.Vector3(x,y,z);
 
-new BABYLON.HemisphericLight(
-"light",
-new BABYLON.Vector3(1,1,0),
-scene
-)
+  const mat=new BABYLON.StandardMaterial("mat_"+d.id,scene);
+  mat.diffuseColor=color.scale(0.25);
+  mat.emissiveColor=color.scale(0.55);
+  mat.specularColor=color.scale(0.15);
+  mat.alpha=0.96;
+  const file=spriteFile(d);
+  const tex=new BABYLON.Texture("./"+file,scene,false,false);
+  tex.hasAlpha=true;
+  mat.opacityTexture=tex;
+  sphere.material=mat;
 
-const sprites={
-god:"god_male.png",
-goddess:"god_female.png",
-hero:"hero_male.png",
-heroine:"hero_female.png",
-monster:"monster_male.png",
-spirit:"spirit.png",
-energy:"energy.png",
-group:"group.png",
-titan:"titan_male.png"
+  const inner=BABYLON.MeshBuilder.CreatePlane("inner_"+d.id,{size:size*0.88},scene);
+  inner.position=sphere.position.clone();
+  const pm=new BABYLON.StandardMaterial("pm_"+d.id,scene);
+  const ptex=new BABYLON.Texture("./"+file,scene,false,false);
+  ptex.hasAlpha=true;
+  pm.diffuseTexture=ptex;
+  pm.opacityTexture=ptex;
+  pm.emissiveColor=BABYLON.Color3.White();
+  pm.backFaceCulling=false;
+  inner.material=pm;
+  inner.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+
+  createLabel(d.Name||d.id,sphere.position.add(new BABYLON.Vector3(0,size*0.85,0)),"white");
+
+  if(String(d.id)==="PRIM_CHAOS_001"){addRing(sphere,color3("#ffffff"),size*1.45)}
+  if(d.ring===true||d.Shape==="group"||d.ModelType==="group"){addRing(sphere,color,size*1.35)}
+  if(d.ModelType==="energy"){addRing(sphere,color3("#e0b3ff"),size*1.25)}
+
+  sphere.metadata=d;
+  inner.metadata=d;
+  nodes[d.id]=sphere;
+  rawMap[d.id]=d;
+}
+function connect(aId,bId,type){
+  const a=nodes[aId], b=nodes[bId];
+  if(!a||!b) return;
+  let key="";
+  if(type==="partner"){key="partner_"+[aId,bId].sort().join("_")}
+  else{key="parent_"+aId+"_"+bId}
+  if(lineDone.has(key)) return;
+  lineDone.add(key);
+  const lines=BABYLON.MeshBuilder.CreateLines(key,{points:[a.position.clone(),b.position.clone()]},scene);
+  lines.color=type==="partner"?color3("#ff4b4b"):color3("#56a6ff");
+  lines.alpha=0.95;
+}
+function showInfo(d){
+  const info=document.getElementById("info");
+  info.innerHTML=`
+    <h2>${d.Name||d.id}</h2>
+    <div class="sub">${d.Category||""} · ${d.ModelType||""} · Gen ${d.Generation ?? "-"}</div>
+    <div class="sec">Summary</div>
+    <div class="txt">${d.Summary||"-"}</div>
+    <div class="sec">Parents</div>
+    <div class="txt">${d.Parents||"-"}</div>
+    <div class="sec">Partners</div>
+    <div class="txt">${d.Partners||"-"}</div>
+    <div class="sec">Children</div>
+    <div class="txt">${d.Children||"-"}</div>
+    <div class="sec">FullText</div>
+    <div class="txt">${d.FullText||"-"}</div>
+  `;
+}
+scene.onPointerObservable.add((pointerInfo)=>{
+  if(pointerInfo.pickInfo && pointerInfo.pickInfo.hit && pointerInfo.pickInfo.pickedMesh && pointerInfo.pickInfo.pickedMesh.metadata){
+    showInfo(pointerInfo.pickInfo.pickedMesh.metadata);
+  }
+}, BABYLON.PointerEventTypes.POINTERPICK);
+
+function bucketFor(d){
+  const id=String(d.id||"");
+  const model=String(d.ModelType||"");
+  const gen=Number(d.Generation||9);
+  if(id==="PRIM_CHAOS_001") return "center";
+  if(gen===1||model==="energy") return "ring1";
+  if(model==="group") return "ring2";
+  if(model==="giant") return "ring3";
+  if(gen===3) return "ring4";
+  return "ring5";
+}
+function polarLayout(list,radius,yBase,jitter){
+  const out=[], n=list.length||1;
+  for(let i=0;i<n;i++){
+    const angle=(Math.PI*2*i/n)-Math.PI/2;
+    out.push({
+      x:Math.cos(angle)*radius,
+      y:yBase+Math.sin(angle*2)*(jitter||0),
+      z:Math.sin(angle)*radius
+    });
+  }
+  return out;
 }
 
-function createNode(d,x,z){
+fetch("./app-data.json?v=orbit7").then(r=>r.json()).then(data=>{
+  const filtered=data.filter(d=>d&&d.id);
+  const center=filtered.filter(d=>bucketFor(d)==="center");
+  const ring1=filtered.filter(d=>bucketFor(d)==="ring1" && d.id!=="PRIM_CHAOS_001");
+  const ring2=filtered.filter(d=>bucketFor(d)==="ring2");
+  const ring3=filtered.filter(d=>bucketFor(d)==="ring3");
+  const ring4=filtered.filter(d=>bucketFor(d)==="ring4");
+  const ring5=filtered.filter(d=>bucketFor(d)==="ring5");
 
-let mesh
+  if(center.length){createNode(center[0],0,0,0)}
+  const p1=polarLayout(ring1,42,0,5); ring1.forEach((d,i)=>createNode(d,p1[i].x,p1[i].y,p1[i].z));
+  const p2=polarLayout(ring2,78,8,6); ring2.forEach((d,i)=>createNode(d,p2[i].x,p2[i].y,p2[i].z));
+  const p3=polarLayout(ring3,122,-6,8); ring3.forEach((d,i)=>createNode(d,p3[i].x,p3[i].y,p3[i].z));
+  const p4=polarLayout(ring4,168,12,8); ring4.forEach((d,i)=>createNode(d,p4[i].x,p4[i].y,p4[i].z));
+  const p5=polarLayout(ring5,220,-12,10); ring5.forEach((d,i)=>createNode(d,p5[i].x,p5[i].y,p5[i].z));
 
-if(d.Shape==="group"){
+  filtered.forEach(d=>{
+    safeArrayIds(d.Parents).forEach(pid=>connect(pid,d.id,"parent"));
+    safeArrayIds(d.Partners).forEach(pid=>connect(pid,d.id,"partner"));
+  });
+}).catch(err=>{
+  document.getElementById("info").innerHTML="<h2>JSON Load Error</h2><div class='txt'>"+err+"</div>";
+  console.error(err);
+});
 
-mesh=BABYLON.MeshBuilder.CreateSphere(
-d.id,
-{diameter:10},
-scene
-)
-
-const m=new BABYLON.StandardMaterial("m",scene)
-m.emissiveColor=new BABYLON.Color3(0.7,0.2,1)
-mesh.material=m
-
-}else{
-
-mesh=BABYLON.MeshBuilder.CreatePlane(
-d.id,
-{size:10},
-scene
-)
-
-const tex=new BABYLON.Texture(
-sprites[d.ModelType]||"group.png",
-scene
-)
-
-const m=new BABYLON.StandardMaterial("m",scene)
-m.diffuseTexture=tex
-m.emissiveColor=new BABYLON.Color3(1,1,1)
-
-mesh.material=m
-
-}
-
-mesh.position.x=x
-mesh.position.z=z
-
-}
-console.log("LOADING JSON 999")
-fetch("/myth-universe/app-data.json?v=999")
-.then(r=>r.json())
-.then(data=>{
-
-console.log("JSON", data)
-console.log("LEN", data.length)
-
-console.log("COUNT", data.length)
-
-let i=0
-
-data.forEach(d=>{
-
-createNode(
-d,
-(i%12)*12,
-Math.floor(i/12)*12
-)
-
-i++
-
-})
-
-})
-
-engine.runRenderLoop(()=>{
-scene.render()
-})
-
+engine.runRenderLoop(()=>scene.render());
+window.addEventListener("resize",()=>engine.resize());
 </script>
 </body>
 </html>
