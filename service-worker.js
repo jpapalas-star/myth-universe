@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "myth-universe-v2";
+const CACHE_NAME = "myth-universe-v999";
 const ASSETS = [
   "./",
   "./index.html",
