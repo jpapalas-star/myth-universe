@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#040713" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Greek Mythology Universe</title>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <style>
+    html, body { margin:0; height:100%; overflow:hidden; background:#040713; color:#eef2ff; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+    #renderCanvas { width:100%; height:100%; touch-action:none; }
+    #topbar {
+      position:fixed; top:12px; left:12px; right:12px; display:flex; gap:8px; flex-wrap:wrap;
+      z-index:10; pointer-events:none;
+    }
+    .panel {
+      pointer-events:auto; background:rgba(7,12,24,.82); backdrop-filter:blur(10px);
+      border:1px solid rgba(255,255,255,.12); border-radius:16px; color:#eef2ff;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    #controls { padding:10px; display:flex; gap:8px; flex-wrap:wrap; max-width:min(820px, calc(100vw - 24px));}
+    #controls input, #controls select, #controls button {
+      background:rgba(255,255,255,.06); color:#eef2ff; border:1px solid rgba(255,255,255,.12);
+      border-radius:12px; padding:10px 12px; font-size:14px;
+    }
+    #info {
+      position:fixed; right:12px; top:76px; bottom:12px; width:min(390px, calc(100vw - 24px));
+      overflow:auto; z-index:10; padding:14px;
+    }
+    .title { font-size:24px; font-weight:800; margin:0 0 8px; }
+    .sub { font-size:13px; color:#b8c3df; margin-bottom:10px; }
+    .sec { font-size:13px; color:#7dd3fc; font-weight:700; margin:12px 0 6px; }
+    .txt { font-size:14px; line-height:1.55; white-space:pre-wrap; }
+    .hint { color:#b8c3df; line-height:1.55; }
+    @media (max-width: 900px) {
+      #info { top:auto; height:42vh; left:12px; width:auto; }
+    }
+  </style>
+</head>
+<body>
+  <div id="topbar">
+    <div id="controls" class="panel">
+      <input id="search" placeholder="Αναζήτηση ονόματος..." />
+      <select id="categoryFilter"><option value="">Όλες οι κατηγορίες</option></select>
+      <button id="resetBtn">Επαναφορά</button>
+    </div>
+  </div>
+
+  <div id="info" class="panel">
+    <div class="title">Greek Mythology Universe</div>
+    <div class="sub">PWA 3D έκδοση για Android</div>
+    <div class="hint">Σύρε για περιστροφή, κάνε pinch για zoom και πάτησε μια μορφή για λεπτομέρειες. Όταν τη σερβίρεις από hosting, μπορείς να την εγκαταστήσεις στο Android με “Add to Home screen”.</div>
+  </div>
+
+  <canvas id="renderCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+    let scene;
+    let allMeshes = [];
+    let allLines = [];
+    let allRecords = [];
+    let meshMap = new Map();
+
+    function colorFor(row) {
+      const c = String(row.Category || "");
+      const theme = String(row.theme || "").toLowerCase();
+      if (theme.includes("void")) return new BABYLON.Color3.FromHexString("#9b5de5");
+      if (theme.includes("stone")) return new BABYLON.Color3.FromHexString("#f59e0b");
+      if (theme.includes("gold")) return new BABYLON.Color3.FromHexString("#22c55e");
+      if (theme.includes("aqua")) return new BABYLON.Color3.FromHexString("#38bdf8");
+      if (theme.includes("shadow")) return new BABYLON.Color3.FromHexString("#ef4444");
+      if (theme.includes("bronze")) return new BABYLON.Color3.FromHexString("#e5e7eb");
+      if (c.includes("Πρωτογεν")) return new BABYLON.Color3.FromHexString("#9b5de5");
+      if (c.includes("Τιτάν")) return new BABYLON.Color3.FromHexString("#f59e0b");
+      if (c.includes("Ολύμπ")) return new BABYLON.Color3.FromHexString("#22c55e");
+      if (c.includes("Νύμφ")) return new BABYLON.Color3.FromHexString("#38bdf8");
+      if (c.includes("Τέρα") || c.includes("Δαίμον")) return new BABYLON.Color3.FromHexString("#ef4444");
+      return new BABYLON.Color3.FromHexString("#e5e7eb");
+    }
+
+    function parseIds(val) {
+      return String(val || "").split(";").map(x => x.trim()).filter(Boolean).filter(x => x !== "-");
+    }
+
+    function levelPosition(level, index, total) {
+      const radiusBase = {1: 22, 2: 55, 3: 95, 4: 140, 5: 180};
+      const radius = (radiusBase[level] || 180) + (index % 7) * 3;
+      const angle = (index / Math.max(total, 1)) * Math.PI * 2 + level * 0.35;
+      const y = (2.5 - level) * 16 + Math.sin(angle * 2.0) * 5;
+      return new BABYLON.Vector3(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+    }
+
+    function makeLabelPlane(text, scene) {
+      const dt = new BABYLON.DynamicTexture("label" + text, {width:1024, height:256}, scene, true);
+      dt.hasAlpha = true;
+      dt.drawText(text, null, 150, "bold 88px Arial", "#eef2ff", "transparent", true);
+      const plane = BABYLON.MeshBuilder.CreatePlane("plane_" + text, {width:18, height:4.5}, scene);
+      const mat = new BABYLON.StandardMaterial("pmat_" + text, scene);
+      mat.diffuseTexture = dt;
+      mat.emissiveColor = BABYLON.Color3.White();
+      mat.opacityTexture = dt;
+      mat.backFaceCulling = false;
+      plane.material = mat;
+      plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+      return plane;
+    }
+
+    function makeNode(row, pos, scene) {
+      const color = colorFor(row);
+      const type = String(row.Type || "").toLowerCase();
+      const model = String(row.ModelType || "").toLowerCase();
+      const gender = String(row.Gender || "").toLowerCase();
+
+      let mesh;
+      if (type === "group") {
+        mesh = BABYLON.MeshBuilder.CreateSphere("node_" + row.id, {diameter:7, segments:20}, scene);
+      } else if (model === "energy") {
+        mesh = BABYLON.MeshBuilder.CreatePolyhedron("node_" + row.id, {type:1, size:5}, scene);
+      } else if (model === "monster") {
+        mesh = BABYLON.MeshBuilder.CreateBox("node_" + row.id, {size:5.2}, scene);
+      } else if (model === "nymph") {
+        mesh = BABYLON.MeshBuilder.CreateCapsule("node_" + row.id, {height:8, radius:1.9}, scene);
+      } else if (model === "giant") {
+        mesh = BABYLON.MeshBuilder.CreateBox("node_" + row.id, {height:9, width:4.8, depth:3.4}, scene);
+      } else {
+        mesh = BABYLON.MeshBuilder.CreateCapsule("node_" + row.id, {height: gender === "female" ? 7.4 : 8.2, radius: gender === "female" ? 1.7 : 2.0}, scene);
+      }
+
+      mesh.position = pos;
+      const mat = new BABYLON.StandardMaterial("mat_" + row.id, scene);
+      mat.diffuseColor = color;
+      mat.emissiveColor = color.scale(0.6);
+      mat.specularColor = BABYLON.Color3.White().scale(0.2);
+      mesh.material = mat;
+
+      if (type === "group" || row.ring) {
+        const torus = BABYLON.MeshBuilder.CreateTorus("ring_" + row.id, {diameter: 9.5, thickness: 0.12, tessellation: 42}, scene);
+        torus.rotation.x = Math.PI / 2;
+        torus.position = pos.clone();
+        const rmat = new BABYLON.StandardMaterial("rmat_" + row.id, scene);
+        rmat.emissiveColor = color;
+        rmat.alpha = 0.65;
+        torus.material = rmat;
+      }
+
+      const label = makeLabelPlane(row.Name, scene);
+      label.position = pos.add(new BABYLON.Vector3(0, 7.5, 0));
+
+      mesh.metadata = row;
+      allMeshes.push(mesh);
+      meshMap.set(String(row.id), mesh);
+      return mesh;
+    }
+
+    function relationNames(idString) {
+      const map = new Map(allRecords.map(r => [String(r.id), String(r.Name)]));
+      const ids = parseIds(idString);
+      return ids.length ? ids.map(i => map.get(i) || i).join(", ") : "—";
+    }
+
+    function showInfo(row) {
+      document.getElementById("info").innerHTML = `
+        <div class="title">${row.Name}</div>
+        <div class="sub">${row.Category} · Level ${row.Level || "—"} · ${row.Gender || "—"}</div>
+        <div class="sec">Σύνοψη</div>
+        <div class="txt">${row.Summary || "—"}</div>
+        <div class="sec">Γονείς</div>
+        <div class="txt">${relationNames(row.Parents)}</div>
+        <div class="sec">Σύντροφοι</div>
+        <div class="txt">${relationNames(row.Partners)}</div>
+        <div class="sec">Παιδιά</div>
+        <div class="txt">${relationNames(row.Children)}</div>
+        <div class="sec">Ανάλυση</div>
+        <div class="txt">${row.FullText || "Δεν υπάρχει ακόμη κείμενο."}</div>
+      `;
+    }
+
+    async function createScene() {
+      const scene = new BABYLON.Scene(engine);
+      scene.clearColor = new BABYLON.Color4(0.02, 0.03, 0.08, 1);
+
+      const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.7, 220, BABYLON.Vector3.Zero(), scene);
+      camera.attachControl(canvas, true);
+      camera.lowerRadiusLimit = 30;
+      camera.upperRadiusLimit = 600;
+      camera.wheelDeltaPercentage = 0.01;
+
+      const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+      light.intensity = 1.0;
+
+      const glow = new BABYLON.GlowLayer("glow", scene);
+      glow.intensity = 0.65;
+
+      // stars
+      for (let i = 0; i < 1200; i++) {
+        const star = BABYLON.MeshBuilder.CreateSphere("s"+i, {diameter: 0.35 + Math.random()*0.6}, scene);
+        const smat = new BABYLON.StandardMaterial("sm"+i, scene);
+        smat.emissiveColor = BABYLON.Color3.White().scale(0.8 + Math.random()*0.2);
+        star.material = smat;
+        star.position = new BABYLON.Vector3((Math.random()-0.5)*1200, (Math.random()-0.5)*600, (Math.random()-0.5)*1200);
+      }
+
+      const response = await fetch("./app-data.json");
+      allRecords = await response.json();
+
+      const byLevel = {};
+      for (const row of allRecords) {
+        const l = Number(row.Level || 1);
+        if (!byLevel[l]) byLevel[l] = [];
+        byLevel[l].push(row);
+      }
+
+      Object.keys(byLevel).sort((a,b) => Number(a)-Number(b)).forEach(levelKey => {
+        const arr = byLevel[levelKey];
+        arr.forEach((row, i) => {
+          const pos = levelPosition(Number(levelKey), i, arr.length);
+          makeNode(row, pos, scene);
+        });
+      });
+
+      for (const row of allRecords) {
+        const child = meshMap.get(String(row.id));
+        parseIds(row.Parents).forEach(pid => {
+          const parent = meshMap.get(String(pid));
+          if (!parent || !child) return;
+          const line = BABYLON.MeshBuilder.CreateLines("line_" + pid + "_" + row.id, {
+            points: [parent.position.clone(), child.position.clone()]
+          }, scene);
+          line.color = new BABYLON.Color3(0.49, 0.83, 0.99);
+          line.alpha = 0.28;
+          allLines.push(line);
+        });
+      }
+
+      scene.onPointerObservable.add((pointerInfo) => {
+        if (pointerInfo.pickInfo && pointerInfo.pickInfo.hit && pointerInfo.pickInfo.pickedMesh && pointerInfo.pickInfo.pickedMesh.metadata) {
+          showInfo(pointerInfo.pickInfo.pickedMesh.metadata);
+        }
+      }, BABYLON.PointerEventTypes.POINTERPICK);
+
+      const categories = [...new Set(allRecords.map(r => r.Category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'el'));
+      const select = document.getElementById("categoryFilter");
+      categories.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        select.appendChild(opt);
+      });
+
+      select.addEventListener("change", () => {
+        const v = select.value;
+        allMeshes.forEach(m => {
+          const row = m.metadata;
+          m.isVisible = !v || row.Category === v || String(row.Type).toLowerCase() === "group";
+        });
+        allLines.forEach(l => l.isVisible = !v);
+      });
+
+      document.getElementById("search").addEventListener("input", e => {
+        const q = e.target.value.trim().toLowerCase();
+        if (!q) return;
+        const row = allRecords.find(r => String(r.Name).toLowerCase().includes(q));
+        if (row) {
+          const mesh = meshMap.get(String(row.id));
+          if (mesh) {
+            camera.setTarget(mesh.position);
+            showInfo(row);
+          }
+        }
+      });
+
+      document.getElementById("resetBtn").addEventListener("click", () => {
+        document.getElementById("search").value = "";
+        document.getElementById("categoryFilter").value = "";
+        allMeshes.forEach(m => m.isVisible = true);
+        allLines.forEach(l => l.isVisible = true);
+        camera.setTarget(BABYLON.Vector3.Zero());
+        camera.radius = 220;
+      });
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+      }
+
+      return scene;
+    }
+
+    createScene().then(s => {
+      scene = s;
+      engine.runRenderLoop(() => scene.render());
+    });
+
+    window.addEventListener("resize", () => engine.resize());
+  </script>
+</body>
+</html>
