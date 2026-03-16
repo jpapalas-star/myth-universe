@@ -93,7 +93,10 @@ mesh.position.z=z
 console.log("LOADING JSON 999")
 fetch("/myth-universe/app-data.json?v=999")
 .then(r=>r.json())
-.then(data => {
+.then(data=>{
+
+console.log("JSON", data)
+console.log("LEN", data.length)
 
 console.log("COUNT", data.length)
 
