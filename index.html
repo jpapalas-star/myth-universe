@@ -1,1 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
 
+<meta charset="UTF-8">
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+<style>
+body{
+margin:0;
+background:black;
+overflow:hidden;
+}
+</style>
+
+</head>
+
+<body>
+
+<canvas id="c"></canvas>
+
+<script>
+
+console.log("NEW CLEAN INDEX")
+
+const canvas = document.getElementById("c")
+
+const engine = new BABYLON.Engine(canvas,true)
+
+const scene = new BABYLON.Scene(engine)
+
+scene.clearColor = new BABYLON.Color3(0,0,0)
+
+const camera =
+new BABYLON.ArcRotateCamera(
+"cam",
+Math.PI/2,
+Math.PI/3,
+200,
+new BABYLON.Vector3(0,0,0),
+scene
+)
+
+camera.attachControl(canvas,true)
+
+new BABYLON.HemisphericLight(
+"l",
+new BABYLON.Vector3(1,1,0),
+scene
+)
+
+engine.runRenderLoop(
+()=>scene.render()
+)
+
+</script>
+
+</body>
+</html>
