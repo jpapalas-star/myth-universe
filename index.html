@@ -2,29 +2,40 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Mythology Universe</title>
-<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<title>Tree</title>
+
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#05070f;}
-#renderCanvas{width:100%;height:100%;}
+body {
+margin:0;
+background:black;
+overflow:hidden;
+}
 </style>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+
 </head>
 <body>
 
-<canvas id="renderCanvas"></canvas>
+<canvas id="c"></canvas>
 
 <script>
 
-const canvas=document.getElementById("renderCanvas")
-const engine=new BABYLON.Engine(canvas,true)
-const scene=new BABYLON.Scene(engine)
+const canvas = document.getElementById("c")
 
-const camera=new BABYLON.ArcRotateCamera(
+const engine = new BABYLON.Engine(canvas,true)
+
+const scene = new BABYLON.Scene(engine)
+
+scene.clearColor = new BABYLON.Color3(0,0,0)
+
+const camera =
+new BABYLON.ArcRotateCamera(
 "cam",
--Math.PI/2,
-Math.PI/2.5,
-220,
-BABYLON.Vector3.Zero(),
+Math.PI/2,
+Math.PI/3,
+200,
+new BABYLON.Vector3(0,0,0),
 scene
 )
 
@@ -32,231 +43,179 @@ camera.attachControl(canvas,true)
 
 new BABYLON.HemisphericLight(
 "l",
-new BABYLON.Vector3(0,1,0),
+new BABYLON.Vector3(1,1,0),
 scene
 )
 
-let meshMap={}
-
-function ring(mesh,color,size){
-
-let t=
-BABYLON.MeshBuilder.CreateTorus(
-"r",
-{diameter:size,thickness:0.2},
-scene
-)
-
-t.rotation.x=Math.PI/2
-t.position=mesh.position
-
-let m=new BABYLON.StandardMaterial("rm",scene)
-m.emissiveColor=color
-
-t.material=m
-
-}
-
-
-
-function make(row,x,y,z){
-
-let type=(row.Type||"").toLowerCase()
-let model=(row.ModelType||"").toLowerCase()
-let cat=(row.Category||"")
-
-
-let planet=
-BABYLON.MeshBuilder.CreateSphere(
-"p"+row.id,
-{diameter:6},
-scene
-)
-
-planet.position=new BABYLON.Vector3(x,y,z)
-
-let pmat=new BABYLON.StandardMaterial("pm",scene)
-
-pmat.emissiveColor=
-new BABYLON.Color3(
-Math.random(),
-Math.random(),
-Math.random()
-)
-
-planet.material=pmat
-
-
-let mesh
-
-if(model==="energy"){
-
-mesh=
-BABYLON.MeshBuilder.CreatePolyhedron(
-row.id,
-{type:1,size:2},
-scene
-)
-
-}
-
-else if(cat.includes("Ήρω")){
-
-mesh=
-BABYLON.MeshBuilder.CreateCapsule(
-row.id,
-{height:4,radius:1},
-scene
-)
-
-}
-
-else if(cat.includes("Θε")){
-
-mesh=
-BABYLON.MeshBuilder.CreateCapsule(
-row.id,
-{height:5,radius:1.3},
-scene
-)
-
-}
-
-else{
-
-mesh=
-BABYLON.MeshBuilder.CreateSphere(
-row.id,
-{diameter:3},
-scene
-)
-
-}
-
-mesh.position=planet.position
-
-let mat=new BABYLON.StandardMaterial("m",scene)
-mat.emissiveColor=new BABYLON.Color3(1,1,1)
-mesh.material=mat
-
-meshMap[row.id]=planet
-
-
-if(model==="energy")
-ring(planet,new BABYLON.Color3(1,1,0),8)
-
-if(type==="group")
-ring(planet,new BABYLON.Color3(1,0,1),10)
-
-
-return planet
-
-}
-
-
+const nodes = {}
 
 fetch("app-data.json")
 .then(r=>r.json())
 .then(data=>{
 
-let i=0
+const byGen = {}
 
-data.forEach(row=>{
+data.forEach(r=>{
 
-let x=Math.cos(i)*40
-let z=Math.sin(i)*40
-let y=(row.Level||1)*6
+if(!byGen[r.Generation])
+byGen[r.Generation] = []
 
-make(row,x,y,z)
-
-i+=0.3
+byGen[r.Generation].push(r)
 
 })
 
+Object.keys(byGen).forEach(g=>{
 
+let arr = byGen[g]
 
-// ===== ONLY PARENTS + PARTNER =====
+arr.forEach((r,i)=>{
 
-data.forEach(row=>{
+let x = i*12 - arr.length*6
+let y = -g*20
 
-let self=meshMap[row.id]
+let s =
+BABYLON.MeshBuilder.CreateSphere(
+"s",
+{diameter:6},
+scene
+)
 
-if(!self) return
+s.position =
+new BABYLON.Vector3(x,y,0)
 
+let mat =
+new BABYLON.StandardMaterial(
+"m",
+scene
+)
 
-if(row.Parents && row.Parents!="-"){
+let img =
+(r.sprite || "default") + ".png"
 
-row.Parents.split(";").forEach(p=>{
+mat.diffuseTexture =
+new BABYLON.Texture(
+img,
+scene
+)
 
-let parent=meshMap[p]
+s.material = mat
 
-if(!parent) return
+nodes[r.id] = s
 
-let id="p_"+p+"_"+row.id
+// text
 
-if(scene.getMeshByName(id)) return
+let dt =
+new BABYLON.DynamicTexture(
+"t",
+512,
+scene,
+true
+)
 
-let line=
+dt.drawText(
+r.Name,
+50,
+200,
+"bold 80px Arial",
+"white",
+"transparent",
+true
+)
+
+let plane =
+BABYLON.MeshBuilder.CreatePlane(
+"p",
+{size:8},
+scene
+)
+
+plane.position =
+s.position.add(
+new BABYLON.Vector3(0,6,0)
+)
+
+let pm =
+new BABYLON.StandardMaterial(
+"pm",
+scene
+)
+
+pm.diffuseTexture = dt
+
+pm.emissiveColor =
+BABYLON.Color3.White()
+
+plane.material = pm
+
+})
+
+})
+
+// lines
+
+data.forEach(r=>{
+
+if(r.Parents && r.Parents!="-"){
+
+r.Parents.split(";").forEach(p=>{
+
+if(nodes[p] && nodes[r.id]){
+
+let l =
 BABYLON.MeshBuilder.CreateLines(
-id,
+"l",
 {
 points:[
-parent.position,
-self.position
+nodes[p].position,
+nodes[r.id].position
 ]
 },
 scene
 )
 
-line.color=new BABYLON.Color3(0,1,0)
+l.color =
+new BABYLON.Color3(0,0,1)
+
+}
 
 })
 
 }
 
+if(r.Partners && r.Partners!="-"){
 
-if(row.Partners && row.Partners!="-"){
+r.Partners.split(";").forEach(p=>{
 
-row.Partners.split(";").forEach(p=>{
+if(nodes[p] && nodes[r.id]){
 
-if(p>row.id) return
-
-let partner=meshMap[p]
-
-if(!partner) return
-
-let id="partner_"+p+"_"+row.id
-
-if(scene.getMeshByName(id)) return
-
-let line=
+let l =
 BABYLON.MeshBuilder.CreateLines(
-id,
+"lp",
 {
 points:[
-partner.position,
-self.position
+nodes[p].position,
+nodes[r.id].position
 ]
 },
 scene
 )
 
-line.color=new BABYLON.Color3(1,0,0)
+l.color =
+new BABYLON.Color3(1,0,0)
+
+}
 
 })
 
 }
 
+})
 
 })
 
-
-})
-
-
-engine.runRenderLoop(()=>{
-scene.render()
-})
+engine.runRenderLoop(
+()=>scene.render()
+)
 
 </script>
 
