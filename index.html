@@ -90,10 +90,12 @@ mesh.position.x=x
 mesh.position.z=z
 
 }
-
-fetch("./app-data.json?v=3")
+console.log("LOADING JSON 999")
+fetch("/myth-universe/app-data.json?v=999")
 .then(r=>r.json())
-.then(data=>{
+.then(data => {
+
+console.log("COUNT", data.length)
 
 let i=0
 
