@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta charset="UTF-8">
-<title>Tree</title>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
 
 <style>
-body {
+
+body{
 margin:0;
 background:black;
 overflow:hidden;
 }
+
 </style>
 
-<script src="https://cdn.babylonjs.com/babylon.js"></script>
-
 </head>
+
 <body>
 
 <canvas id="c"></canvas>
@@ -58,7 +61,7 @@ const byGen = {}
 data.forEach(r=>{
 
 if(!byGen[r.Generation])
-byGen[r.Generation] = []
+byGen[r.Generation]=[]
 
 byGen[r.Generation].push(r)
 
@@ -70,8 +73,9 @@ let arr = byGen[g]
 
 arr.forEach((r,i)=>{
 
-let x = i*12 - arr.length*6
-let y = -g*20
+let x = i*15 - arr.length*7
+
+let y = -g*25
 
 let s =
 BABYLON.MeshBuilder.CreateSphere(
@@ -102,56 +106,9 @@ s.material = mat
 
 nodes[r.id] = s
 
-// text
-
-let dt =
-new BABYLON.DynamicTexture(
-"t",
-512,
-scene,
-true
-)
-
-dt.drawText(
-r.Name,
-50,
-200,
-"bold 80px Arial",
-"white",
-"transparent",
-true
-)
-
-let plane =
-BABYLON.MeshBuilder.CreatePlane(
-"p",
-{size:8},
-scene
-)
-
-plane.position =
-s.position.add(
-new BABYLON.Vector3(0,6,0)
-)
-
-let pm =
-new BABYLON.StandardMaterial(
-"pm",
-scene
-)
-
-pm.diffuseTexture = dt
-
-pm.emissiveColor =
-BABYLON.Color3.White()
-
-plane.material = pm
-
 })
 
 })
-
-// lines
 
 data.forEach(r=>{
 
