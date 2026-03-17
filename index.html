@@ -573,6 +573,15 @@ function enterFocus(id){
   focusedId=id;
   const relatives=getRelativesSet(id);
   Object.keys(nodes).forEach(nodeId=>setNodeEnabled(nodeId,relatives.has(nodeId)));
+Object.values(nodes).forEach(n=>{
+
+ if(relatives.has(n.id)){
+   n.sphere.material.alpha = 1;
+ }else{
+   n.sphere.material.alpha = 0.25;
+ }
+
+});
   applyFocusLayout(id,relatives);
   renderConnections(relatives);
   const pos=getNodePos(id);
@@ -592,6 +601,9 @@ function resetFocus(fromPop){
   focusedId=null;
   restoreOriginalPositions();
   Object.keys(nodes).forEach(id=>setNodeEnabled(id,true));
+Object.values(nodes).forEach(n=>{
+ n.sphere.material.alpha = 1;
+});
   renderConnections();
   camera.lowerRadiusLimit=34;
   camera.upperRadiusLimit=5000;
@@ -730,18 +742,32 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
 
 engine.runRenderLoop(()=>{
 
-const t = performance.now()*0.001;
+ const t = performance.now()*0.001;
 
-for(let i=0;i<lineMaterials.length;i++){
+ for(let i=0;i<lineMaterials.length;i++){
 
-const m=lineMaterials[i];
+   const m = lineMaterials[i];
 
-const glow = 0.5 + Math.sin(t*0.3 + i)*0.02;
+   let strength = 0.6;
 
-m.mat.emissiveColor =
-m.base.scale(glow);
+   if(focusedId){
+     strength = 0.9;
+   }
 
-}
+   const pulse =
+     strength +
+     Math.sin(t*0.35 + i)*0.05;
+
+   m.mat.emissiveColor =
+     m.base.scale(pulse);
+
+ }
+
+ scene.render();
+
+});
+
+
 
 scene.render();
 
