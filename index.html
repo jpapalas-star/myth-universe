@@ -3,245 +3,730 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Myth Universe</title>
-
+<title>Myth Universe Final Focus</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
-
 <style>
-
-html,body{
-margin:0;
-width:100%;
-height:100%;
-overflow:hidden;
-background:#02040a;
-font-family:Arial;
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02040a;font-family:Arial,sans-serif}
+#renderCanvas{width:100%;height:100%;display:block;touch-action:none}
+#indexBtn{position:fixed;left:10px;top:10px;z-index:30;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:bold;cursor:pointer;backdrop-filter:blur(6px)}
+#searchBox{position:fixed;right:10px;top:58px;z-index:40;color:#fff;background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 12px;font-size:14px;outline:none;backdrop-filter:blur(6px);width:min(260px,calc(100vw - 20px));box-sizing:border-box}
+#searchBox::placeholder{color:rgba(255,255,255,.6)}
+#searchResults{position:fixed;right:10px;top:106px;z-index:39;width:min(260px,calc(100vw - 20px));max-height:220px;overflow:auto;color:#fff;background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.12);border-radius:12px;backdrop-filter:blur(6px);display:none}
+.searchItem{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.08);cursor:pointer;font-size:13px;line-height:1.35}
+.searchItem:last-child{border-bottom:none}
+.searchItem:hover,.searchItem.active{background:rgba(255,255,255,.1)}
+.searchName{font-weight:bold}
+.searchMeta{opacity:.72;font-size:12px;margin-top:2px}
+#homeBtn{position:fixed;right:10px;top:10px;z-index:30;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:bold;cursor:pointer;backdrop-filter:blur(6px)}
+#panel{position:fixed;left:10px;top:58px;z-index:20;color:#fff;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;backdrop-filter:blur(6px);display:none;max-width:min(280px,calc(100vw - 20px))}
+#info{position:fixed;right:10px;top:344px;z-index:10;color:#fff;width:min(360px,calc(100vw - 20px));max-height:calc(100vh - 354px);overflow:auto;background:rgba(0,0,0,.46);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;backdrop-filter:blur(6px)}
+#info h2{margin:0 0 6px 0;font-size:20px}
+#info .sub{opacity:.78;font-size:13px;margin-bottom:10px}
+#info .sec{color:#8fd3ff;margin:10px 0 4px 0;font-weight:bold;font-size:13px}
+#info .txt{font-size:13px;line-height:1.5;white-space:pre-wrap}
+.infoLink{color:#8fd3ff;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.infoLink:hover{color:#c7ecff}
+@media (max-width:900px){
+  #indexBtn{left:10px;top:10px}
+  #homeBtn{right:10px;top:10px}
+  #searchBox{left:10px;right:10px;top:58px;width:auto}
+  #searchResults{left:10px;right:10px;top:106px;width:auto;max-height:180px}
+  #panel{left:10px;right:10px;top:58px;max-width:none}
+  #info{left:10px;right:10px;top:auto;bottom:10px;width:auto;max-height:34vh}
 }
-
-#renderCanvas{
-width:100%;
-height:100%;
-touch-action:none;
-display:block;
-}
-
-#indexBtn{
-position:fixed;
-left:10px;
-top:10px;
-z-index:20;
-}
-
-#homeBtn{
-position:fixed;
-right:10px;
-top:10px;
-z-index:20;
-}
-
-button{
-background:#0008;
-color:white;
-border:1px solid #fff3;
-border-radius:10px;
-padding:8px 12px;
-font-size:14px;
-}
-
 </style>
 </head>
-
 <body>
+<button id="indexBtn" type="button">Index</button>
+<button id="homeBtn" type="button">Μυθολογία</button>
 
-<button id="indexBtn">Index</button>
-<button id="homeBtn">Μυθολογία</button>
+<input id="searchBox" type="text" placeholder="Search by name, id, category, type, generation..." autocomplete="off">
+<div id="searchResults"></div>
+
+<div id="panel">
+  <div><b>Myth Universe</b></div>
+  <div>Drag = rotate</div>
+  <div>Pinch / wheel = zoom</div>
+  <div>Shift + drag = pan</div>
+  <div>Blue arrows = parent → child</div>
+  <div>Red = partners</div>
+  <div>Tap entity = family focus</div>
+</div>
+
+<div id="info">
+  <h2>Myth Universe</h2>
+  <div class="sub">Chaos center · generation rings · family clusters</div>
+  <div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>
+</div>
 
 <canvas id="renderCanvas"></canvas>
 
 <script>
+const canvas=document.getElementById('renderCanvas');
+const infoEl=document.getElementById('info');
+const homeBtn=document.getElementById('homeBtn');
+const indexBtn=document.getElementById('indexBtn');
+const panelEl=document.getElementById('panel');
+const searchBox=document.getElementById('searchBox');
+const searchResults=document.getElementById('searchResults');
 
-const canvas = document.getElementById("renderCanvas");
+const engine=new BABYLON.Engine(canvas,true);
+const scene=new BABYLON.Scene(engine);
+scene.clearColor=new BABYLON.Color4(0.01,0.02,0.05,1);
 
-const engine = new BABYLON.Engine(canvas,true);
-
-const scene = new BABYLON.Scene(engine);
-
-scene.clearColor = new BABYLON.Color4(0,0,0,1);
-
-
-
-const camera = new BABYLON.ArcRotateCamera(
-"cam",
--Math.PI/2,
-Math.PI/2.5,
-380,
-BABYLON.Vector3.Zero(),
-scene
-);
-
+const camera=new BABYLON.ArcRotateCamera('cam',-Math.PI/2,Math.PI/2.65,380,BABYLON.Vector3.Zero(),scene);
+camera.lowerRadiusLimit=34;
+camera.upperRadiusLimit=5000;
+camera.wheelDeltaPercentage=0.02;
+camera.pinchDeltaPercentage=0.02;
+camera.pinchPrecision=5;
+camera.useNaturalPinchZoom=true;
+camera.panningSensibility=40;
 camera.attachControl(canvas,true);
-
-camera.lowerRadiusLimit = 20;
-camera.upperRadiusLimit = 5000;
-
-camera.panningSensibility = 40;
-
-camera.wheelDeltaPercentage = 0.02;
-
-camera.pinchDeltaPercentage = 0.02;
-
-camera.useNaturalPinchZoom = true;
-
-
-
-const light = new BABYLON.HemisphericLight(
-"h",
-new BABYLON.Vector3(0,1,0),
-scene
-);
-
-light.intensity = 1;
-
-
-
-const glow = new BABYLON.GlowLayer(
-"glow",
-scene
-);
-
-glow.intensity = 0.3;
-
-
-
-const lineMaterials = [];
-
-
-
-function c3(hex){
-
-return BABYLON.Color3.FromHexString(hex);
-
+if(camera.inputs&&camera.inputs.attached&&camera.inputs.attached.pointers){
+  camera.inputs.attached.pointers.multiTouchPanAndZoom=true;
 }
 
+const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
+hemi.intensity=0.96;
+const light2=new BABYLON.PointLight('p',new BABYLON.Vector3(0,60,0),scene);
+light2.intensity=1.2;
+const glow=new BABYLON.GlowLayer('glow',scene);
+glow.intensity=0.08;
+
+const nodes={};
+const dataMap={};
+const familyColorByKey=new Map();
+const familyByMemberId=new Map();
+const placed=new Set();
+const originalPositions=new Map();
+const connectionRecords=[];
+const lineMaterials=[];
+let allData=[];
+let focusedId=null;
+let suppressPop=false;
+let tapCandidate=null;
+let panelOpen=false;
+let searchMatches=[];
+let activeSearchIndex=-1;
+
+function c3(hex){return BABYLON.Color3.FromHexString(hex);}
+function hslToHex(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12;const a=s*Math.min(l,1-l);const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));const toHex=x=>Math.round(255*x).toString(16).padStart(2,'0');return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;}
+function hashColor(str){let h=0;for(let i=0;i<str.length;i++)h=(h*31+str.charCodeAt(i))>>>0;return BABYLON.Color3.FromHexString(hslToHex(h%360,80,64));}
+function idsFromField(s){if(!s||s==='-')return[];return String(s).split(';').map(v=>v.trim()).filter(Boolean).filter(v=>v!=='-');}
+
+function modelColor(d){
+  const id=String(d.id||''),model=String(d.ModelType||''),cat=String(d.Category||'');
+  if(id==='PRIM_CHAOS_001')return c3('#ffffff');
+  if(model==='group'||d.Shape==='group')return c3('#62a6ff');
+  if(model==='energy')return c3('#c084ff');
+  if(model==='giant')return c3('#ffbf5e');
+  if(model==='spirit')return c3('#ff6b6b');
+  if(model==='human')return c3('#d6a86f');
+  if(model==='goddess')return c3('#ffd3f0');
+  if(model==='god')return c3('#ffe680');
+  if(cat.includes('Πρωτογεν'))return c3('#c084ff');
+  if(cat.includes('Τιτά'))return c3('#ffbf5e');
+  if(cat.includes('Ολύμπ'))return c3('#ffe680');
+  if(cat.includes('Ήρω'))return c3('#d6a86f');
+  return c3('#b8c5ff');
+}
+
+function spriteFile(d){
+  const sprite=String(d.sprite||''),model=String(d.ModelType||''),gender=String(d.Gender||'');
+  if(sprite==='orb-group')return 'group.png';
+  if(sprite==='energy-neutral'||sprite==='energy-female')return 'energy.png';
+  if(sprite==='titan-male')return 'titan_male.png';
+  if(sprite==='titan-female')return 'titan_female.png';
+  if(sprite==='god')return gender==='female'?'god_female.png':'god_male.png';
+  if(sprite==='goddess')return 'god_female.png';
+  if(sprite==='hero')return 'hero_male.png';
+  if(sprite==='heroine')return 'hero_female.png';
+  if(sprite==='monster')return gender==='female'?'monster_female.png':'monster_male.png';
+  if(sprite==='spirit')return 'spirit.png';
+  if(sprite==='cosmic')return 'cosmic.png';
+  if(model==='group')return 'group.png';
+  if(model==='energy')return 'energy.png';
+  if(model==='giant')return gender==='female'?'titan_female.png':'titan_male.png';
+  if(model==='spirit')return 'spirit.png';
+  if(model==='human')return gender==='female'?'hero_female.png':'hero_male.png';
+  if(model==='goddess')return 'god_female.png';
+  if(model==='god')return gender==='female'?'god_female.png':'god_male.png';
+  return 'default.png';
+}
+
+function sizeFor(d){
+  const model=String(d.ModelType||''),id=String(d.id||'');
+  if(id==='PRIM_CHAOS_001')return 14;
+  if(model==='group')return 7.8;
+  if(model==='energy')return 8.5;
+  if(model==='giant')return 7.8;
+  if(model==='god'||model==='goddess')return 6.8;
+  if(model==='human')return 6.1;
+  if(model==='spirit')return 5.8;
+  return 6.3;
+}
+
+function addRing(parentMesh,color,diameter,thickness){
+  const ring=BABYLON.MeshBuilder.CreateTorus('ring_'+Math.random(),{diameter,thickness:thickness||0.11,tessellation:70},scene);
+  ring.rotation.x=Math.PI/2;
+  ring.parent=parentMesh;
+  ring.position=BABYLON.Vector3.Zero();
+  const rm=new BABYLON.StandardMaterial('rm_'+Math.random(),scene);
+  rm.emissiveColor=color;
+  rm.alpha=0.92;
+  ring.material=rm;
+  glow.addIncludedOnlyMesh(ring);
+  return ring;
+}
+
+function createLabel(text,parentMesh,size){
+  const dt=new BABYLON.DynamicTexture('dt_'+Math.random(),{width:512,height:128},scene,true);
+  dt.hasAlpha=true;
+  dt.drawText(text,null,82,'bold 40px Arial','#ead271','transparent',true);
+  const plane=BABYLON.MeshBuilder.CreatePlane('label_'+Math.random(),{width:Math.max(6,size*2.1),height:Math.max(1.6,size*0.58)},scene);
+  plane.parent=parentMesh;
+  plane.position=new BABYLON.Vector3(0,size*0.92,0);
+  plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+  const mat=new BABYLON.StandardMaterial('lmat_'+Math.random(),scene);
+
+mat.diffuseTexture=dt;
+mat.opacityTexture=dt;
+
+mat.disableLighting=true;
+
+mat.emissiveColor=BABYLON.Color3.White().scale(0.84);
+
+mat.backFaceCulling=false;
+
+plane.material=mat;
+}
+
+function createNode(d,x,y,z,familyRingColor){
+  const size=sizeFor(d),baseColor=modelColor(d);
+  const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:28},scene);
+  sphere.position=new BABYLON.Vector3(x,y,z);
+
+  const sm=new BABYLON.StandardMaterial('sm_'+d.id,scene);
+  const tex=new BABYLON.Texture('./'+spriteFile(d),scene,true,false);
+  tex.hasAlpha=true;
+
+  sm.diffuseTexture=tex;
+  sm.diffuseColor=baseColor.scale(0.7);
+  sm.specularColor=new BABYLON.Color3(1,1,1);
+  sm.specularPower=64;
+  sm.emissiveColor=baseColor.scale(0.1);
+  sm.backFaceCulling=false;
+  sm.alpha=0.96;
+  sphere.material=sm;
+
+  createLabel(d.Name||d.id,sphere,size);
+
+  const rings=[];
+  if(String(d.id)==='PRIM_CHAOS_001')rings.push(addRing(sphere,c3('#ffffff'),size*1.36,0.13));
+  if(d.ModelType==='energy')rings.push(addRing(sphere,c3('#deb3ff'),size*1.18,0.10));
+  if(d.ModelType==='group'||d.Shape==='group'||d.ring===true)rings.push(addRing(sphere,modelColor(d),size*1.24,0.10));
+  if(familyRingColor)rings.push(addRing(sphere,familyRingColor,size*1.12,0.09));
+
+  sphere.metadata=d;
+  nodes[d.id]={id:d.id,data:d,sphere,rings,size,familyRingColor:familyRingColor||null};
+  placed.add(d.id);
+}
+
+function nameFromId(id){
+  if(!id || id==='-') return '-';
+  const d=dataMap[id];
+  if(!d) return id;
+  return d.Name || id;
+}
+
+function makeInfoLink(id){
+  if(!id || id==='-') return '-';
+  const d=dataMap[id];
+  if(!d) return id;
+  return `<span class="infoLink" data-id="${id}">${d.Name || id}</span>`;
+}
+
+function listInfoLinks(str){
+  if(!str || str==='-') return '-';
+  return String(str).split(';').map(s=>s.trim()).filter(Boolean).filter(v=>v!=='-').map(id=>makeInfoLink(id)).join(', ');
+}
+
+function highlightNode(id,on){
+  const n=nodes[id];
+  if(!n) return;
+  n.sphere.scaling.setAll(on ? 1.18 : 1);
+}
+
+function bindInfoLinks(){
+  infoEl.querySelectorAll('.infoLink').forEach(el=>{
+    const id=el.dataset.id;
+    el.addEventListener('click',()=>{
+      searchBox.blur();
+      hideSearchResults();
+      enterFocus(id);
+    });
+    el.addEventListener('mouseenter',()=>highlightNode(id,true));
+    el.addEventListener('mouseleave',()=>highlightNode(id,false));
+    el.addEventListener('touchstart',()=>highlightNode(id,true),{passive:true});
+    el.addEventListener('touchend',()=>highlightNode(id,false),{passive:true});
+  });
+}
+
+function showInfo(d){
+  infoEl.innerHTML=`<h2>${d.Name||d.id}</h2><div class="sub">${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation ?? '-'}</div><div class="sec">Summary</div><div class="txt">${d.Summary||'-'}</div><div class="sec">Parents</div><div class="txt">${listInfoLinks(d.Parents)}</div><div class="sec">Partners</div><div class="txt">${listInfoLinks(d.Partners)}</div><div class="sec">Children</div><div class="txt">${listInfoLinks(d.Children)}</div><div class="sec">FullText</div><div class="txt">${d.FullText||'-'}</div>`;
+  bindInfoLinks();
+}
+
+function resetInfo(){
+  infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">Chaos center · generation rings · family clusters</div><div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>`;
+}
+
+function setNodeEnabled(id,enabled){const n=nodes[id];if(n)n.sphere.setEnabled(enabled);}
+function getNodePos(id){return nodes[id]?.sphere.position||null;}
+function saveOriginalPositions(){Object.values(nodes).forEach(n=>originalPositions.set(n.id,n.sphere.position.clone()));}
+function restoreOriginalPositions(){Object.values(nodes).forEach(n=>{const p=originalPositions.get(n.id);if(p)n.sphere.position.copyFrom(p);});}
+function coupleKey(a,b){return [a,b].sort().join('|');}
+
+function buildFamilies(all){
+  const families=[];const inFamilyChild=new Set();
+  all.forEach(d=>{
+    const partners=idsFromField(d.Partners);
+    const kidsA=new Set(idsFromField(d.Children));
+    partners.forEach(pid=>{
+      const p=dataMap[pid];
+      if(!p)return;
+      const kidsB=new Set(idsFromField(p.Children));
+      const shared=[...kidsA].filter(k=>kidsB.has(k));
+      if(shared.length){
+        const key=coupleKey(d.id,pid);
+        if(!families.find(f=>f.key===key)){
+          families.push({key,parents:[d.id,pid],children:shared});
+          shared.forEach(c=>inFamilyChild.add(c));
+        }
+      }
+    });
+  });
+  all.forEach(d=>{
+    const kids=idsFromField(d.Children).filter(k=>!inFamilyChild.has(k));
+    if(kids.length){
+      families.push({key:'single|'+d.id,parents:[d.id],children:kids});
+      kids.forEach(k=>inFamilyChild.add(k));
+    }
+  });
+  families.forEach(f=>{
+    f.parents.forEach(id=>familyByMemberId.set(id,f.key));
+    f.children.forEach(id=>{if(!familyByMemberId.has(id))familyByMemberId.set(id,f.key);});
+  });
+  return families;
+}
+
+function polarPositions(count,radius,yBase,jitter){
+  const out=[];const n=count||1;
+  for(let i=0;i<n;i++){
+    const angle=(Math.PI*2*i/n)-Math.PI/2;
+    out.push({x:Math.cos(angle)*radius,y:yBase+Math.sin(angle*2)*(jitter||0),z:Math.sin(angle)*radius});
+  }
+  return out;
+}
+
+function placeFamily(center,family,famColor){
+  const parents=family.parents.map(id=>dataMap[id]).filter(Boolean);
+  const children=family.children.map(id=>dataMap[id]).filter(Boolean);
+  if(parents.length===1){
+    createNode(parents[0],center.x,center.y,center.z,famColor);
+  } else if(parents.length>=2){
+    const gap=7.5;
+    createNode(parents[0],center.x-gap/2,center.y,center.z,famColor);
+    createNode(parents[1],center.x+gap/2,center.y,center.z,famColor);
+  }
+  const n=children.length||1;
+  const childRadius=Math.max(13,9+n*1.2);
+  for(let i=0;i<n;i++){
+    const angle=(Math.PI*2*i/n)-Math.PI/2;
+    const x=center.x+Math.cos(angle)*childRadius;
+    const z=center.z+Math.sin(angle)*childRadius;
+    const y=center.y+Math.sin(angle*2)*1.4;
+    createNode(children[i],x,y,z,famColor);
+  }
+}
+
+function placeRing(items,radius,yBase,jitter){
+  const pos=polarPositions(items.length,radius,yBase,jitter);
+  items.forEach((d,i)=>createNode(d,pos[i].x,pos[i].y,pos[i].z,null));
+}
+
+function registerConnection(type,aId,bId,color){
+  if(!nodes[aId]||!nodes[bId])return;
+  connectionRecords.push({type,aId,bId,color});
+}
+
+function buildConnections(){
+  connectionRecords.length=0;
+  const partnerDone=new Set();
+  const parentDone=new Set();
+  allData.forEach(d=>{
+    idsFromField(d.Partners).forEach(pid=>{
+      if(!nodes[d.id]||!nodes[pid])return;
+      const k=[d.id,pid].sort().join('|');
+      if(partnerDone.has(k))return;
+      partnerDone.add(k);
+      registerConnection('partner',d.id,pid,c3('#ff4b4b'));
+    });
+    idsFromField(d.Parents).forEach(pid=>{
+      if(!nodes[pid]||!nodes[d.id])return;
+      const partners=idsFromField(d.Partners);
+      if(partners.includes(pid))return;
+      const k=`${pid}->${d.id}`;
+      if(parentDone.has(k))return;
+      parentDone.add(k);
+      registerConnection('parent',pid,d.id,c3('#56a6ff'));
+    });
+  });
+}
+
+function makeControlPoint(a,b,type){
+  const dir=b.subtract(a);
+  const mid=BABYLON.Vector3.Lerp(a,b,0.5);
+  let normal=new BABYLON.Vector3(-dir.z,0,dir.x);
+  if(normal.lengthSquared()<0.0001)normal=new BABYLON.Vector3(1,0,0);
+  normal.normalize();
+  const len=Math.max(8,dir.length());
+  const sideStrength=type==='partner'?Math.min(18,len*0.22):Math.min(14,len*0.18);
+  const upStrength=type==='partner'?Math.min(6,len*0.03):Math.min(10,len*0.06);
+  return mid.add(normal.scale(sideStrength)).add(new BABYLON.Vector3(0,upStrength,0));
+}
+
+function renderConnections(filterSet){
+
+ lineMaterials.length = 0;
+
+ scene.meshes.slice().forEach(m=>{
+   if(m.name.startsWith('conn_')||m.name.startsWith('arrow_'))
+     m.dispose();
+ });
+
+ connectionRecords.forEach((rec,idx)=>{
+
+   if(filterSet && (!filterSet.has(rec.aId)||!filterSet.has(rec.bId))) return;
+
+   const a=getNodePos(rec.aId);
+   const b=getNodePos(rec.bId);
+   if(!a||!b) return;
+
+   const ctrl=makeControlPoint(a.clone(),b.clone(),rec.type);
+
+   const curve=BABYLON.Curve3.CreateQuadraticBezier(
+     a.clone(),
+     ctrl,
+     b.clone(),
+     28
+   );
+
+   const path=curve.getPoints();
+
+   const tube=BABYLON.MeshBuilder.CreateTube(
+     'conn_'+idx,
+     {path,radius:rec.type==='partner'?0.18:0.06},
+     scene
+   );
+
+   const mat=new BABYLON.StandardMaterial(
+     'conn_mat_'+idx,
+     scene
+   );
+
+   mat.emissiveColor = rec.color;
+   mat.alpha = 0.5;
+   mat.disableLighting = true;
+   mat.backFaceCulling = false;
+   mat.transparencyMode =
+     BABYLON.Material.MATERIAL_ALPHABLEND;
+
+   tube.material = mat;
+
+   glow.addIncludedOnlyMesh(tube);
+
+   lineMaterials.push({
+     mat: mat,
+     base: rec.color
+   });
 
 
-function makeLine(a,b,color){
+   if(rec.type==='parent' && path.length>4){
 
-const path = [a,b];
+     const points=[
+       Math.floor(path.length*0.38),
+       Math.floor(path.length*0.68)
+     ];
 
-const tube = BABYLON.MeshBuilder.CreateTube(
+     points.forEach((pIdx,arrowIdx)=>{
 
-"line",
+       const i=Math.max(
+         1,
+         Math.min(path.length-2,pIdx)
+       );
 
-{ path, radius:0.06 },
+       const prev=path[i-1];
+       const next=path[i+1];
+       const pos=path[i];
 
-scene
+       const dir=prev.subtract(next).normalize();
 
-);
+       const cone=
+       BABYLON.MeshBuilder.CreateCylinder(
+         'arrow_'+idx+'_'+arrowIdx,
+         {
+           height:2.3,
+           diameterTop:0,
+           diameterBottom:1,
+           tessellation:8
+         },
+         scene
+       );
 
-const mat = new BABYLON.StandardMaterial("m",scene);
+       cone.position=pos.clone();
 
-mat.emissiveColor = color;
+       cone.rotationQuaternion=
+       BABYLON.Quaternion.FromLookDirectionLH(
+         dir,
+         BABYLON.Vector3.Up()
+       );
 
-mat.alpha = 0.5;
+       cone.rotate(
+         BABYLON.Axis.X,
+         Math.PI/2,
+         BABYLON.Space.LOCAL
+       );
 
-mat.disableLighting = true;
+       const am=new BABYLON.StandardMaterial(
+         'am_'+idx+'_'+arrowIdx,
+         scene
+       );
 
-tube.material = mat;
+       am.emissiveColor =
+         BABYLON.Color3.FromHexString('#56a6ff');
 
-lineMaterials.push({
+       am.disableLighting = true;
 
-mat:mat,
+       cone.material = am;
 
-base:color
+       glow.addIncludedOnlyMesh(cone);
 
+     });
+
+   }
+
+ });
+
+}
+function getRelativesSet(id){
+  const set=new Set([id]);
+  const d=dataMap[id];
+  if(!d)return set;
+  idsFromField(d.Parents).forEach(x=>{if(nodes[x])set.add(x);});
+  idsFromField(d.Partners).forEach(x=>{if(nodes[x])set.add(x);});
+  idsFromField(d.Children).forEach(x=>{if(nodes[x])set.add(x);});
+  return set;
+}
+
+function applyFocusLayout(centerId,relativeSet){
+  restoreOriginalPositions();
+  const center=nodes[centerId];
+  if(!center)return;
+  const anchor=(originalPositions.get(centerId)||center.sphere.position).clone();
+  center.sphere.position.copyFrom(anchor);
+  const d=dataMap[centerId]||{};
+  const parents=idsFromField(d.Parents).filter(id=>relativeSet.has(id));
+  const partners=idsFromField(d.Partners).filter(id=>relativeSet.has(id));
+  const children=idsFromField(d.Children).filter(id=>relativeSet.has(id));
+  const partnerGap=16,parentRadius=18,childRadius=Math.max(18,14+children.length*1.2);
+
+  partners.forEach((pid,idx)=>{
+    const p=nodes[pid];
+    if(!p)return;
+    const side=idx%2===0?-1:1;
+    const lane=Math.floor(idx/2);
+    p.sphere.position.copyFrom(anchor.add(new BABYLON.Vector3(side*(partnerGap+lane*8),0,0)));
+  });
+
+  parents.forEach((pid,idx)=>{
+    const p=nodes[pid];
+    if(!p)return;
+    const angle=parents.length===1?-Math.PI/2:(-Math.PI+(Math.PI*idx/Math.max(1,parents.length-1)));
+    const local=new BABYLON.Vector3(Math.cos(angle)*parentRadius,5,-Math.abs(Math.sin(angle))*parentRadius);
+    p.sphere.position.copyFrom(anchor.add(local));
+  });
+
+  children.forEach((cid,idx)=>{
+    const c=nodes[cid];
+    if(!c)return;
+    const angle=(Math.PI*2*idx/Math.max(1,children.length))-Math.PI/2;
+    const local=new BABYLON.Vector3(Math.cos(angle)*childRadius,Math.sin(angle*2)*1.4,18+Math.sin(angle)*childRadius*0.55);
+    c.sphere.position.copyFrom(anchor.add(local));
+  });
+}
+
+function enterFocus(id){
+  if(!nodes[id])return;
+  if(focusedId===id){resetFocus(false);return;}
+  focusedId=id;
+  const relatives=getRelativesSet(id);
+  Object.keys(nodes).forEach(nodeId=>setNodeEnabled(nodeId,relatives.has(nodeId)));
+  applyFocusLayout(id,relatives);
+  renderConnections(relatives);
+  const pos=getNodePos(id);
+  if(pos){
+    const newTarget=pos.clone();
+    const newRadius=Math.max(48,nodes[id].size*7.5);
+    camera.lowerRadiusLimit=20;
+    camera.upperRadiusLimit=2000;
+    BABYLON.Animation.CreateAndStartAnimation('camTargetFocus',camera,'target',60,30,camera.target.clone(),newTarget,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+    BABYLON.Animation.CreateAndStartAnimation('camRadiusFocus',camera,'radius',60,30,camera.radius,newRadius,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  }
+  showInfo(dataMap[id]);
+  if(!suppressPop)history.pushState({focus:id},'');
+}
+
+function resetFocus(fromPop){
+  focusedId=null;
+  restoreOriginalPositions();
+  Object.keys(nodes).forEach(id=>setNodeEnabled(id,true));
+  renderConnections();
+  camera.lowerRadiusLimit=34;
+  camera.upperRadiusLimit=5000;
+  BABYLON.Animation.CreateAndStartAnimation('camTargetReset',camera,'target',60,30,camera.target.clone(),BABYLON.Vector3.Zero(),BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  BABYLON.Animation.CreateAndStartAnimation('camRadiusReset',camera,'radius',60,30,camera.radius,380,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  resetInfo();
+  hideSearchResults();
+  if(!fromPop && history.state && history.state.focus){
+    suppressPop=true;
+    history.back();
+    setTimeout(()=>{suppressPop=false;},50);
+  }
+}
+
+function normalizeText(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+function searchableText(d){return normalizeText([d.Name||'',d.id||'',d.Category||'',d.ModelType||'',d.Generation||''].join(' '));}
+function hideSearchResults(){searchResults.style.display='none';searchResults.innerHTML='';searchMatches=[];activeSearchIndex=-1;}
+function renderSearchResults(){
+  searchResults.innerHTML='';
+  if(!searchMatches.length){searchResults.style.display='none';activeSearchIndex=-1;return;}
+  searchResults.style.display='block';
+  searchMatches.forEach((d,idx)=>{
+    const item=document.createElement('div');
+    item.className='searchItem'+(idx===activeSearchIndex?' active':'');
+    item.innerHTML=`<div class="searchName">${d.Name||d.id}</div><div class="searchMeta">${d.id||''} · ${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation ?? '-'}</div>`;
+    item.addEventListener('click',()=>{searchBox.value=d.Name||d.id;hideSearchResults();enterFocus(d.id);});
+    searchResults.appendChild(item);
+  });
+}
+function runSearch(raw){
+  const q=normalizeText(raw).trim();
+  if(!q){hideSearchResults();return;}
+  searchMatches=allData.filter(d=>searchableText(d).includes(q)).sort((a,b)=>{
+    const an=normalizeText(a.Name||a.id),bn=normalizeText(b.Name||b.id);
+    const aStarts=an.startsWith(q)?0:1,bStarts=bn.startsWith(q)?0:1;
+    if(aStarts!==bStarts)return aStarts-bStarts;
+    return an.localeCompare(bn);
+  }).slice(0,20);
+  activeSearchIndex=searchMatches.length?0:-1;
+  renderSearchResults();
+}
+
+indexBtn.addEventListener('click',()=>{panelOpen=!panelOpen;panelEl.style.display=panelOpen?'block':'none';});
+searchBox.addEventListener('input',e=>runSearch(e.target.value));
+searchBox.addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){if(!searchMatches.length)return;e.preventDefault();activeSearchIndex=Math.min(searchMatches.length-1,activeSearchIndex+1);renderSearchResults();}
+  else if(e.key==='ArrowUp'){if(!searchMatches.length)return;e.preventDefault();activeSearchIndex=Math.max(0,activeSearchIndex-1);renderSearchResults();}
+  else if(e.key==='Enter'){if(!searchMatches.length)return;e.preventDefault();const chosen=searchMatches[Math.max(0,activeSearchIndex)];if(chosen){searchBox.value=chosen.Name||chosen.id;hideSearchResults();enterFocus(chosen.id);}}
+  else if(e.key==='Escape'){hideSearchResults();}
 });
 
-}
+document.addEventListener('click',e=>{
+  if(e.target!==searchBox && !searchResults.contains(e.target)){
+    hideSearchResults();
+  }
+});
 
+homeBtn.addEventListener('click',()=>resetFocus(false));
+window.addEventListener('popstate',()=>{if(focusedId)resetFocus(true);});
 
+scene.onPointerObservable.add((pi)=>{
+  if(pi.type===BABYLON.PointerEventTypes.POINTERDOWN){
+    const evt=pi.event;
+    if(evt && evt.touches && evt.touches.length>1){ tapCandidate=null; return; }
+    const pick=scene.pick(scene.pointerX,scene.pointerY);
+    tapCandidate={
+      x:scene.pointerX,
+      y:scene.pointerY,
+      t:Date.now(),
+      id:(pick&&pick.hit&&pick.pickedMesh&&pick.pickedMesh.metadata)?pick.pickedMesh.metadata.id:null
+    };
+    return;
+  }
 
-function makeArrow(pos,dir){
+  if(pi.type===BABYLON.PointerEventTypes.POINTERUP){
+    if(!tapCandidate) return;
+    const evt=pi.event;
+    if(evt && evt.touches && evt.touches.length>1){ tapCandidate=null; return; }
+    const dx=scene.pointerX-tapCandidate.x;
+    const dy=scene.pointerY-tapCandidate.y;
+    const moved=Math.hypot(dx,dy);
+    const elapsed=Date.now()-tapCandidate.t;
+    const pickedId=tapCandidate.id;
+    tapCandidate=null;
+    if(moved>8 || elapsed>450) return;
 
-const cone = BABYLON.MeshBuilder.CreateCylinder(
+    if(pickedId && nodes[pickedId]){
+      if(focusedId===pickedId) resetFocus(false);
+      else enterFocus(pickedId);
+    }else{
+      if(focusedId) resetFocus(false);
+      else resetInfo();
+    }
+  }
+},BABYLON.PointerEventTypes.POINTERDOWN | BABYLON.PointerEventTypes.POINTERUP);
 
-"arrow",
+fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
+  .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(all=>{
+    allData=all;
+    all.forEach(d=>dataMap[d.id]=d);
+    const chaos=all.find(d=>d.id==='PRIM_CHAOS_001');
+    if(chaos)createNode(chaos,0,0,0,null);
 
-{
+    const families=buildFamilies(all);
+    families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
+    const famPos=polarPositions(families.length,82,0,8);
+    families.forEach((f,i)=>placeFamily(famPos[i],f,familyColorByKey.get(f.key)));
 
-height:2,
+    const leftovers=all.filter(d=>d.id!=='PRIM_CHAOS_001'&&!placed.has(d.id));
+    const ring1=leftovers.filter(d=>Number(d.Generation||9)===1||d.ModelType==='energy');
+    const used1=new Set(ring1.map(d=>d.id));
+    const ring2=leftovers.filter(d=>!used1.has(d.id)&&(d.ModelType==='group'||d.Shape==='group'));
+    const used2=new Set([...used1,...ring2.map(d=>d.id)]);
+    const ring3=leftovers.filter(d=>!used2.has(d.id)&&d.ModelType==='giant');
+    const used3=new Set([...used2,...ring3.map(d=>d.id)]);
+    const ring4=leftovers.filter(d=>!used3.has(d.id)&&Number(d.Generation||9)===3);
+    const used4=new Set([...used3,...ring4.map(d=>d.id)]);
+    const ring5=leftovers.filter(d=>!used4.has(d.id));
 
-diameterTop:0,
+    placeRing(ring1,138,6,4);
+    placeRing(ring2,182,-6,5);
+    placeRing(ring3,230,8,6);
+    placeRing(ring4,286,-8,6);
+    placeRing(ring5,350,0,7);
 
-diameterBottom:1
-
-},
-
-scene
-
-);
-
-cone.position = pos;
-
-cone.rotationQuaternion =
-
-BABYLON.Quaternion.FromLookDirectionLH(
-
-dir,
-
-BABYLON.Vector3.Up()
-
-);
-
-const mat = new BABYLON.StandardMaterial("a",scene);
-
-mat.emissiveColor = c3("#56a6ff");
-
-mat.disableLighting = true;
-
-cone.material = mat;
-
-glow.addIncludedOnlyMesh(cone);
-
-}
-
-
-
-for(let i=0;i<30;i++){
-
-const a = new BABYLON.Vector3(
-
-Math.random()*200-100,
-
-Math.random()*200-100,
-
-Math.random()*200-100
-
-);
-
-const b = new BABYLON.Vector3(
-
-Math.random()*200-100,
-
-Math.random()*200-100,
-
-Math.random()*200-100
-
-);
-
-makeLine(a,b,c3("#56a6ff"));
-
-makeArrow(
-
-BABYLON.Vector3.Lerp(a,b,0.5),
-
-b.subtract(a).normalize()
-
-);
-
-}
-
-
+    saveOriginalPositions();
+    buildConnections();
+    renderConnections();
+    resetInfo();
+  })
+  .catch(err=>{
+    infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';
+    console.error('JSON ERROR',err);
+  });
 
 engine.runRenderLoop(()=>{
 
@@ -249,38 +734,19 @@ const t = performance.now()*0.001;
 
 for(let i=0;i<lineMaterials.length;i++){
 
-const m = lineMaterials[i];
+const m=lineMaterials[i];
 
-const glowV =
-
-0.45 +
-
-Math.sin(t*0.5+i)*0.02;
+const glow = 0.5 + Math.sin(t*0.3 + i)*0.02;
 
 m.mat.emissiveColor =
-
-m.base.scale(glowV);
+m.base.scale(glow);
 
 }
 
 scene.render();
 
 });
-
-
-
-window.addEventListener(
-
-"resize",
-
-()=>engine.resize()
-
-);
-
-
-
+window.addEventListener('resize',()=>engine.resize());
 </script>
-
 </body>
-
 </html>
