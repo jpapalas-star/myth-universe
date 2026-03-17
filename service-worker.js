@@ -1,18 +1,11 @@
-self.addEventListener("install", event => {
+self.addEventListener("install", e => {
     self.skipWaiting()
 })
 
-self.addEventListener("activate", event => {
-    event.waitUntil(self.clients.claim())
+self.addEventListener("activate", e => {
+    self.clients.claim()
 })
 
-self.addEventListener("fetch", event => {
-
-    // ΠΑΝΤΑ από network
-    event.respondWith(
-        fetch(event.request).catch(() => {
-            return new Response("offline")
-        })
-    )
-
+self.addEventListener("fetch", e => {
+    e.respondWith(fetch(e.request))
 })
