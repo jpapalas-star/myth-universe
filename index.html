@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Myth Universe Final Clean FIX</title>
-
+<title>Myth Universe Final Clean</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 
 <style>
@@ -12,21 +11,13 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02040a;fon
 #renderCanvas{width:100%;height:100%;display:block;touch-action:none}
 #panel{position:fixed;left:10px;top:10px;z-index:10;color:#fff;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;font-size:13px}
 #info{position:fixed;right:10px;top:10px;z-index:10;color:#fff;width:360px;max-height:90vh;overflow:auto;background:rgba(0,0,0,.46);border-radius:12px;padding:12px}
-#resetBtn{position:fixed;bottom:10px;left:10px;z-index:20}
 </style>
 </head>
 
 <body>
 
-<button id="resetBtn">RESET</button>
-
-<div id="panel">
-Myth Universe
-</div>
-
-<div id="info">
-Loading...
-</div>
+<div id="panel">Myth Universe</div>
+<div id="info">Loading...</div>
 
 <canvas id="renderCanvas"></canvas>
 
@@ -37,7 +28,6 @@ const engine=new BABYLON.Engine(canvas,true);
 const scene=new BABYLON.Scene(engine);
 
 scene.clearColor=new BABYLON.Color4(0.01,0.02,0.05,1);
-
 
 const camera=new BABYLON.ArcRotateCamera(
 "cam",
@@ -50,57 +40,54 @@ scene
 
 camera.attachControl(canvas,true);
 
-camera.useNaturalPinchZoom=true;
-camera.pinchDeltaPercentage=0.01;
-camera.wheelDeltaPercentage=0.01;
-camera.panningSensibility=120;
-
-
 new BABYLON.HemisphericLight(
 "hemi",
 new BABYLON.Vector3(0,1,0),
 scene
 );
 
+const nodes={},dataMap={},linesDone=new Set(),placed=new Set()
 
-const nodes={}
-const dataMap={}
-const lines=[]
-let focused=null
+function c3(h){return BABYLON.Color3.FromHexString(h)}
 
+function createNode(d,x,y,z){
 
-function curvedLine(a,b,color){
-
-const mid=BABYLON.Vector3.Lerp(a,b,0.5)
-
-const dir=b.subtract(a)
-
-const n=new BABYLON.Vector3(
--dir.z,0,dir.x
-).normalize()
-
-mid.addInPlace(n.scale(5))
-
-const curve=BABYLON.Curve3.CreateQuadraticBezier(
-a,mid,b,24
-)
-
-const tube=BABYLON.MeshBuilder.CreateTube(
-"tube",
-{path:curve.getPoints(),radius:0.1},
+const s=BABYLON.MeshBuilder.CreateSphere(
+"s"+d.id,
+{diameter:6},
 scene
 )
 
-const m=new BABYLON.StandardMaterial("m",scene)
-m.emissiveColor=color
-m.disableLighting=true
+s.position.set(x,y,z)
 
-tube.material=m
+nodes[d.id]=s
 
-lines.push(tube)
+s.metadata=d
 
 }
-fetch("app-data.json?nocache=" + Date.now(),{
+
+
+
+function connect(a,b){
+
+if(!nodes[a]||!nodes[b])return
+
+BABYLON.MeshBuilder.CreateLines(
+"l",
+{
+points:[
+nodes[a].position,
+nodes[b].position
+]
+},
+scene
+)
+
+}
+
+
+
+fetch("app-data.json?nocache="+Date.now(),{
 cache:"no-store"
 })
 .then(r=>{
@@ -118,7 +105,14 @@ all.forEach(d=>{
 dataMap[d.id]=d
 })
 
-createNode("PRIM_CHAOS_001",0,0,0)
+const chaos=all.find(
+d=>d.id==="PRIM_CHAOS_001"
+)
+
+createNode(
+chaos,
+0,0,0
+)
 
 })
 .catch(err=>{
@@ -129,3 +123,17 @@ document.getElementById("info").innerHTML=
 console.error(err)
 
 })
+
+
+engine.runRenderLoop(()=>{
+scene.render()
+})
+
+window.addEventListener(
+"resize",
+()=>engine.resize()
+)
+
+</script>
+</body>
+</html>
