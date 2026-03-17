@@ -70,6 +70,7 @@ const connectionRecords=[];
 let allData=[];
 let focusedId=null;
 let suppressPop=false;
+let tapCandidate=null;
 
 function c3(hex){return BABYLON.Color3.FromHexString(hex);} 
 function hslToHex(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12;const a=s*Math.min(l,1-l);const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));const toHex=x=>Math.round(255*x).toString(16).padStart(2,'0');return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;}
@@ -188,7 +189,7 @@ function renderConnections(filterSet){
     const mat=new BABYLON.StandardMaterial('conn_mat_'+idx,scene);mat.emissiveColor=rec.color;mat.disableLighting=true;mat.backFaceCulling=false;tube.material=mat;
     if(rec.type==='parent' && path.length>4){
       const points=[Math.floor(path.length*0.38),Math.floor(path.length*0.68)];
-      points.forEach((pIdx,arrowIdx)=>{const i=Math.max(1,Math.min(path.length-2,pIdx));const prev=path[i-1];const next=path[i+1];const pos=path[i];const dir=next.subtract(prev).normalize();const cone=BABYLON.MeshBuilder.CreateCylinder('arrow_'+idx+'_'+arrowIdx,{height:2.3,diameterTop:0,diameterBottom:1.0,tessellation:8},scene);cone.position=pos.clone();cone.rotationQuaternion=BABYLON.Quaternion.FromLookDirectionLH(dir,BABYLON.Vector3.Up());cone.rotate(BABYLON.Axis.X,Math.PI/2,BABYLON.Space.LOCAL);const am=new BABYLON.StandardMaterial('am_'+idx+'_'+arrowIdx,scene);am.emissiveColor=c3('#56a6ff');cone.material=am;});
+      points.forEach((pIdx,arrowIdx)=>{const i=Math.max(1,Math.min(path.length-2,pIdx));const prev=path[i-1];const next=path[i+1];const pos=path[i];const dir=prev.subtract(next).normalize();const cone=BABYLON.MeshBuilder.CreateCylinder('arrow_'+idx+'_'+arrowIdx,{height:2.3,diameterTop:0,diameterBottom:1.0,tessellation:8},scene);cone.position=pos.clone();cone.rotationQuaternion=BABYLON.Quaternion.FromLookDirectionLH(dir,BABYLON.Vector3.Up());cone.rotate(BABYLON.Axis.X,Math.PI/2,BABYLON.Space.LOCAL);const am=new BABYLON.StandardMaterial('am_'+idx+'_'+arrowIdx,scene);am.emissiveColor=c3('#56a6ff');cone.material=am;});
     }
   });
 }
@@ -282,7 +283,41 @@ function resetFocus(fromPop){
 
 homeBtn.addEventListener('click',()=>resetFocus(false));
 window.addEventListener('popstate',()=>{if(focusedId)resetFocus(true);});
-scene.onPointerObservable.add((pi)=>{if(pi.type!==BABYLON.PointerEventTypes.POINTERDOWN)return;const pick=scene.pick(scene.pointerX,scene.pointerY);if(pick&&pick.hit&&pick.pickedMesh&&pick.pickedMesh.metadata){const d=pick.pickedMesh.metadata;if(focusedId===d.id)resetFocus(false);else enterFocus(d.id);}else{if(focusedId)resetFocus(false);else resetInfo();}},BABYLON.PointerEventTypes.POINTERDOWN);
+scene.onPointerObservable.add((pi)=>{
+  if(pi.type===BABYLON.PointerEventTypes.POINTERDOWN){
+    const evt=pi.event;
+    if(evt && evt.touches && evt.touches.length>1){ tapCandidate=null; return; }
+    const pick=scene.pick(scene.pointerX,scene.pointerY);
+    tapCandidate={
+      x:scene.pointerX,
+      y:scene.pointerY,
+      t:Date.now(),
+      id:(pick&&pick.hit&&pick.pickedMesh&&pick.pickedMesh.metadata)?pick.pickedMesh.metadata.id:null
+    };
+    return;
+  }
+
+  if(pi.type===BABYLON.PointerEventTypes.POINTERUP){
+    if(!tapCandidate) return;
+    const evt=pi.event;
+    if(evt && evt.touches && evt.touches.length>1){ tapCandidate=null; return; }
+    const dx=scene.pointerX-tapCandidate.x;
+    const dy=scene.pointerY-tapCandidate.y;
+    const moved=Math.hypot(dx,dy);
+    const elapsed=Date.now()-tapCandidate.t;
+    const pickedId=tapCandidate.id;
+    tapCandidate=null;
+    if(moved>8 || elapsed>450) return;
+
+    if(pickedId && nodes[pickedId]){
+      if(focusedId===pickedId) resetFocus(false);
+      else enterFocus(pickedId);
+    }else{
+      if(focusedId) resetFocus(false);
+      else resetInfo();
+    }
+  }
+},BABYLON.PointerEventTypes.POINTERDOWN | BABYLON.PointerEventTypes.POINTERUP);
 
 fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
   .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
