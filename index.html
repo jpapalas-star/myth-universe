@@ -2,8 +2,8 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Greek Mythology Final Orbit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Greek Mythology Final Orbit FIXED</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <style>
 html,body{
@@ -15,13 +15,12 @@ html,body{
   position:fixed; left:10px; top:10px; z-index:10; color:#fff;
   background:rgba(0,0,0,.38); border:1px solid rgba(255,255,255,.12);
   border-radius:12px; padding:10px 12px; font-size:13px; line-height:1.45;
-  backdrop-filter:blur(6px)
 }
 #info{
   position:fixed; right:10px; top:10px; z-index:10; color:#fff;
   width:min(360px,calc(100vw - 20px)); max-height:calc(100vh - 20px);
   overflow:auto; background:rgba(0,0,0,.46); border:1px solid rgba(255,255,255,.12);
-  border-radius:12px; padding:12px 14px; backdrop-filter:blur(6px)
+  border-radius:12px; padding:12px 14px;
 }
 #info h2{margin:0 0 6px 0; font-size:20px}
 #info .sub{opacity:.78; font-size:13px; margin-bottom:10px}
@@ -38,8 +37,6 @@ html,body{
   <div>Left drag = pan</div>
   <div>Right drag = rotate</div>
   <div>Pinch / wheel = zoom</div>
-  <div>Blue arrows = parent → child</div>
-  <div>Couples = same color ring + line</div>
 </div>
 
 <div id="info">
@@ -68,14 +65,14 @@ camera.lowerRadiusLimit = 40;
 camera.upperRadiusLimit = 5000;
 camera.wheelDeltaPercentage = 0.01;
 camera.panningSensibility = 0;
-camera.pinchPrecision = 10;
-camera.allowUpsideDown = false;
+camera.pinchDeltaPercentage = 0.01;
+camera.useNaturalPinchZoom = true;
+camera.multiTouchPanAndZoom = false;
 camera.attachControl(canvas, true);
-
-// Right mouse rotates. Left mouse panning is handled manually below.
 if (camera.inputs && camera.inputs.attached && camera.inputs.attached.pointers) {
   camera.inputs.attached.pointers.buttons = [2];
 }
+try { camera.inputs.addTouch(); } catch(e) {}
 
 const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0,1,0), scene);
 hemi.intensity = 0.96;
@@ -92,7 +89,6 @@ const linesDone = new Set();
 const placed = new Set();
 
 function c3(hex){ return BABYLON.Color3.FromHexString(hex); }
-
 function hslToHex(h, s, l){
   s/=100; l/=100;
   const k=n=>(n+h/30)%12;
@@ -106,12 +102,10 @@ function hashColor(str){
   for(let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i)) >>> 0;
   return BABYLON.Color3.FromHexString(hslToHex(h % 360, 80, 64));
 }
-
 function idsFromField(s){
   if (!s || s === "-") return [];
   return String(s).split(";").map(v => v.trim()).filter(Boolean).filter(v => v !== "-");
 }
-
 function modelColor(d){
   const id = String(d.id || "");
   const model = String(d.ModelType || "");
@@ -130,7 +124,6 @@ function modelColor(d){
   if (cat.includes("Ήρω")) return c3("#d6a86f");
   return c3("#b8c5ff");
 }
-
 function spriteFile(d){
   const sprite = String(d.sprite || "");
   const model = String(d.ModelType || "");
@@ -157,7 +150,6 @@ function spriteFile(d){
   if (model === "god") return gender === "female" ? "god_female.png" : "god_male.png";
   return "default.png";
 }
-
 function sizeFor(d){
   const model = String(d.ModelType || "");
   const id = String(d.id || "");
@@ -170,7 +162,6 @@ function sizeFor(d){
   if (model === "spirit") return 5.8;
   return 6.3;
 }
-
 function addRing(mesh, color, diameter, thickness){
   const ring = BABYLON.MeshBuilder.CreateTorus("ring_"+Math.random(), {
     diameter: diameter,
@@ -179,15 +170,12 @@ function addRing(mesh, color, diameter, thickness){
   }, scene);
   ring.rotation.x = Math.PI/2;
   ring.position = mesh.position.clone();
-
   const rm = new BABYLON.StandardMaterial("rm_"+Math.random(), scene);
   rm.emissiveColor = color;
   rm.alpha = 0.92;
   ring.material = rm;
   glow.addIncludedOnlyMesh(ring);
-  return ring;
 }
-
 function createLabel(text, pos, size){
   const dt = new BABYLON.DynamicTexture("dt_"+Math.random(), {width:512,height:128}, scene, true);
   dt.hasAlpha = true;
@@ -197,7 +185,6 @@ function createLabel(text, pos, size){
     width: Math.max(6, size*2.1),
     height: Math.max(1.6, size*0.58)
   }, scene);
-
   plane.position = pos.add(new BABYLON.Vector3(0, size*0.92, 0));
   plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
 
@@ -209,7 +196,6 @@ function createLabel(text, pos, size){
   mat.backFaceCulling = false;
   plane.material = mat;
 }
-
 function createNode(d, x, y, z, coupleColor){
   const size = sizeFor(d);
   const baseColor = coupleColor || modelColor(d);
@@ -238,7 +224,7 @@ function createNode(d, x, y, z, coupleColor){
   pm.opacityTexture = tex;
   pm.useAlphaFromDiffuseTexture = true;
   pm.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
-  pm.alpha = 0.70; // 30% transparent
+  pm.alpha = 0.70;
   pm.disableLighting = true;
   pm.backFaceCulling = false;
   pm.emissiveColor = BABYLON.Color3.White().scale(0.76);
@@ -256,66 +242,52 @@ function createNode(d, x, y, z, coupleColor){
   nodes[d.id] = sphere;
   placed.add(d.id);
 }
-
 function connectPartner(aId, bId, color){
   const a = nodes[aId], b = nodes[bId];
   if (!a || !b) return;
   const key = "m_" + [aId,bId].sort().join("_");
   if (linesDone.has(key)) return;
   linesDone.add(key);
-
   const line = BABYLON.MeshBuilder.CreateLines(key, {
     points:[a.position.clone(), b.position.clone()]
   }, scene);
   line.color = color;
   line.alpha = 0.96;
 }
-
 function addArrowMarkers(aPos, bPos){
   const dir = bPos.subtract(aPos);
   const len = dir.length();
   if (len < 14) return;
   const forward = dir.normalize();
   const count = Math.max(1, Math.floor(len / 26));
-
   for (let i=1; i<=count; i++){
     const t = i / (count + 1);
     const pos = BABYLON.Vector3.Lerp(aPos, bPos, t);
-
     const cone = BABYLON.MeshBuilder.CreateCylinder("arrow_"+Math.random(), {
-      height: 2.3,
-      diameterTop: 0,
-      diameterBottom: 1.0,
-      tessellation: 8
+      height: 2.3, diameterTop: 0, diameterBottom: 1.0, tessellation: 8
     }, scene);
-
     cone.position = pos;
     cone.rotationQuaternion = BABYLON.Quaternion.FromLookDirectionLH(forward, BABYLON.Vector3.Up());
     cone.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
-
     const m = new BABYLON.StandardMaterial("arrm_"+Math.random(), scene);
     m.emissiveColor = c3("#56a6ff");
     cone.material = m;
   }
 }
-
 function connectParent(parentId, childId){
   const a = nodes[parentId], b = nodes[childId];
   if (!a || !b) return;
   const key = "p_" + parentId + "_" + childId;
   if (linesDone.has(key)) return;
   linesDone.add(key);
-
   const blue = c3("#56a6ff");
   const line = BABYLON.MeshBuilder.CreateLines(key, {
     points:[a.position.clone(), b.position.clone()]
   }, scene);
   line.color = blue;
   line.alpha = 0.96;
-
   addArrowMarkers(a.position.clone(), b.position.clone());
 }
-
 function showInfo(d){
   const info = document.getElementById("info");
   info.innerHTML = `
@@ -328,32 +300,29 @@ function showInfo(d){
     <div class="sec">FullText</div><div class="txt">${d.FullText || "-"}</div>
   `;
 }
-
 function resetInfo(){
-  const info = document.getElementById("info");
-  info.innerHTML = `
+  document.getElementById("info").innerHTML = `
     <h2>Myth Universe</h2>
     <div class="sub">Chaos center · generation rings · family clusters</div>
     <div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα στο κενό για κλείσιμο.</div>
   `;
 }
 
+// use pointerdown so empty-space tap also closes on mobile
 scene.onPointerObservable.add((pi)=>{
-  if (
-    pi.pickInfo &&
-    pi.pickInfo.hit &&
-    pi.pickInfo.pickedMesh &&
-    pi.pickInfo.pickedMesh.metadata
-  ){
-    showInfo(pi.pickInfo.pickedMesh.metadata);
+  if (pi.type !== BABYLON.PointerEventTypes.POINTERDOWN) return;
+  const pick = scene.pick(scene.pointerX, scene.pointerY);
+  if (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata) {
+    showInfo(pick.pickedMesh.metadata);
   } else {
     resetInfo();
   }
-}, BABYLON.PointerEventTypes.POINTERPICK);
+}, BABYLON.PointerEventTypes.POINTERDOWN);
 
 // Desktop left-drag pan
 let isLeftPanning = false, lastX = 0, lastY = 0;
 canvas.addEventListener("pointerdown", (e)=>{
+  if (e.pointerType === "touch") return;
   if (e.button === 0){
     isLeftPanning = true;
     lastX = e.clientX;
@@ -366,22 +335,18 @@ window.addEventListener("pointermove", (e)=>{
   const dx = e.clientX - lastX;
   const dy = e.clientY - lastY;
   lastX = e.clientX; lastY = e.clientY;
-
   const panScale = camera.radius * 0.0018;
   const right = camera.getDirection(BABYLON.Axis.X);
   const up = new BABYLON.Vector3(0,1,0);
   camera.target = camera.target.subtract(right.scale(dx * panScale)).add(up.scale(dy * panScale));
 });
 
-// Family clusters by shared children between partners, plus single-parent families
 function coupleKey(a,b){ return [a,b].sort().join("|"); }
-
 function buildFamilies(all){
   const families = [];
   const inFamilyChild = new Set();
   const inFamilyParent = new Set();
 
-  // 2-parent families
   all.forEach(d=>{
     const partners = idsFromField(d.Partners);
     const kidsA = new Set(idsFromField(d.Children));
@@ -393,28 +358,18 @@ function buildFamilies(all){
       if (shared.length){
         const key = coupleKey(d.id, pid);
         if (!families.find(f => f.key === key)){
-          families.push({
-            key,
-            parents:[d.id, pid],
-            children: shared
-          });
-          inFamilyParent.add(d.id);
-          inFamilyParent.add(pid);
+          families.push({ key, parents:[d.id, pid], children:shared });
+          inFamilyParent.add(d.id); inFamilyParent.add(pid);
           shared.forEach(c => inFamilyChild.add(c));
         }
       }
     });
   });
 
-  // 1-parent families for leftovers with children
   all.forEach(d=>{
     const kids = idsFromField(d.Children).filter(k => !inFamilyChild.has(k));
     if (kids.length){
-      families.push({
-        key: "single|" + d.id,
-        parents:[d.id],
-        children:kids
-      });
+      families.push({ key:"single|" + d.id, parents:[d.id], children:kids });
       inFamilyParent.add(d.id);
       kids.forEach(k => inFamilyChild.add(k));
     }
@@ -422,7 +377,6 @@ function buildFamilies(all){
 
   return { families, inFamilyParent, inFamilyChild };
 }
-
 function polarPositions(count, radius, yBase, jitter){
   const out = [];
   const n = count || 1;
@@ -436,7 +390,6 @@ function polarPositions(count, radius, yBase, jitter){
   }
   return out;
 }
-
 function placeFamily(center, family, coupleColor){
   const parents = family.parents.map(id => dataMap[id]).filter(Boolean);
   const children = family.children.map(id => dataMap[id]).filter(Boolean);
@@ -452,33 +405,28 @@ function placeFamily(center, family, coupleColor){
 
   const n = children.length || 1;
   const childRadius = Math.max(13, 9 + n * 1.2);
-
   for (let i=0; i<n; i++){
     const angle = (Math.PI * 2 * i / n) - Math.PI/2;
     const x = center.x + Math.cos(angle) * childRadius;
     const z = center.z + Math.sin(angle) * childRadius;
     const y = center.y + Math.sin(angle * 2) * 1.4;
     createNode(children[i], x, y, z, null);
-
     family.parents.forEach(pid => connectParent(pid, children[i].id));
   }
 }
-
 function placeRing(items, radius, yBase, jitter){
   const pos = polarPositions(items.length, radius, yBase, jitter);
   items.forEach((d, i) => createNode(d, pos[i].x, pos[i].y, pos[i].z, null));
 }
 
-fetch("./app-data.json?v=final-family")
+fetch("./app-data.json?v=final-family-fix")
 .then(r => r.json())
 .then(all => {
   all.forEach(d => dataMap[d.id] = d);
 
-  // Chaos center
   const chaos = all.find(d => d.id === "PRIM_CHAOS_001");
   if (chaos) createNode(chaos, 0, 0, 0, null);
 
-  // Families live near center inside generation structure
   const familyResult = buildFamilies(all);
   const families = familyResult.families;
   const famPos = polarPositions(families.length, 82, 0, 8);
@@ -489,21 +437,15 @@ fetch("./app-data.json?v=final-family")
     placeFamily(famPos[i], f, color);
   });
 
-  // Leftovers by generation/model rings
   const leftovers = all.filter(d => d.id !== "PRIM_CHAOS_001" && !placed.has(d.id));
-
   const ring1 = leftovers.filter(d => Number(d.Generation || 9) === 1 || d.ModelType === "energy");
   const used1 = new Set(ring1.map(d => d.id));
-
-  const ring2 = leftovers.filter(d => !used1.has(d.id) && d.ModelType === "group");
+  const ring2 = leftovers.filter(d => !used1.has(d.id) && (d.ModelType === "group" || d.Shape === "group"));
   const used2 = new Set([...used1, ...ring2.map(d => d.id)]);
-
   const ring3 = leftovers.filter(d => !used2.has(d.id) && d.ModelType === "giant");
   const used3 = new Set([...used2, ...ring3.map(d => d.id)]);
-
   const ring4 = leftovers.filter(d => !used3.has(d.id) && Number(d.Generation || 9) === 3);
   const used4 = new Set([...used3, ...ring4.map(d => d.id)]);
-
   const ring5 = leftovers.filter(d => !used4.has(d.id));
 
   placeRing(ring1, 138, 6, 4);
@@ -512,7 +454,6 @@ fetch("./app-data.json?v=final-family")
   placeRing(ring4, 286, -8, 6);
   placeRing(ring5, 350, 0, 7);
 
-  // Remaining relations
   all.forEach(d => {
     idsFromField(d.Partners).forEach(pid => {
       const fam = families.find(f => f.parents.includes(d.id) && f.parents.includes(pid));
