@@ -458,4 +458,19 @@ fetch('./app-data.json?v=focus-orbit-v4').then(r=>r.json()).then(all=>{
   const ring5=leftovers.filter(d=>!used4.has(d.id));
 
   placeRing(ring1,138,6,4);
-  placeRing(ring2,182,
+  placeRing(ring2,182,-6,5);
+  placeRing(ring3,230,8,6);
+  placeRing(ring4,286,-8,6);
+  placeRing(ring5,350,0,7);
+
+  buildLines(null);
+}).catch(err=>{
+  document.getElementById('info').innerHTML='<h2>JSON Load Error</h2><div class="txt">'+String(err)+'</div>';
+  console.error(err);
+});
+
+engine.runRenderLoop(()=>scene.render());
+window.addEventListener('resize',()=>engine.resize());
+</script>
+</body>
+</html>
