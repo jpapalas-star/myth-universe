@@ -218,7 +218,7 @@ function enterFocus(id){
   Object.keys(nodes).forEach(nodeId=>setNodeEnabled(nodeId,relatives.has(nodeId)));
   applyFocusLayout(id,relatives);
   renderConnections(relatives);
-  const pos=getNodePos(id);if(pos){camera.setTarget(pos.clone());camera.radius=Math.max(48,nodes[id].size*7.5);} 
+  const pos=getNodePos(id);if(pos){const newTarget=pos.clone();const newRadius=Math.max(48,nodes[id].size*7.5);BABYLON.Animation.CreateAndStartAnimation('camTarget',camera,'target',60,30,camera.target.clone(),newTarget,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);BABYLON.Animation.CreateAndStartAnimation('camRadius',camera,'radius',60,30,camera.radius,newRadius,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);} 
   showInfo(dataMap[id]);
   if(!suppressPop)history.pushState({focus:id},'');
 }
@@ -228,8 +228,8 @@ function resetFocus(fromPop){
   restoreOriginalPositions();
   Object.keys(nodes).forEach(id=>setNodeEnabled(id,true));
   renderConnections();
-  camera.setTarget(BABYLON.Vector3.Zero());
-  camera.radius=380;
+  BABYLON.Animation.CreateAndStartAnimation('camTargetBack',camera,'target',60,30,camera.target.clone(),BABYLON.Vector3.Zero(),BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  BABYLON.Animation.CreateAndStartAnimation('camRadiusBack',camera,'radius',60,30,camera.radius,380,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
   resetInfo();
   if(!fromPop && history.state && history.state.focus){suppressPop=true;history.back();setTimeout(()=>{suppressPop=false;},50);} 
 }
@@ -261,17 +261,4 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     const ring4=leftovers.filter(d=>!used3.has(d.id)&&Number(d.Generation||9)===3);
     const used4=new Set([...used3,...ring4.map(d=>d.id)]);
     const ring5=leftovers.filter(d=>!used4.has(d.id));
-    placeRing(ring1,138,6,4);placeRing(ring2,182,-6,5);placeRing(ring3,230,8,6);placeRing(ring4,286,-8,6);placeRing(ring5,350,0,7);
-
-    saveOriginalPositions();
-    buildConnections();
-    renderConnections();
-    resetInfo();
-  })
-  .catch(err=>{infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';console.error('JSON ERROR',err);});
-
-engine.runRenderLoop(()=>scene.render());
-window.addEventListener('resize',()=>engine.resize());
-</script>
-</body>
-</html>
+    placeRing(ring1,138,6,4);p
