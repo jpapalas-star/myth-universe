@@ -91,8 +91,13 @@ const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene)
 hemi.intensity=0.96;
 const light2=new BABYLON.PointLight('p',new BABYLON.Vector3(0,60,0),scene);
 light2.intensity=1.2;
-const glow=new BABYLON.GlowLayer('glow',scene);
-glow.intensity=0.08;
+const glow=new BABYLON.GlowLayer("glow",scene);
+
+glow.intensity = 1.2;
+
+glow.blurKernelSize = 32;
+
+glow.addExcludedMesh(camera);
 
 const nodes={};
 const dataMap={};
@@ -173,7 +178,7 @@ function addRing(parentMesh,color,diameter,thickness){
   ring.parent=parentMesh;
   ring.position=BABYLON.Vector3.Zero();
   const rm=new BABYLON.StandardMaterial('rm_'+Math.random(),scene);
-  rm.emissiveColor=color;
+  rm.emissiveColor = color.scale(2);
   rm.alpha=0.92;
   ring.material=rm;
   glow.addIncludedOnlyMesh(ring);
@@ -445,7 +450,9 @@ function renderConnections(filterSet){
 
    tube.material = mat;
 
-   glow.addIncludedOnlyMesh(tube);
+glow.addIncludedOnlyMesh(tube);
+
+mat.emissiveColor = rec.color.scale(2);
 
    lineMaterials.push({
      mat: mat,
@@ -511,7 +518,9 @@ function renderConnections(filterSet){
 
        cone.material = am;
 
-       glow.addIncludedOnlyMesh(cone);
+am.emissiveColor = BABYLON.Color3.FromHexString("#56a6ff").scale(2);
+
+glow.addIncludedOnlyMesh(cone);
 
      });
 
@@ -755,9 +764,8 @@ engine.runRenderLoop(()=>{
    }
 
    const pulse =
-     strength +
-     Math.sin(t*0.35 + i)*0.05;
-
+ strength +
+ Math.sin(t*0.35 + i)*0.15;
    m.mat.emissiveColor =
      m.base.scale(pulse);
 
