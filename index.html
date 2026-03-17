@@ -3,11 +3,12 @@
 <head>
 
 <meta charset="UTF-8">
-<title>Orbit Universe V4</title>
+<title>Myth Universe</title>
 
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 
 <style>
+
 html,body{
 margin:0;
 overflow:hidden;
@@ -19,6 +20,7 @@ width:100%;
 height:100%;
 display:block;
 }
+
 </style>
 
 </head>
@@ -28,160 +30,284 @@ display:block;
 
 <script>
 
-const canvas = document.getElementById("renderCanvas")
 
-const engine = new BABYLON.Engine(canvas,true)
+const canvas =
+document.getElementById("renderCanvas")
 
-const scene = new BABYLON.Scene(engine)
+const engine =
+new BABYLON.Engine(canvas,true)
 
-scene.clearColor = new BABYLON.Color3(0,0,0)
+const scene =
+new BABYLON.Scene(engine)
 
-const camera = new BABYLON.ArcRotateCamera(
+scene.clearColor =
+new BABYLON.Color3(0,0,0)
+
+
+
+const camera =
+new BABYLON.ArcRotateCamera(
 "cam",
 Math.PI/2,
 Math.PI/3,
-120,
-new BABYLON.Vector3(0,0,0),
+180,
+BABYLON.Vector3.Zero(),
 scene
 )
 
 camera.attachControl(canvas,true)
 
-camera.panningSensibility = 50
+camera.panningSensibility = 60
 
-const light = new BABYLON.HemisphericLight(
-"light",
+
+
+const light =
+new BABYLON.HemisphericLight(
+"l",
 new BABYLON.Vector3(1,1,0),
 scene
 )
 
 
-// =========================
-// LOAD JSON
-// =========================
 
-fetch("app-data.json")
+// ---------- LOAD DATA ----------
+
+
+let DATA = []
+
+
+fetch("./app-data.json")
 .then(r=>r.json())
-.then(data=>{
+.then(d=>{
 
-buildSystem(data)
+DATA = d
 
-})
-
-
-// =========================
-// BUILD
-// =========================
-
-function buildSystem(data){
-
-const chaos = data.find(x=>x.id.includes("CHAOS"))
-
-let families = {}
-
-data.forEach(c=>{
-
-if(!c.Parents || c.Parents=="-") return
-
-let p = c.Parents.split(";")[0]
-
-if(!families[p]) families[p]=[]
-
-families[p].push(c)
+build()
 
 })
 
 
-let index=0
 
-for(let key in families){
-
-let parent = data.find(x=>x.id==key)
-
-if(!parent) continue
-
-let angle = index * 0.6
-
-let dist = 25
-
-let cx = Math.cos(angle)*dist
-let cz = Math.sin(angle)*dist
-
-let parentMesh = makePlanet(parent,cx,0,cz,3)
-
-let kids = families[key]
-
-kids.forEach((k,i)=>{
-
-let a = i*(Math.PI*2/kids.length)
-
-let r = 6
-
-let x = cx + Math.cos(a)*r
-let z = cz + Math.sin(a)*r
-
-let childMesh = makePlanet(k,x,0,z,2)
-
-makeLine(parentMesh.position,childMesh.position)
-
-})
-
-index++
-
-}
-
-}
+// ---------- CHAOS ----------
 
 
-// =========================
-// PLANET
-// =========================
+function createChaos(){
 
-function makePlanet(obj,x,y,z,size){
-
-let mesh = BABYLON.MeshBuilder.CreateSphere(
-"p",
-{diameter:size},
+const s =
+BABYLON.MeshBuilder.CreateSphere(
+"chaos",
+{diameter:8},
 scene
 )
 
-mesh.position = new BABYLON.Vector3(x,y,z)
+const m =
+new BABYLON.StandardMaterial("m",scene)
 
-let mat = new BABYLON.StandardMaterial("m",scene)
+m.emissiveColor =
+new BABYLON.Color3(1,0.5,1)
 
-mat.emissiveColor = new BABYLON.Color3(
-Math.random(),
-Math.random(),
-Math.random()
-)
+s.material = m
 
-mesh.material = mat
-
-return mesh
+return s
 
 }
 
 
-// =========================
-// LINE
-// =========================
 
-function makeLine(a,b){
+// ---------- GET IMAGE ----------
 
-BABYLON.MeshBuilder.CreateLines(
-"l",
-{points:[a,b]},
+
+function getImage(type){
+
+if(!type) return "default.png"
+
+type = type.toLowerCase()
+
+if(type.includes("god")) return "god_male.png"
+if(type.includes("titan")) return "titan_male.png"
+if(type.includes("hero")) return "hero_male.png"
+if(type.includes("monster")) return "monster_male.png"
+if(type.includes("spirit")) return "spirit.png"
+if(type.includes("energy")) return "energy.png"
+if(type.includes("group")) return "group.png"
+if(type.includes("cosmic")) return "cosmic.png"
+
+return "default.png"
+
+}
+
+
+
+// ---------- PLANET ----------
+
+
+function createPlanet(name,type,pos){
+
+let file =
+getImage(type)
+
+
+const plane =
+BABYLON.MeshBuilder.CreatePlane(
+name,
+{size:6},
 scene
 )
 
+plane.position = pos
+
+
+const mat =
+new BABYLON.StandardMaterial(
+"m"+name,
+scene
+)
+
+
+const tex =
+new BABYLON.Texture(
+"./"+file,
+scene,
+true,
+false
+)
+
+
+tex.hasAlpha = true
+
+mat.diffuseTexture = tex
+mat.opacityTexture = tex
+mat.useAlphaFromDiffuseTexture = true
+
+mat.emissiveColor =
+new BABYLON.Color3(1,1,1)
+
+mat.alpha = 0.9
+
+plane.material = mat
+
+
+createText(name,pos)
+
+
+return plane
+
 }
 
 
-// =========================
 
-engine.runRenderLoop(()=>{
+// ---------- TEXT ----------
+
+
+function createText(name,pos){
+
+const plane =
+BABYLON.MeshBuilder.CreatePlane(
+"t"+name,
+{size:8},
+scene
+)
+
+plane.position =
+pos.add(
+new BABYLON.Vector3(0,4,0)
+)
+
+
+const dt =
+new BABYLON.DynamicTexture(
+"dt"+name,
+{width:256,height:64},
+scene
+)
+
+
+dt.drawText(
+name,
+10,
+40,
+"20px Arial",
+"yellow",
+"transparent",
+true
+)
+
+
+const mat =
+new BABYLON.StandardMaterial(
+"tm"+name,
+scene
+)
+
+mat.diffuseTexture = dt
+mat.emissiveColor =
+BABYLON.Color3.White()
+
+plane.material = mat
+
+}
+
+
+
+// ---------- BUILD ----------
+
+
+function build(){
+
+
+createChaos()
+
+
+let radius = 40
+let angle = 0
+
+
+DATA.forEach(d=>{
+
+
+angle += Math.PI*2 / DATA.length
+
+
+let x =
+Math.cos(angle) * radius
+
+let z =
+Math.sin(angle) * radius
+
+
+createPlanet(
+d.Name,
+d.Type,
+new BABYLON.Vector3(x,0,z)
+)
+
+
+})
+
+
+}
+
+
+
+// ---------- LOOP ----------
+
+
+engine.runRenderLoop(function(){
+
 scene.render()
+
 })
+
+
+window.addEventListener(
+"resize",
+function(){
+
+engine.resize()
+
+})
+
+
 
 </script>
 
