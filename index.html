@@ -5,19 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Myth Universe Final Clean</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
-
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02040a;font-family:Arial,sans-serif}
 #renderCanvas{width:100%;height:100%;display:block;touch-action:none}
-#panel{position:fixed;left:10px;top:10px;z-index:10;color:#fff;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;font-size:13px}
-#info{position:fixed;right:10px;top:10px;z-index:10;color:#fff;width:360px;max-height:90vh;overflow:auto;background:rgba(0,0,0,.46);border-radius:12px;padding:12px}
+#panel{position:fixed;left:10px;top:10px;z-index:10;color:#fff;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45}
+#info{position:fixed;right:10px;top:10px;z-index:10;color:#fff;width:min(360px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow:auto;background:rgba(0,0,0,.46);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px}
+#info h2{margin:0 0 6px 0;font-size:20px}
+#info .sub{opacity:.78;font-size:13px;margin-bottom:10px}
+#info .sec{color:#8fd3ff;margin:10px 0 4px 0;font-weight:bold;font-size:13px}
+#info .txt{font-size:13px;line-height:1.5;white-space:pre-wrap}
+@media (max-width:900px){#info{top:auto;left:10px;right:10px;bottom:10px;width:auto;max-height:40vh}}
 </style>
 </head>
-
 <body>
 
-<div id="panel">Myth Universe</div>
-<div id="info">Loading...</div>
+<div id="panel">
+  <div><b>Myth Universe</b></div>
+  <div>Drag = rotate</div>
+  <div>Pinch / wheel = zoom</div>
+  <div>Shift + drag = pan</div>
+  <div>Blue arrows = parent → child</div>
+  <div>Couples = same color ring + line</div>
+</div>
+
+<div id="info">
+  <h2>Myth Universe</h2>
+  <div class="sub">Chaos center · generation rings · family clusters</div>
+  <div class="txt">Loading...</div>
+</div>
 
 <canvas id="renderCanvas"></canvas>
 
@@ -26,114 +41,47 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02040a;fon
 const canvas=document.getElementById("renderCanvas");
 const engine=new BABYLON.Engine(canvas,true);
 const scene=new BABYLON.Scene(engine);
-
 scene.clearColor=new BABYLON.Color4(0.01,0.02,0.05,1);
 
-const camera=new BABYLON.ArcRotateCamera(
-"cam",
--Math.PI/2,
-Math.PI/2.65,
-380,
-BABYLON.Vector3.Zero(),
-scene
-);
-
+const camera=new BABYLON.ArcRotateCamera("cam",-Math.PI/2,Math.PI/2.65,380,BABYLON.Vector3.Zero(),scene);
+camera.lowerRadiusLimit=40;
+camera.upperRadiusLimit=5000;
+camera.wheelDeltaPercentage=0.01;
+camera.pinchDeltaPercentage=0.01;
+camera.useNaturalPinchZoom=true;
+camera.panningSensibility=120;
 camera.attachControl(canvas,true);
 
-new BABYLON.HemisphericLight(
-"hemi",
-new BABYLON.Vector3(0,1,0),
-scene
-);
+const hemi=new BABYLON.HemisphericLight("hemi",new BABYLON.Vector3(0,1,0),scene);
+hemi.intensity=0.96;
 
-const nodes={},dataMap={},linesDone=new Set(),placed=new Set()
+const glow=new BABYLON.GlowLayer("glow",scene);
+glow.intensity=0.14;
 
-function c3(h){return BABYLON.Color3.FromHexString(h)}
-
-function createNode(d,x,y,z){
-
-const s=BABYLON.MeshBuilder.CreateSphere(
-"s"+d.id,
-{diameter:6},
-scene
-)
-
-s.position.set(x,y,z)
-
-nodes[d.id]=s
-
-s.metadata=d
-
-}
-
-
-
-function connect(a,b){
-
-if(!nodes[a]||!nodes[b])return
-
-BABYLON.MeshBuilder.CreateLines(
-"l",
-{
-points:[
-nodes[a].position,
-nodes[b].position
-]
-},
-scene
-)
-
-}
-
-
-
-fetch("app-data.json?nocache="+Date.now(),{
-cache:"no-store"
+const nodes={}, dataMap={}, familyColorByKey=new Map(), linesDone=new Set(), placed=new Set();
+fetch("app-data.json?nocache=" + Date.now(), {
+  cache: "no-store"
 })
 .then(r=>{
-
-if(!r.ok){
-throw new Error("HTTP "+r.status)
-}
-
-return r.json()
-
+  if(!r.ok){
+    throw new Error("HTTP "+r.status)
+  }
+  return r.json()
 })
 .then(all=>{
 
-all.forEach(d=>{
-dataMap[d.id]=d
-})
+all.forEach(d=>dataMap[d.id]=d);
 
-const chaos=all.find(
-d=>d.id==="PRIM_CHAOS_001"
-)
+const chaos=all.find(d=>d.id==='PRIM_CHAOS_001');
 
-createNode(
-chaos,
-0,0,0
-)
+if(chaos) createNode(chaos,0,0,0,null);
 
 })
 .catch(err=>{
 
-document.getElementById("info").innerHTML=
-"JSON ERROR<br>"+err
+document.getElementById('info').innerHTML =
+"<h2>JSON ERROR</h2><div class='txt'>"+err+"</div>";
 
-console.error(err)
+console.error(err);
 
-})
-
-
-engine.runRenderLoop(()=>{
-scene.render()
-})
-
-window.addEventListener(
-"resize",
-()=>engine.resize()
-)
-
-</script>
-</body>
-</html>
+});
