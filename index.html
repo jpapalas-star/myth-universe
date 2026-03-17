@@ -8,23 +8,23 @@
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02040a;font-family:Arial,sans-serif}
 #renderCanvas{width:100%;height:100%;display:block;touch-action:none}
-#indexBtn{position:fixed;left:10px;top:10px;z-index:20;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:bold;cursor:pointer;backdrop-filter:blur(6px)}
-#searchBox{position:fixed;right:10px;top:10px;z-index:40;width:min(260px,calc(100vw - 20px));box-sizing:border-box;color:#fff;background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 12px;font-size:14px;outline:none;backdrop-filter:blur(6px)}
+#indexBtn{position:fixed;left:10px;top:10px;z-index:30;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:bold;cursor:pointer;backdrop-filter:blur(6px)}
+#searchBox{position:fixed;right:10px;top:10px;z-index:40;color:#fff;background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 12px;font-size:14px;outline:none;backdrop-filter:blur(6px);width:min(260px,calc(100vw - 20px));box-sizing:border-box}
 #searchBox::placeholder{color:rgba(255,255,255,.6)}
-#searchResults{position:fixed;right:10px;top:56px;z-index:39;width:min(260px,calc(100vw - 20px));max-height:220px;overflow:auto;color:#fff;background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.12);border-radius:12px;backdrop-filter:blur(6px);display:none}
+#searchResults{position:fixed;right:10px;top:58px;z-index:39;width:min(260px,calc(100vw - 20px));max-height:220px;overflow:auto;color:#fff;background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.12);border-radius:12px;backdrop-filter:blur(6px);display:none}
 .searchItem{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.08);cursor:pointer;font-size:13px;line-height:1.35}
 .searchItem:last-child{border-bottom:none}
 .searchItem:hover,.searchItem.active{background:rgba(255,255,255,.1)}
 .searchName{font-weight:bold}
 .searchMeta{opacity:.72;font-size:12px;margin-top:2px}
-#panel{position:fixed;left:10px;top:60px;z-index:10;color:#fff;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;backdrop-filter:blur(6px);display:none}
-#homeBtn{position:fixed;right:10px;top:286px;z-index:20;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:bold;cursor:pointer;backdrop-filter:blur(6px)}
-#info{position:fixed;right:10px;top:336px;z-index:10;color:#fff;width:min(360px,calc(100vw - 20px));max-height:calc(100vh - 348px);overflow:auto;background:rgba(0,0,0,.46);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;backdrop-filter:blur(6px)}
+#homeBtn{position:fixed;right:10px;top:290px;z-index:30;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:bold;cursor:pointer;backdrop-filter:blur(6px)}
+#panel{position:fixed;left:10px;top:58px;z-index:20;color:#fff;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;backdrop-filter:blur(6px);display:none;max-width:min(280px,calc(100vw - 20px))}
+#info{position:fixed;right:10px;top:344px;z-index:10;color:#fff;width:min(360px,calc(100vw - 20px));max-height:calc(100vh - 354px);overflow:auto;background:rgba(0,0,0,.46);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;backdrop-filter:blur(6px)}
 #info h2{margin:0 0 6px 0;font-size:20px}
 #info .sub{opacity:.78;font-size:13px;margin-bottom:10px}
 #info .sec{color:#8fd3ff;margin:10px 0 4px 0;font-weight:bold;font-size:13px}
 #info .txt{font-size:13px;line-height:1.5;white-space:pre-wrap}
-@media (max-width:900px){#searchBox{left:10px;right:10px;width:auto}#searchResults{left:10px;right:10px;width:auto;top:56px;max-height:180px}#homeBtn{left:10px;right:auto;top:246px}#panel{left:10px;right:10px;top:296px;width:auto}#info{left:10px;right:10px;top:auto;bottom:10px;width:auto;max-height:34vh}}
+@media (max-width:900px){#indexBtn{left:10px;top:10px}#searchBox{left:10px;right:10px;top:56px;width:auto}#searchResults{left:10px;right:10px;top:104px;width:auto;max-height:180px}#homeBtn{left:10px;right:auto;top:294px}#panel{left:10px;right:10px;top:342px;max-width:none}#info{left:10px;right:10px;top:auto;bottom:10px;width:auto;max-height:34vh}}
 </style>
 </head>
 <body>
@@ -52,6 +52,7 @@ const canvas=document.getElementById('renderCanvas');
 const infoEl=document.getElementById('info');
 const homeBtn=document.getElementById('homeBtn');
 const indexBtn=document.getElementById('indexBtn');
+const panelEl=document.getElementById('panel');
 const searchBox=document.getElementById('searchBox');
 const searchResults=document.getElementById('searchResults');
 const engine=new BABYLON.Engine(canvas,true);
@@ -61,10 +62,11 @@ scene.clearColor=new BABYLON.Color4(0.01,0.02,0.05,1);
 const camera=new BABYLON.ArcRotateCamera('cam',-Math.PI/2,Math.PI/2.65,380,BABYLON.Vector3.Zero(),scene);
 camera.lowerRadiusLimit=34;
 camera.upperRadiusLimit=5000;
-camera.wheelDeltaPercentage=0.01;
-camera.pinchDeltaPercentage=0.01;
+camera.wheelDeltaPercentage=0.02;
+camera.pinchDeltaPercentage=0.02;
+camera.pinchPrecision=5;
 camera.useNaturalPinchZoom=true;
-camera.panningSensibility=120;
+camera.panningSensibility=40;
 camera.attachControl(canvas,true);
 if(camera.inputs&&camera.inputs.attached&&camera.inputs.attached.pointers){
   camera.inputs.attached.pointers.multiTouchPanAndZoom=true;
@@ -72,6 +74,8 @@ if(camera.inputs&&camera.inputs.attached&&camera.inputs.attached.pointers){
 
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
 hemi.intensity=0.96;
+const light2=new BABYLON.PointLight('p',new BABYLON.Vector3(0,60,0),scene);
+light2.intensity=1.2;
 const glow=new BABYLON.GlowLayer('glow',scene);
 glow.intensity=0.14;
 
@@ -125,7 +129,12 @@ function createNode(d,x,y,z,familyRingColor){
   const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:28},scene);
   sphere.position=new BABYLON.Vector3(x,y,z);
   const sm=new BABYLON.StandardMaterial('sm_'+d.id,scene);
-  sm.diffuseColor=baseColor.scale(0.16);sm.emissiveColor=baseColor.scale(0.07);sm.specularColor=BABYLON.Color3.Black();sm.alpha=0.92;sphere.material=sm;
+  sm.diffuseColor=baseColor;
+  sm.specularColor=new BABYLON.Color3(1,1,1);
+  sm.specularPower=64;
+  sm.emissiveColor=baseColor.scale(0.05);
+  sm.alpha=0.96;
+  sphere.material=sm;
 
   const inner=BABYLON.MeshBuilder.CreatePlane('inner_'+d.id,{size:size*0.76},scene);
   inner.parent=sphere;
@@ -133,7 +142,17 @@ function createNode(d,x,y,z,familyRingColor){
   inner.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
   const pm=new BABYLON.StandardMaterial('pm_'+d.id,scene);
   const tex=new BABYLON.Texture('./'+spriteFile(d),scene,true,false);
-  tex.hasAlpha=true;pm.diffuseTexture=tex;pm.opacityTexture=tex;pm.useAlphaFromDiffuseTexture=true;pm.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;pm.alpha=0.70;pm.disableLighting=true;pm.backFaceCulling=false;pm.emissiveColor=BABYLON.Color3.White().scale(0.76);inner.material=pm;
+  tex.hasAlpha=true;
+  pm.diffuseTexture=tex;
+  pm.opacityTexture=tex;
+  pm.useAlphaFromDiffuseTexture=true;
+  pm.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;
+  pm.alphaCutOff=0.1;
+  pm.alpha=1.0;
+  pm.disableLighting=true;
+  pm.backFaceCulling=false;
+  pm.emissiveColor=BABYLON.Color3.White().scale(0.82);
+  inner.material=pm;
 
   createLabel(d.Name||d.id,sphere,size);
   const rings=[];
@@ -182,7 +201,7 @@ function buildConnections(){
   const parentDone=new Set();
   allData.forEach(d=>{
     idsFromField(d.Partners).forEach(pid=>{if(!nodes[d.id]||!nodes[pid])return;const k=[d.id,pid].sort().join('|');if(partnerDone.has(k))return;partnerDone.add(k);registerConnection('partner',d.id,pid,c3('#ff4b4b'));});
-    idsFromField(d.Parents).forEach(pid=>{if(!nodes[pid]||!nodes[d.id])return;const k=`${pid}->${d.id}`;if(parentDone.has(k))return;parentDone.add(k);registerConnection('parent',pid,d.id,c3('#56a6ff'));});
+    idsFromField(d.Parents).forEach(pid=>{if(!nodes[pid]||!nodes[d.id])return;const partners=idsFromField(d.Partners);if(partners.includes(pid))return;const k=`${pid}->${d.id}`;if(parentDone.has(k))return;parentDone.add(k);registerConnection('parent',pid,d.id,c3('#56a6ff'));});
   });
 }
 
@@ -300,14 +319,43 @@ function resetFocus(fromPop){
   if(!fromPop && history.state && history.state.focus){suppressPop=true;history.back();setTimeout(()=>{suppressPop=false;},50);} 
 }
 
-function normalizeText(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+
+function normalizeText(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
 function searchableText(d){return normalizeText([d.Name||'',d.id||'',d.Category||'',d.ModelType||'',d.Generation||''].join(' '));}
 function hideSearchResults(){searchResults.style.display='none';searchResults.innerHTML='';searchMatches=[];activeSearchIndex=-1;}
-function renderSearchResults(){searchResults.innerHTML='';if(!searchMatches.length){searchResults.style.display='none';activeSearchIndex=-1;return;}searchResults.style.display='block';searchMatches.forEach((d,idx)=>{const item=document.createElement('div');item.className='searchItem'+(idx===activeSearchIndex?' active':'');item.innerHTML=`<div class="searchName">${d.Name||d.id}</div><div class="searchMeta">${d.id||''} · ${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation ?? '-'}</div>`;item.addEventListener('click',()=>{searchBox.value=d.Name||d.id;hideSearchResults();enterFocus(d.id);});searchResults.appendChild(item);});}
-function runSearch(raw){const q=normalizeText(raw).trim();if(!q){hideSearchResults();return;}searchMatches=allData.filter(d=>searchableText(d).includes(q)).sort((a,b)=>{const an=normalizeText(a.Name||a.id);const bn=normalizeText(b.Name||b.id);const aStarts=an.startsWith(q)?0:1;const bStarts=bn.startsWith(q)?0:1;if(aStarts!==bStarts)return aStarts-bStarts;return an.localeCompare(bn);}).slice(0,20);activeSearchIndex=searchMatches.length?0:-1;renderSearchResults();}
-indexBtn.addEventListener('click',()=>{panelOpen=!panelOpen;panel.style.display=panelOpen?'block':'none';});
-searchBox.addEventListener('input',e=>{runSearch(e.target.value);});
-searchBox.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){if(!searchMatches.length)return;e.preventDefault();activeSearchIndex=Math.min(searchMatches.length-1,activeSearchIndex+1);renderSearchResults();}else if(e.key==='ArrowUp'){if(!searchMatches.length)return;e.preventDefault();activeSearchIndex=Math.max(0,activeSearchIndex-1);renderSearchResults();}else if(e.key==='Enter'){if(!searchMatches.length)return;e.preventDefault();const chosen=searchMatches[Math.max(0,activeSearchIndex)];if(chosen){searchBox.value=chosen.Name||chosen.id;hideSearchResults();enterFocus(chosen.id);}}else if(e.key==='Escape'){hideSearchResults();}});
+function renderSearchResults(){
+  searchResults.innerHTML='';
+  if(!searchMatches.length){searchResults.style.display='none';activeSearchIndex=-1;return;}
+  searchResults.style.display='block';
+  searchMatches.forEach((d,idx)=>{
+    const item=document.createElement('div');
+    item.className='searchItem'+(idx===activeSearchIndex?' active':'');
+    item.innerHTML=`<div class="searchName">${d.Name||d.id}</div><div class="searchMeta">${d.id||''} · ${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation ?? '-'}</div>`;
+    item.addEventListener('click',()=>{searchBox.value=d.Name||d.id;hideSearchResults();enterFocus(d.id);});
+    searchResults.appendChild(item);
+  });
+}
+function runSearch(raw){
+  const q=normalizeText(raw).trim();
+  if(!q){hideSearchResults();return;}
+  searchMatches=allData.filter(d=>searchableText(d).includes(q)).sort((a,b)=>{
+    const an=normalizeText(a.Name||a.id),bn=normalizeText(b.Name||b.id);
+    const aStarts=an.startsWith(q)?0:1,bStarts=bn.startsWith(q)?0:1;
+    if(aStarts!==bStarts)return aStarts-bStarts;
+    return an.localeCompare(bn);
+  }).slice(0,20);
+  activeSearchIndex=searchMatches.length?0:-1;
+  renderSearchResults();
+}
+
+indexBtn.addEventListener('click',()=>{panelOpen=!panelOpen;panelEl.style.display=panelOpen?'block':'none';});
+searchBox.addEventListener('input',e=>runSearch(e.target.value));
+searchBox.addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){if(!searchMatches.length)return;e.preventDefault();activeSearchIndex=Math.min(searchMatches.length-1,activeSearchIndex+1);renderSearchResults();}
+  else if(e.key==='ArrowUp'){if(!searchMatches.length)return;e.preventDefault();activeSearchIndex=Math.max(0,activeSearchIndex-1);renderSearchResults();}
+  else if(e.key==='Enter'){if(!searchMatches.length)return;e.preventDefault();const chosen=searchMatches[Math.max(0,activeSearchIndex)];if(chosen){searchBox.value=chosen.Name||chosen.id;hideSearchResults();enterFocus(chosen.id);}}
+  else if(e.key==='Escape'){hideSearchResults();}
+});
 document.addEventListener('click',e=>{if(e.target!==searchBox && !searchResults.contains(e.target)){hideSearchResults();}});
 
 homeBtn.addEventListener('click',()=>resetFocus(false));
@@ -377,7 +425,6 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     buildConnections();
     renderConnections();
     resetInfo();
-  hideSearchResults();
   })
   .catch(err=>{infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';console.error('JSON ERROR',err);});
 
