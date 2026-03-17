@@ -1,4 +1,4 @@
-const CACHE_NAME = "myth-universe-v10";
+const CACHE_NAME = "myth-universe-v110";
 
 const ASSETS = [
 
