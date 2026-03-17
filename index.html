@@ -17,14 +17,16 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02040a;fon
 .searchItem:hover,.searchItem.active{background:rgba(255,255,255,.1)}
 .searchName{font-weight:bold}
 .searchMeta{opacity:.72;font-size:12px;margin-top:2px}
-#homeBtn{position:fixed;right:10px;top:10px;z-index:30;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:bold;cursor:pointer;backdrop-filter:blur(6px)}
+#homeBtn{position:fixed;right:10px;top:290px;z-index:30;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:bold;cursor:pointer;backdrop-filter:blur(6px)}
 #panel{position:fixed;left:10px;top:58px;z-index:20;color:#fff;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;backdrop-filter:blur(6px);display:none;max-width:min(280px,calc(100vw - 20px))}
 #info{position:fixed;right:10px;top:344px;z-index:10;color:#fff;width:min(360px,calc(100vw - 20px));max-height:calc(100vh - 354px);overflow:auto;background:rgba(0,0,0,.46);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;backdrop-filter:blur(6px)}
 #info h2{margin:0 0 6px 0;font-size:20px}
 #info .sub{opacity:.78;font-size:13px;margin-bottom:10px}
 #info .sec{color:#8fd3ff;margin:10px 0 4px 0;font-weight:bold;font-size:13px}
 #info .txt{font-size:13px;line-height:1.5;white-space:pre-wrap}
-@media (max-width:900px){#indexBtn{left:10px;top:10px}#homeBtn{right:10px;top:10px}#searchBox{left:10px;right:10px;top:56px;width:auto}#searchResults{left:10px;right:10px;top:104px;width:auto;max-height:180px}#panel{left:10px;right:10px;top:342px;max-width:none}#info{left:10px;right:10px;top:auto;bottom:10px;width:auto;max-height:34vh}}
+.infoLink{color:#8fd3ff;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.infoLink:hover{color:#c7ecff}
+@media (max-width:900px){#indexBtn{left:10px;top:10px}#searchBox{left:10px;right:10px;top:56px;width:auto}#searchResults{left:10px;right:10px;top:104px;width:auto;max-height:180px}#homeBtn{left:10px;right:auto;top:294px}#panel{left:10px;right:10px;top:342px;max-width:none}#info{left:10px;right:10px;top:auto;bottom:10px;width:auto;max-height:34vh}}
 </style>
 </head>
 <body>
@@ -140,19 +142,18 @@ function createNode(d,x,y,z,familyRingColor){
   inner.parent=sphere;
   inner.position=BABYLON.Vector3.Zero();
   inner.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
-  inner.rotation.y=Math.PI;
   const pm=new BABYLON.StandardMaterial('pm_'+d.id,scene);
   const tex=new BABYLON.Texture('./'+spriteFile(d),scene,true,false);
   tex.hasAlpha=true;
   pm.diffuseTexture=tex;
   pm.opacityTexture=tex;
   pm.useAlphaFromDiffuseTexture=true;
-  pm.transparencyMode=BABYLON.Material.MATERIAL_ALPHATEST;
-  pm.alphaCutOff=0.25;
+  pm.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;
+  pm.alphaCutOff=0.1;
   pm.alpha=1.0;
   pm.disableLighting=true;
   pm.backFaceCulling=false;
-  pm.emissiveColor=baseColor.scale(0.7);
+  pm.emissiveColor=BABYLON.Color3.White().scale(0.82);
   inner.material=pm;
 
   createLabel(d.Name||d.id,sphere,size);
@@ -167,8 +168,48 @@ function createNode(d,x,y,z,familyRingColor){
   placed.add(d.id);
 }
 
-function showInfo(d){infoEl.innerHTML=`<h2>${d.Name||d.id}</h2><div class="sub">${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation ?? '-'}</div><div class="sec">Summary</div><div class="txt">${d.Summary||'-'}</div><div class="sec">Parents</div><div class="txt">${d.Parents||'-'}</div><div class="sec">Partners</div><div class="txt">${d.Partners||'-'}</div><div class="sec">Children</div><div class="txt">${d.Children||'-'}</div><div class="sec">FullText</div><div class="txt">${d.FullText||'-'}</div>`;}
-function resetInfo(){infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">Chaos center · generation rings · family clusters</div><div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>`;}
+
+function nameFromId(id){
+  if(!id || id==='-') return '-';
+  const d=dataMap[id];
+  if(!d) return id;
+  return d.Name || id;
+}
+function makeInfoLink(id){
+  if(!id || id==='-') return '-';
+  const d=dataMap[id];
+  if(!d) return id;
+  return `<span class="infoLink" data-id="${id}">${d.Name || id}</span>`;
+}
+function listInfoLinks(str){
+  if(!str || str==='-') return '-';
+  return String(str).split(';').map(s=>s.trim()).filter(Boolean).filter(v=>v!=='-').map(id=>makeInfoLink(id)).join(', ');
+}
+function highlightNode(id,on){
+  const n=nodes[id];
+  if(!n) return;
+  n.sphere.scaling.setAll(on ? 1.18 : 1);
+}
+function bindInfoLinks(){
+  infoEl.querySelectorAll('.infoLink').forEach(el=>{
+    const id=el.dataset.id;
+    el.addEventListener('click',()=>{
+      searchBox.blur();
+      hideSearchResults();
+      enterFocus(id);
+    });
+    el.addEventListener('mouseenter',()=>highlightNode(id,true));
+    el.addEventListener('mouseleave',()=>highlightNode(id,false));
+    el.addEventListener('touchstart',()=>highlightNode(id,true),{passive:true});
+    el.addEventListener('touchend',()=>highlightNode(id,false),{passive:true});
+  });
+}
+function showInfo(d){
+  infoEl.innerHTML=`<h2>${d.Name||d.id}</h2><div class="sub">${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation ?? '-'}</div><div class="sec">Summary</div><div class="txt">${d.Summary||'-'}</div><div class="sec">Parents</div><div class="txt">${listInfoLinks(d.Parents)}</div><div class="sec">Partners</div><div class="txt">${listInfoLinks(d.Partners)}</div><div class="sec">Children</div><div class="txt">${listInfoLinks(d.Children)}</div><div class="sec">FullText</div><div class="txt">${d.FullText||'-'}</div>`;
+  bindInfoLinks();
+}
+function resetInfo(){
+infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">Chaos center · generation rings · family clusters</div><div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>`;}
 function setNodeEnabled(id,enabled){const n=nodes[id];if(n)n.sphere.setEnabled(enabled);} 
 function getNodePos(id){return nodes[id]?.sphere.position||null;}
 function saveOriginalPositions(){Object.values(nodes).forEach(n=>originalPositions.set(n.id,n.sphere.position.clone()));}
@@ -263,8 +304,26 @@ function enterFocus(id){
     const newRadius=Math.max(48,nodes[id].size*7.5);
     camera.lowerRadiusLimit=20;
     camera.upperRadiusLimit=2000;
-    BABYLON.Animation.CreateAndStartAnimation('camTargetFocus',camera,'target',60,30,camera.target.clone(),newTarget,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
-    BABYLON.Animation.CreateAndStartAnimation('camRadiusFocus',camera,'radius',60,30,camera.radius,newRadius,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+    BABYLON.Animation.CreateAndStartAnimation(
+      'camTargetFocus',
+      camera,
+      'target',
+      60,
+      30,
+      camera.target.clone(),
+      newTarget,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
+    BABYLON.Animation.CreateAndStartAnimation(
+      'camRadiusFocus',
+      camera,
+      'radius',
+      60,
+      30,
+      camera.radius,
+      newRadius,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
   }
   showInfo(dataMap[id]);
   if(!suppressPop)history.pushState({focus:id},'');
@@ -277,14 +336,33 @@ function resetFocus(fromPop){
   renderConnections();
   camera.lowerRadiusLimit=34;
   camera.upperRadiusLimit=5000;
-  BABYLON.Animation.CreateAndStartAnimation('camTargetReset',camera,'target',60,30,camera.target.clone(),BABYLON.Vector3.Zero(),BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
-  BABYLON.Animation.CreateAndStartAnimation('camRadiusReset',camera,'radius',60,30,camera.radius,380,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  BABYLON.Animation.CreateAndStartAnimation(
+    'camTargetReset',
+    camera,
+    'target',
+    60,
+    30,
+    camera.target.clone(),
+    BABYLON.Vector3.Zero(),
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+  BABYLON.Animation.CreateAndStartAnimation(
+    'camRadiusReset',
+    camera,
+    'radius',
+    60,
+    30,
+    camera.radius,
+    380,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
   resetInfo();
   hideSearchResults();
   if(!fromPop && history.state && history.state.focus){suppressPop=true;history.back();setTimeout(()=>{suppressPop=false;},50);} 
 }
 
-function normalizeText(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+
+function normalizeText(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
 function searchableText(d){return normalizeText([d.Name||'',d.id||'',d.Category||'',d.ModelType||'',d.Generation||''].join(' '));}
 function hideSearchResults(){searchResults.style.display='none';searchResults.innerHTML='';searchMatches=[];activeSearchIndex=-1;}
 function renderSearchResults(){
