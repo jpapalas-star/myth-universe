@@ -3,262 +3,103 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Myth Universe Final Clean PATCH</title>
-
+<title>Myth Universe Final Clean Patched</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
-
 <style>
-html,body{
-margin:0;
-width:100%;
-height:100%;
-overflow:hidden;
-background:#02040a;
-}
-
-#renderCanvas{
-width:100%;
-height:100%;
-touch-action:none;
-}
-
-#resetBtn{
-position:fixed;
-left:10px;
-bottom:10px;
-z-index:10;
-padding:8px 12px;
-border-radius:8px;
-border:1px solid #fff3;
-background:#0008;
-color:white;
-}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02040a;font-family:Arial,sans-serif}
+#renderCanvas{width:100%;height:100%;display:block;touch-action:none}
+#panel{position:fixed;left:10px;top:10px;z-index:10;color:#fff;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;max-width:min(320px,calc(100vw - 20px))}
+#info{position:fixed;right:10px;top:10px;z-index:10;color:#fff;width:min(360px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow:auto;background:rgba(0,0,0,.46);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px}
+#resetFocusBtn{position:fixed;left:10px;bottom:10px;z-index:10;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 14px;font-size:13px;display:none}
+#info h2{margin:0 0 6px 0;font-size:20px}
+#info .sub{opacity:.78;font-size:13px;margin-bottom:10px}
+#info .sec{color:#8fd3ff;margin:10px 0 4px 0;font-weight:bold;font-size:13px}
+#info .txt{font-size:13px;line-height:1.5;white-space:pre-wrap}
+@media (max-width:900px){#info{top:auto;left:10px;right:10px;bottom:58px;width:auto;max-height:38vh}#panel{font-size:12px;line-height:1.35}}
 </style>
 </head>
-
 <body>
-
-<button id="resetBtn">RESET</button>
-
+<div id="panel">
+  <div><b>Myth Universe</b></div>
+  <div>Drag = rotate</div>
+  <div>Pinch / wheel = zoom</div>
+  <div>Shift + drag = pan</div>
+  <div>Tap = info + family focus</div>
+  <div>Blue arrows = parent → child</div>
+  <div>Couples = same color ring + line</div>
+</div>
+<div id="info">
+  <h2>Myth Universe</h2>
+  <div class="sub">Chaos center · generation rings · family clusters</div>
+  <div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες και family focus. Πάτα στο κενό ή RESET για επιστροφή.</div>
+</div>
+<button id="resetFocusBtn">RESET FOCUS</button>
 <canvas id="renderCanvas"></canvas>
-
 <script>
+const canvas=document.getElementById("renderCanvas");
+const infoEl=document.getElementById('info');
+const resetBtn=document.getElementById('resetFocusBtn');
+const engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true});
+const scene=new BABYLON.Scene(engine);
+scene.clearColor=new BABYLON.Color4(0.01,0.02,0.05,1);
 
-const canvas=document.getElementById("renderCanvas")
-
-const engine=new BABYLON.Engine(canvas,true)
-
-const scene=new BABYLON.Scene(engine)
-
-scene.clearColor=new BABYLON.Color4(0.01,0.02,0.05,1)
-
-
-const camera=new BABYLON.ArcRotateCamera(
-"cam",
--Math.PI/2,
-Math.PI/2.6,
-380,
-BABYLON.Vector3.Zero(),
-scene
-)
-
-camera.attachControl(canvas,true)
-
-camera.useNaturalPinchZoom=true
-camera.pinchDeltaPercentage=0.01
-camera.wheelDeltaPercentage=0.01
-camera.panningSensibility=120
-
-if(camera.inputs.attached.pointers){
-camera.inputs.attached.pointers.multiTouchPanAndZoom=true
+const camera=new BABYLON.ArcRotateCamera("cam",-Math.PI/2,Math.PI/2.65,380,BABYLON.Vector3.Zero(),scene);
+camera.lowerRadiusLimit=40;
+camera.upperRadiusLimit=5000;
+camera.wheelDeltaPercentage=0.01;
+camera.pinchDeltaPercentage=0.01;
+camera.useNaturalPinchZoom=true;
+camera.panningSensibility=120;
+camera.angularSensibilityX=2200;
+camera.angularSensibilityY=2200;
+camera.pinchPrecision=120;
+camera.attachControl(canvas,true);
+if(camera.inputs&&camera.inputs.attached&&camera.inputs.attached.pointers){
+  camera.inputs.attached.pointers.multiTouchPanAndZoom=true;
+  camera.inputs.attached.pointers.pinchInwards=true;
 }
 
-
-
-const light=new BABYLON.HemisphericLight(
-"l",
-new BABYLON.Vector3(0,1,0),
-scene
-)
-
-
-
-const nodes={}
-const lines=[]
-
-
-
-function curvedLine(a,b,color){
-
-const mid=BABYLON.Vector3.Lerp(a,b,0.5)
-
-const dir=b.subtract(a)
-
-const normal=new BABYLON.Vector3(
--dir.z,
-0,
-dir.x
-).normalize()
-
-mid.addInPlace(normal.scale(5))
-
-const curve=BABYLON.Curve3.CreateQuadraticBezier(
-a,
-mid,
-b,
-24
-)
-
-const tube=BABYLON.MeshBuilder.CreateTube(
-"tube",
-{
-path:curve.getPoints(),
-radius:0.12
-},
-scene
-)
-
-const mat=new BABYLON.StandardMaterial("m",scene)
-
-mat.emissiveColor=color
-mat.disableLighting=true
-
-tube.material=mat
-
-lines.push(tube)
-
-}
-
-
-
-function resetFocus(){
-
-for(let k in nodes){
-nodes[k].setEnabled(true)
-}
-
-lines.forEach(l=>l.setEnabled(true))
-
-camera.setTarget(BABYLON.Vector3.Zero())
-
-camera.radius=380
-
-}
-
-
-
-document.getElementById("resetBtn").onclick=resetFocus
-
-
-
-scene.onPointerObservable.add(pi=>{
-
-if(pi.type!==BABYLON.PointerEventTypes.POINTERDOWN) return
-
-const pick=scene.pick(
-scene.pointerX,
-scene.pointerY
-)
-
-if(!pick.hit) return
-
-const m=pick.pickedMesh
-
-if(!m.metadata) return
-
-focus(m.metadata.id)
-
-})
-
-
-
-function focus(id){
-
-for(let k in nodes){
-
-nodes[k].setEnabled(
-k===id
-)
-
-}
-
-lines.forEach(l=>l.setEnabled(false))
-
-camera.setTarget(nodes[id].position)
-
-camera.radius=80
-
-}
-
-
-
-function createNode(id,x,y,z){
-
-const s=BABYLON.MeshBuilder.CreateSphere(
-"s"+id,
-{diameter:6},
-scene
-)
-
-s.position.set(x,y,z)
-
-nodes[id]=s
-
-s.metadata={id}
-
-}
-
-
-
-function connect(a,b){
-
-curvedLine(
-nodes[a].position,
-nodes[b].position,
-new BABYLON.Color3(0.4,0.6,1)
-)
-
-}
-
-
-
-fetch("./app-data.json?v=final-clean2")
-
-.then(r=>r.json())
-
-.then(data=>{
-
-createNode("PRIM_CHAOS_001",0,0,0)
-
-for(let i=0;i<20;i++){
-
-createNode(
-"n"+i,
-Math.cos(i)*80,
-0,
-Math.sin(i)*80
-)
-
-connect(
-"PRIM_CHAOS_001",
-"n"+i
-)
-
-}
-
-})
-
-
-
-engine.runRenderLoop(()=>{
-scene.render()
-})
-
-window.addEventListener(
-"resize",
-()=>engine.resize()
-)
-
-</script>
-</body>
-</html>
+const hemi=new BABYLON.HemisphericLight("hemi",new BABYLON.Vector3(0,1,0),scene);
+hemi.intensity=0.96;
+const glow=new BABYLON.GlowLayer("glow",scene);
+glow.intensity=0.14;
+
+const nodes={}, dataMap={}, familyColorByKey=new Map(), linesDone=new Set(), placed=new Set();
+const entityMeshes=new Map(), familyMembership=new Map(), graphLinks=new Map(), graphLines=[];
+let focusedId=null, focusHistoryActive=false;
+
+function c3(hex){return BABYLON.Color3.FromHexString(hex);}
+function hslToHex(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12;const a=s*Math.min(l,1-l);const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));const toHex=x=>Math.round(255*x).toString(16).padStart(2,'0');return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;}
+function hashColor(str){let h=0;for(let i=0;i<str.length;i++) h=(h*31+str.charCodeAt(i))>>>0;return BABYLON.Color3.FromHexString(hslToHex(h%360,80,64));}
+function idsFromField(s){if(!s||s==='-') return [];return String(s).split(';').map(v=>v.trim()).filter(Boolean).filter(v=>v!=='-');}
+function modelColor(d){const id=String(d.id||''),model=String(d.ModelType||''),cat=String(d.Category||'');if(id==='PRIM_CHAOS_001') return c3('#ffffff');if(model==='group'||d.Shape==='group') return c3('#62a6ff');if(model==='energy') return c3('#c084ff');if(model==='giant') return c3('#ffbf5e');if(model==='spirit') return c3('#ff6b6b');if(model==='human') return c3('#d6a86f');if(model==='goddess') return c3('#ffd3f0');if(model==='god') return c3('#ffe680');if(cat.includes('Πρωτογεν')) return c3('#c084ff');if(cat.includes('Τιτά')) return c3('#ffbf5e');if(cat.includes('Ολύμπ')) return c3('#ffe680');if(cat.includes('Ήρω')) return c3('#d6a86f');return c3('#b8c5ff');}
+function spriteFile(d){const sprite=String(d.sprite||''),model=String(d.ModelType||''),gender=String(d.Gender||'');if(sprite==='orb-group') return 'group.png';if(sprite==='energy-neutral'||sprite==='energy-female') return 'energy.png';if(sprite==='titan-male') return 'titan_male.png';if(sprite==='titan-female') return 'titan_female.png';if(sprite==='god') return gender==='female'?'god_female.png':'god_male.png';if(sprite==='goddess') return 'god_female.png';if(sprite==='hero') return 'hero_male.png';if(sprite==='heroine') return 'hero_female.png';if(sprite==='monster') return gender==='female'?'monster_female.png':'monster_male.png';if(sprite==='spirit') return 'spirit.png';if(sprite==='cosmic') return 'cosmic.png';if(model==='group') return 'group.png';if(model==='energy') return 'energy.png';if(model==='giant') return gender==='female'?'titan_female.png':'titan_male.png';if(model==='spirit') return 'spirit.png';if(model==='human') return gender==='female'?'hero_female.png':'hero_male.png';if(model==='goddess') return 'god_female.png';if(model==='god') return gender==='female'?'god_female.png':'god_male.png';return 'default.png';}
+function sizeFor(d){const model=String(d.ModelType||''),id=String(d.id||'');if(id==='PRIM_CHAOS_001') return 14;if(model==='group') return 7.8;if(model==='energy') return 8.5;if(model==='giant') return 7.8;if(model==='god'||model==='goddess') return 6.8;if(model==='human') return 6.1;if(model==='spirit') return 5.8;return 6.3;}
+function registerEntityMesh(id,mesh){if(!id||!mesh) return; if(!entityMeshes.has(id)) entityMeshes.set(id,[]); entityMeshes.get(id).push(mesh);}
+function setEntityVisible(id,visible){const arr=entityMeshes.get(id)||[];arr.forEach(m=>m&&m.setEnabled(visible));}
+function addFamilyMembership(id,key){if(!id||!key) return; if(!familyMembership.has(id)) familyMembership.set(id,new Set()); familyMembership.get(id).add(key);}
+function addGraphLink(a,b){if(!a||!b) return; if(!graphLinks.has(a)) graphLinks.set(a,new Set()); if(!graphLinks.has(b)) graphLinks.set(b,new Set()); graphLinks.get(a).add(b); graphLinks.get(b).add(a);}
+function addRing(mesh,color,diameter,thickness){const ring=BABYLON.MeshBuilder.CreateTorus('ring_'+Math.random(),{diameter:diameter,thickness:thickness||0.11,tessellation:70},scene);ring.rotation.x=Math.PI/2;ring.position=mesh.position.clone();const rm=new BABYLON.StandardMaterial('rm_'+Math.random(),scene);rm.emissiveColor=color;rm.alpha=0.92;rm.disableLighting=true;ring.material=rm;glow.addIncludedOnlyMesh(ring);registerEntityMesh(mesh.metadata?.id,ring);return ring;}
+function createLabel(text,pos,size,id){const dt=new BABYLON.DynamicTexture('dt_'+Math.random(),{width:512,height:128},scene,true);dt.hasAlpha=true;dt.drawText(text,null,82,'bold 40px Arial','#ead271','transparent',true);const plane=BABYLON.MeshBuilder.CreatePlane('label_'+Math.random(),{width:Math.max(6,size*2.1),height:Math.max(1.6,size*0.58)},scene);plane.position=pos.add(new BABYLON.Vector3(0,size*0.92,0));plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;const mat=new BABYLON.StandardMaterial('lmat_'+Math.random(),scene);mat.diffuseTexture=dt;mat.opacityTexture=dt;mat.useAlphaFromDiffuseTexture=true;mat.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;mat.disableLighting=true;mat.emissiveColor=BABYLON.Color3.White().scale(0.84);mat.backFaceCulling=false;plane.material=mat;registerEntityMesh(id,plane);return plane;}
+function createNode(d,x,y,z,coupleColor){const size=sizeFor(d),baseColor=coupleColor||modelColor(d);const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:28},scene);sphere.position=new BABYLON.Vector3(x,y,z);const sm=new BABYLON.StandardMaterial('sm_'+d.id,scene);sm.diffuseColor=baseColor.scale(0.16);sm.emissiveColor=baseColor.scale(0.07);sm.specularColor=BABYLON.Color3.Black();sm.alpha=0.92;sphere.material=sm;const inner=BABYLON.MeshBuilder.CreatePlane('inner_'+d.id,{size:size*0.76},scene);inner.position=sphere.position.clone();inner.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;const pm=new BABYLON.StandardMaterial('pm_'+d.id,scene);const tex=new BABYLON.Texture('./'+spriteFile(d),scene,true,false);tex.hasAlpha=true;pm.diffuseTexture=tex;pm.opacityTexture=tex;pm.useAlphaFromDiffuseTexture=true;pm.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;pm.alpha=1;pm.disableLighting=true;pm.backFaceCulling=false;pm.emissiveColor=BABYLON.Color3.White().scale(0.76);inner.material=pm;createLabel(d.Name||d.id,sphere.position.clone(),size,d.id);if(String(d.id)==='PRIM_CHAOS_001') addRing(sphere,c3('#ffffff'),size*1.36,0.13);if(d.ModelType==='energy') addRing(sphere,c3('#deb3ff'),size*1.18,0.10);if(d.ModelType==='group'||d.Shape==='group'||d.ring===true) addRing(sphere,modelColor(d),size*1.24,0.10);if(coupleColor) addRing(sphere,coupleColor,size*1.12,0.09);sphere.metadata=d;inner.metadata=d;nodes[d.id]=sphere;registerEntityMesh(d.id,sphere);registerEntityMesh(d.id,inner);placed.add(d.id);}
+function curvePoints(aPos,bPos,biasSeed,heightBias){const dir=bPos.subtract(aPos);const len=dir.length()||1;const mid=BABYLON.Vector3.Lerp(aPos,bPos,0.5);const perp=new BABYLON.Vector3(-dir.z,0,dir.x);if(perp.lengthSquared()<0.0001) perp.copyFromFloats(1,0,0);perp.normalize();const sign=(biasSeed%2===0)?1:-1;const lateral=Math.min(Math.max(len*0.18,4),18)*sign;const vertical=heightBias!==undefined?heightBias:Math.min(Math.max(len*0.06,1.2),8)*(((biasSeed>>1)%2===0)?1:-1);const c1=aPos.add(dir.scale(0.28)).add(perp.scale(lateral)).add(new BABYLON.Vector3(0,vertical,0));const c2=mid.add(perp.scale(-lateral*0.55)).add(new BABYLON.Vector3(0,-vertical*0.35,0));const c3=bPos.subtract(dir.scale(0.22)).add(perp.scale(lateral*0.35)).add(new BABYLON.Vector3(0,vertical*0.6,0));return BABYLON.Curve3.CreateCubicBezier(aPos,c1,c2,bPos,34).getPoints();}
+function createCurvedTube(name,aPos,bPos,color,radius,biasSeed){const path=curvePoints(aPos,bPos,biasSeed);const tube=BABYLON.MeshBuilder.CreateTube(name,{path:path,radius:radius||0.16,cap:BABYLON.Mesh.CAP_ROUND,updatable:false,tessellation:16},scene);const mat=new BABYLON.StandardMaterial('mat_'+name,scene);mat.emissiveColor=color;mat.disableLighting=true;mat.alpha=0.96;tube.material=mat;return {mesh:tube,path};}
+function connectPartner(aId,bId,color,familyKey){const a=nodes[aId],b=nodes[bId];if(!a||!b) return;const key='m_'+[aId,bId].sort().join('_');if(linesDone.has(key)) return;linesDone.add(key);const tube=createCurvedTube(key,a.position.clone(),b.position.clone(),color,0.13,key.length);tube.mesh.metadata={type:'partner',aId,bId,familyKey};graphLines.push({mesh:tube.mesh,aId,bId,type:'partner',familyKey});addGraphLink(aId,bId);if(familyKey){addFamilyMembership(aId,familyKey);addFamilyMembership(bId,familyKey);} }
+function addArrowMarkers(path,color,aId,bId,familyKey){const total=path.length;if(total<6) return;const count=Math.max(1,Math.floor(total/10));for(let i=1;i<=count;i++){const idx=Math.min(total-2,Math.max(1,Math.round((i/(count+1))*(total-2))));const pos=path[idx];const next=path[idx+1];const dir=next.subtract(pos).normalize();const cone=BABYLON.MeshBuilder.CreateCylinder('arrow_'+Math.random(),{height:2.3,diameterTop:0,diameterBottom:1.0,tessellation:8},scene);cone.position=pos.clone();cone.rotationQuaternion=BABYLON.Quaternion.FromLookDirectionLH(dir,BABYLON.Vector3.Up());cone.rotate(BABYLON.Axis.X,Math.PI/2,BABYLON.Space.LOCAL);const m=new BABYLON.StandardMaterial('arrm_'+Math.random(),scene);m.emissiveColor=color;m.disableLighting=true;cone.material=m;cone.metadata={type:'arrow',aId,bId,familyKey};graphLines.push({mesh:cone,aId,bId,type:'arrow',familyKey});}}
+function connectParent(parentId,childId,familyKey){const a=nodes[parentId],b=nodes[childId];if(!a||!b) return;const key='p_'+parentId+'_'+childId;if(linesDone.has(key)) return;linesDone.add(key);const blue=c3('#56a6ff');const tube=createCurvedTube(key,a.position.clone(),b.position.clone(),blue,0.11,key.length+3);tube.mesh.metadata={type:'parent',aId:parentId,bId:childId,familyKey};graphLines.push({mesh:tube.mesh,aId:parentId,bId:childId,type:'parent',familyKey});addArrowMarkers(tube.path,blue,parentId,childId,familyKey);addGraphLink(parentId,childId);if(familyKey){addFamilyMembership(parentId,familyKey);addFamilyMembership(childId,familyKey);} }
+function showInfo(d){infoEl.innerHTML=`<h2>${d.Name||d.id}</h2><div class="sub">${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation ?? '-'}</div><div class="sec">Summary</div><div class="txt">${d.Summary||'-'}</div><div class="sec">Parents</div><div class="txt">${d.Parents||'-'}</div><div class="sec">Partners</div><div class="txt">${d.Partners||'-'}</div><div class="sec">Children</div><div class="txt">${d.Children||'-'}</div><div class="sec">FullText</div><div class="txt">${d.FullText||'-'}</div>`;}
+function resetInfo(){infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">Chaos center · generation rings · family clusters</div><div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες και family focus. Πάτα στο κενό ή RESET για επιστροφή.</div>`;}
+function coupleKey(a,b){return [a,b].sort().join('|');}
+function buildFamilies(all){const families=[];const inFamilyChild=new Set();all.forEach(d=>{const partners=idsFromField(d.Partners);const kidsA=new Set(idsFromField(d.Children));partners.forEach(pid=>{const p=dataMap[pid];if(!p) return;const kidsB=new Set(idsFromField(p.Children));const shared=[...kidsA].filter(k=>kidsB.has(k));if(shared.length){const key=coupleKey(d.id,pid);if(!families.find(f=>f.key===key)){families.push({key:key,parents:[d.id,pid],children:shared});shared.forEach(c=>inFamilyChild.add(c));}}});});all.forEach(d=>{const kids=idsFromField(d.Children).filter(k=>!inFamilyChild.has(k));if(kids.length){families.push({key:'single|'+d.id,parents:[d.id],children:kids});kids.forEach(k=>inFamilyChild.add(k));}});return families;}
+function polarPositions(count,radius,yBase,jitter){const out=[];const n=count||1;for(let i=0;i<n;i++){const angle=(Math.PI*2*i/n)-Math.PI/2;out.push({x:Math.cos(angle)*radius,y:yBase+Math.sin(angle*2)*(jitter||0),z:Math.sin(angle)*radius});}return out;}
+function placeFamily(center,family,coupleColor){const parents=family.parents.map(id=>dataMap[id]).filter(Boolean);const children=family.children.map(id=>dataMap[id]).filter(Boolean);family.parents.forEach(id=>addFamilyMembership(id,family.key));family.children.forEach(id=>addFamilyMembership(id,family.key));if(parents.length===1){createNode(parents[0],center.x,center.y,center.z,coupleColor);}else if(parents.length>=2){const gap=7.5;createNode(parents[0],center.x-gap/2,center.y,center.z,coupleColor);createNode(parents[1],center.x+gap/2,center.y,center.z,coupleColor);connectPartner(parents[0].id,parents[1].id,coupleColor,family.key);}const n=children.length||1;const childRadius=Math.max(13,9+n*1.2);for(let i=0;i<n;i++){const angle=(Math.PI*2*i/n)-Math.PI/2;const x=center.x+Math.cos(angle)*childRadius;const z=center.z+Math.sin(angle)*childRadius;const y=center.y+Math.sin(angle*2)*1.4;createNode(children[i],x,y,z,null);family.parents.forEach(pid=>connectParent(pid,children[i].id,family.key));}}
+function placeRing(items,radius,yBase,jitter){const pos=polarPositions(items.length,radius,yBase,jitter);items.forEach((d,i)=>createNode(d,pos[i].x,pos[i].y,pos[i].z,null));}
+function getRelatives(id){const rel=new Set([id]);const d=dataMap[id];if(!d) return rel;idsFromField(d.Parents).forEach(v=>rel.add(v));idsFromField(d.Children).forEach(v=>rel.add(v));idsFromField(d.Partners).forEach(v=>rel.add(v));(graphLinks.get(id)||new Set()).forEach(v=>rel.add(v));(familyMembership.get(id)||new Set()).forEach(fk=>{for(const [entityId,keys] of familyMembership.entries()){if(keys.has(fk)) rel.add(entityId);}});return rel;}
+function applyFocus(id){if(!nodes[id]) return; if(focusedId===id){resetFocus();return;} focusedId=id;const rel=getRelatives(id);for(const entityId of Object.keys(nodes)) setEntityVisible(entityId,rel.has(entityId));graphLines.forEach(item=>item.mesh.setEnabled(rel.has(item.aId)&&rel.has(item.bId)));showInfo(dataMap[id]||{id});resetBtn.style.display='block';const target=nodes[id].position.clone();camera.setTarget(target);camera.radius=Math.max(52,Math.min(100,sizeFor(dataMap[id]||{})*9));camera.beta=Math.max(0.7,Math.min(camera.beta,1.22));if(!focusHistoryActive){try{history.pushState({mythFocus:true},'');focusHistoryActive=true;}catch(e){}}}
+function resetFocus(fromPop){focusedId=null;for(const entityId of Object.keys(nodes)) setEntityVisible(entityId,true);graphLines.forEach(item=>item.mesh.setEnabled(true));camera.setTarget(BABYLON.Vector3.Zero());camera.radius=380;resetBtn.style.display='none';resetInfo();if(focusHistoryActive&&!fromPop){try{history.back();}catch(e){focusHistoryActive=false;}}if(fromPop) focusHistoryActive=false;}
+resetBtn.addEventListener('click',()=>resetFocus());
+window.addEventListener('popstate',()=>{if(focusedId) resetFocus(true); else focusHistoryActive=false;});
+scene.onPointerObservable.add((pi)=>{if(pi.type!==BABYLON.PointerEventTypes.POINTERDOWN) return;const pick=scene.pick(scene.pointerX,scene.pointerY);if(pick&&pick.hit&&pick.pickedMesh&&pick.pickedMesh.metadata&&pick.pickedMesh.metadata.id){applyFocus(pick.pickedMesh.metadata.id);}else{resetFocus();}},BABYLON.PointerEventTypes.POINTERDOWN);
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(reg=>reg.update&&reg.update());}).catch(()=>{});});}
+const appDataUrl='./app-data.json?v=final-clean2';
+fetch(appDataUrl,{cache:'no-store'}).then(r=>r.json()).then(all=>{all.forEach(d=>dataMap[d.id]=d);const chaos=all.find(d=>d.id==='PRIM_CHAOS_001');if(chaos) createNode(chaos,0,0,0,null);const families=buildFamilies(all);const famPos=polarPositions(families.length,82,0,8);families.forEach((f,i)=>{const color=hashColor(f.key);familyColorByKey.set(f.key,color);placeFamily(famPos[i],f,color);});const leftovers=all.filter(d=>d.id!=='PRIM_CHAOS_001'&&!placed.has(d.id));const ring1=leftovers.filter(d=>Number(d.Generation||9)===1||d.ModelType==='energy');const used1=new Set(ring1.map(d=>d.id));const ring2=leftovers.filter(d=>!used1.has(d.id)&&(d.ModelType==='group'||d.Shape==='group'));const used2=new Set([...used1,...ring2.map(d=>d.id)]);const ring3=leftovers.filter(d=>!used2.has(d.id)&&d.ModelType==='giant');const used3=new Set([...used2,...ring3.map(d=>d.id)]);const ring4=leftovers.filter(d=>!used3.has(d.id)&&Number(d.Generation||9)===3);const used4=new Set([...used3,...ring4.map(d=>d.id)]);const ring5=leftovers.filter(d=>!used4.has(d.id));placeRing(ring1,138,6,4);placeRing(ring2,182,-6,5);placeRing(ring3,230,8,6);placeRing(ring4,286,-8,6);placeRing(ring5,350,0,7);all.forEach(d=>{idsFromField(d.Partners).forEach(pid=>{const fam=families.find(f=>f.parents.includes(d.id)&&f.parents.includes(pid));const color=fam?familyColorByKey.get(fam.key):c3('#ff4b4b');connectPartner(d.id,pid,color,fam?fam.key:null);});idsFromField(d.Parents).forEach(pid=>{const famKeys=[...(familyMembership.get(d.id)||[])].filter(k=>(familyMembership.get(pid)||new Set()).has(k));connectParent(pid,d.id,famKeys[0]||null);});});}).catch(err=>{infoEl.innerHTML='<h2>JSON Load Error</h2><div class="txt">'+String(err)+'</di
