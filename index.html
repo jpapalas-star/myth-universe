@@ -92,7 +92,7 @@ hemi.intensity=0.96;
 const light2=new BABYLON.PointLight('p',new BABYLON.Vector3(0,60,0),scene);
 light2.intensity=1.2;
 const glow=new BABYLON.GlowLayer('glow',scene);
-glow.intensity=0.14;
+glow.intensity=0.08;
 
 const nodes={};
 const dataMap={};
@@ -101,6 +101,7 @@ const familyByMemberId=new Map();
 const placed=new Set();
 const originalPositions=new Map();
 const connectionRecords=[];
+const lineMaterials=[];
 let allData=[];
 let focusedId=null;
 let suppressPop=false;
@@ -188,12 +189,17 @@ function createLabel(text,parentMesh,size){
   plane.position=new BABYLON.Vector3(0,size*0.92,0);
   plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
   const mat=new BABYLON.StandardMaterial('lmat_'+Math.random(),scene);
-  mat.diffuseTexture=dt;
-  mat.opacityTexture=dt;
-  mat.disableLighting=true;
-  mat.emissiveColor=BABYLON.Color3.White().scale(0.84);
-  mat.backFaceCulling=false;
-  plane.material=mat;
+
+mat.diffuseTexture=dt;
+mat.opacityTexture=dt;
+
+mat.disableLighting=true;
+
+mat.emissiveColor=BABYLON.Color3.White().scale(0.84);
+
+mat.backFaceCulling=false;
+
+plane.material=mat;
 }
 
 function createNode(d,x,y,z,familyRingColor){
@@ -392,18 +398,30 @@ function makeControlPoint(a,b,type){
 }
 
 function renderConnections(filterSet){
-  scene.meshes.slice().forEach(m=>{if(m.name.startsWith('conn_')||m.name.startsWith('arrow_'))m.dispose();});
+ lineMaterials.length = 0; scene.meshes.slice().forEach(m=>{if(m.name.startsWith('conn_')||m.name.startsWith('arrow_'))m.dispose();});
   connectionRecords.forEach((rec,idx)=>{
     if(filterSet && (!filterSet.has(rec.aId)||!filterSet.has(rec.bId)))return;
     const a=getNodePos(rec.aId),b=getNodePos(rec.bId);if(!a||!b)return;
     const ctrl=makeControlPoint(a.clone(),b.clone(),rec.type);
     const curve=BABYLON.Curve3.CreateQuadraticBezier(a.clone(),ctrl,b.clone(),28);
     const path=curve.getPoints();
-    const tube=BABYLON.MeshBuilder.CreateTube('conn_'+idx,{path,radius:rec.type==='partner'?0.18:0.14,updatable:false},scene);
+    const tube=BABYLON.MeshBuilder.CreateTube('conn_'+idx,{path,radius:rec.type==='partner'?0.18:0.06,updatable:false},scene);
     const mat=new BABYLON.StandardMaterial('conn_mat_'+idx,scene);
-    mat.emissiveColor=rec.color;
-    mat.disableLighting=true;
-    mat.backFaceCulling=false;
+
+mat.emissiveColor = rec.color;
+
+mat.alpha = 0.5;
+
+mat.disableLighting = true;
+
+mat.backFaceCulling = false;
+
+mat.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+
+lineMaterials.push({
+mat: mat,
+base: rec.color
+});
     tube.material=mat;
     if(rec.type==='parent' && path.length>4){
       const points=[Math.floor(path.length*0.38),Math.floor(path.length*0.68)];
@@ -633,7 +651,24 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     console.error('JSON ERROR',err);
   });
 
-engine.runRenderLoop(()=>scene.render());
+engine.runRenderLoop(()=>{
+
+const t = performance.now()*0.001;
+
+for(let i=0;i<lineMaterials.length;i++){
+
+const m=lineMaterials[i];
+
+const glow = 0.5 + Math.sin(t*0.3 + i)*0.02;
+
+m.mat.emissiveColor =
+m.base.scale(glow);
+
+}
+
+scene.render();
+
+});
 window.addEventListener('resize',()=>engine.resize());
 </script>
 </body>
