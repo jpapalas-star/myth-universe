@@ -1,11 +1,30 @@
-const CACHE_NAME = "myth-universe-v9";
+const CACHE_NAME = "myth-universe-v10";
 
 const ASSETS = [
+
   "./",
   "./index.html",
   "./manifest.json",
+
+  "./app-data.json",
+
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+
+  "./group.png",
+  "./energy.png",
+  "./god_male.png",
+  "./god_female.png",
+  "./hero_male.png",
+  "./hero_female.png",
+  "./monster_male.png",
+  "./monster_female.png",
+  "./titan_male.png",
+  "./titan_female.png",
+  "./spirit.png",
+  "./cosmic.png",
+  "./default.png"
+
 ];
 
 
@@ -44,7 +63,7 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
 
-  // ❗ μην κάνεις cache το json
+  // ΜΗΝ cache json
 
   if (event.request.url.includes("app-data.json")) {
     event.respondWith(fetch(event.request));
