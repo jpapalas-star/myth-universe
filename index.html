@@ -93,7 +93,7 @@ const light2=new BABYLON.PointLight('p',new BABYLON.Vector3(0,60,0),scene);
 light2.intensity=1.2;
 const glow = new BABYLON.GlowLayer("glow", scene);
 
-glow.intensity = 0.3;
+glow.intensity = 0.18;
 
 glow.blurKernelSize = 64;
 
@@ -225,7 +225,7 @@ function createNode(d,x,y,z,familyRingColor){
   sm.backFaceCulling=false;
   sm.alpha=0.96;
   sphere.material=sm;
-  glow.addIncludedOnlyMesh(sphere);
+  
 
   createLabel(d.Name||d.id,sphere,size);
 
@@ -454,7 +454,7 @@ function renderConnections(filterSet){
 
 glow.addIncludedOnlyMesh(tube);
 
-mat.emissiveColor = rec.color.scale(4);
+2issiveColor = rec.color.scale(4);
 
    lineMaterials.push({
      mat: mat,
@@ -509,30 +509,25 @@ mat.emissiveColor = rec.color.scale(4);
        );
 
        const am=new BABYLON.StandardMaterial(
-         'am_'+idx+'_'+arrowIdx,
-         scene
-       );
+  'am_'+idx+'_'+arrowIdx,
+  scene
+);
 
-       am.emissiveColor =
-BABYLON.Color3.FromHexString("#1536ff");
+am.disableLighting = true;
+am.emissiveColor = BABYLON.Color3.FromHexString("#1536ff");
 
-lineMaterials.push({
- mat: am,
- base: BABYLON.Color3.FromHexString("#1536ff"),
- type: "arrow",
- speed: 0.5 + Math.random() * 1.5,
- phase: Math.random() * 10
-});
-
-       am.disableLighting = true;
-
-       cone.material = am;
-
-am.emissiveColor = BABYLON.Color3.FromHexString("#56a6ff").scale(2);
+cone.material = am;
 
 glow.addIncludedOnlyMesh(cone);
 
-     });
+lineMaterials.push({
+  mat: am,
+  base: BABYLON.Color3.FromHexString("#1536ff"),
+  type: "arrow",
+  duration: 1 + Math.random() * 2,   // 1 έως 3 δευτ
+  phase: Math.random() * Math.PI * 2
+});
+     
 
    }
 
@@ -761,49 +756,36 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
 
 engine.runRenderLoop(()=>{
 
- const t = performance.now()*0.001;
+  const t = performance.now() * 0.001;
 
- for(let i=0;i<lineMaterials.length;i++){
+  for(let i=0;i<lineMaterials.length;i++){
 
- const m = lineMaterials[i];
+    const m = lineMaterials[i];
 
- if(m.type === "arrow"){
+    if(m.type === "arrow"){
 
-   const darkBlue =
-   BABYLON.Color3.FromHexString("#1536ff");
+      const darkBlue = BABYLON.Color3.FromHexString("#1536ff");
+      const glowBlue = BABYLON.Color3.FromHexString("#2f5dff");
 
-   const glowBlue =
-   BABYLON.Color3.FromHexString("#3a6bff");
+      const mix =
+        (Math.sin((t / m.duration) * (Math.PI * 2) + m.phase) + 1) / 2;
 
-   const mix =
-   (Math.sin(
-     t * m.speed +
-     m.phase
-   ) + 1) / 2;
+      m.mat.emissiveColor =
+        BABYLON.Color3.Lerp(darkBlue, glowBlue, mix);
 
-   m.mat.emissiveColor =
-   BABYLON.Color3.Lerp(
-     darkBlue,
-     glowBlue,
-     mix
-   );
+    }else{
 
- }else{
+      const pulse =
+        0.75 + Math.sin(t * 0.7 + i) * 0.08;
 
-   const pulse =
-   0.7 +
-   Math.sin(
-     t * 0.7 +
-     i
-   ) * 0.15;
+      m.mat.emissiveColor =
+        m.base.scale(pulse);
 
-   m.mat.emissiveColor =
-   m.base.scale(pulse);
+    }
 
- }
+  }
 
-}
- scene.render();
+  scene.render();
 
 });
 
