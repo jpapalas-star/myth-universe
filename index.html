@@ -358,8 +358,12 @@ function polarPositions(count,radius,yBase,jitter){
   return out;
 }
 
-function placeFamily(center,family,famColor){
-  const parents=family.parents.map(id=>dataMap[id]).filter(Boolean);
+function function placeFamily(center,family,famColor){
+
+  if (family.parents.includes("PRIM_CHAOS_001")) return;
+  if (family.children.includes("PRIM_CHAOS_001")) return;
+
+  const parents=family.parents.map(id=>dataMap[id]).filter(Boolean); 
   const children=family.children.map(id=>dataMap[id]).filter(Boolean);
   if(parents.length===1){
     createNode(parents[0],center.x,center.y,center.z,famColor);
@@ -753,7 +757,7 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     families.forEach((f,i)=>placeFamily(famPos[i],f,familyColorByKey.get(f.key)));
 
     const leftovers=all.filter(
-  d=>!placed.has(d.id)
+  d=>d.id!=="PRIM_CHAOS_001" && !placed.has(d.id)
 );
     const ring1=leftovers.filter(d=>Number(d.Generation||9)===1||d.ModelType==='energy');
     const used1=new Set(ring1.map(d=>d.id));
