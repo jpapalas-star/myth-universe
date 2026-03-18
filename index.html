@@ -545,16 +545,17 @@ lineMaterials.push({
   mat: am,
   base: BABYLON.Color3.FromHexString("#1536ff"),
   type: "arrow",
-  duration: 1 + Math.random() * 2,   // 1 έως 3 δευτ
+  duration: 1 + Math.random() * 2,
   phase: Math.random() * Math.PI * 2
 });
-     
 
-   }
+      }); // points.forEach
 
- });
+    } // if parent
 
-}
+  }); // connectionRecords.forEach
+
+} // renderConnections
 function getRelativesSet(id){
   const set=new Set([id]);
   const d=dataMap[id];
