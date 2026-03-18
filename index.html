@@ -752,7 +752,9 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     const famPos=polarPositions(families.length,82,0,8);
     families.forEach((f,i)=>placeFamily(famPos[i],f,familyColorByKey.get(f.key)));
 
-    const leftovers=all.filter(d=>d.id!=='PRIM_CHAOS_001'&&!placed.has(d.id));
+    const leftovers=all.filter(
+  d=>!placed.has(d.id)
+);
     const ring1=leftovers.filter(d=>Number(d.Generation||9)===1||d.ModelType==='energy');
     const used1=new Set(ring1.map(d=>d.id));
     const ring2=leftovers.filter(d=>!used1.has(d.id)&&(d.ModelType==='group'||d.Shape==='group'));
