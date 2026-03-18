@@ -89,8 +89,23 @@ if(camera.inputs&&camera.inputs.attached&&camera.inputs.attached.pointers){
 
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
 hemi.intensity=0.96;
-const light2=new BABYLON.PointLight('p',new BABYLON.Vector3(0,60,0),scene);
-light2.intensity=1.2;
+const light2 = new BABYLON.PointLight(
+  'p',
+  new BABYLON.Vector3(0,60,0),
+  scene
+);
+light2.intensity = 1.2;
+
+
+// FIX
+const glow = new BABYLON.GlowLayer(
+  "glow",
+  scene,
+  { blurKernelSize: 64 }
+);
+
+glow.intensity = 0.18;
+glow.referenceMeshToUseItsOwnMaterial = true;
 glow.intensity = 0.18;
 glow.blurKernelSize = 64;
 glow.referenceMeshToUseItsOwnMaterial = true;
@@ -534,7 +549,7 @@ lineMaterials.push({
 });
      
 
-   }
+   
 
  });
 
