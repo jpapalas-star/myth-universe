@@ -875,106 +875,80 @@ engine.runRenderLoop(()=>{
   for(let i=0;i<lineMaterials.length;i++){
 
     const m = lineMaterials[i];
-if(m.type === "flow"){
 
-  m.offset += 0.000015;
+    if(m.type === "flow"){
+      m.offset += 0.000015;
 
-  if(m.offset > 1) m.offset -= 1;
+      if(m.offset > 1) m.offset -= 1;
 
-  const index =
-    Math.floor(
-      m.offset * (m.path.length - 1)
-    );
+      const index = Math.floor(
+        m.offset * (m.path.length - 1)
+      );
 
-  const p = m.path[index];
+      const p = m.path[index];
 
-  if(p){
-    m.mesh.position.copyFrom(p);
-  }
+      if(p){
+        m.mesh.position.copyFrom(p);
+      }
 
-  continue;
-}
+      continue;
+    }
+
     if(m.type === "arrow"){
 
-      const darkBlue = BABYLON.Color3.FromHexString("#1536ff");
-      const glowBlue = BABYLON.Color3.FromHexString("#2f5dff");
+      const darkBlue =
+        BABYLON.Color3.FromHexString("#1536ff");
+      const glowBlue =
+        BABYLON.Color3.FromHexString("#2f5dff");
 
       const mix =
         (Math.sin((t / m.duration) * (Math.PI * 2) + m.phase) + 1) / 2;
 
       m.mat.emissiveColor =
-        BABYLON.Color3.Lerp(darkBlue, glowBlue, mix);
+        BABYLON.Color3.Lerp(darkBlue, glowBlue, mix).scale(0.35);
+
+      continue;
+    }
+
+    if(m.type === "parent"){
+
+      const dark =
+        BABYLON.Color3.FromHexString("#1a2cff");
+      const glow =
+        BABYLON.Color3.FromHexString("#2f5dff");
+
+      const mix =
+        (Math.sin(t * 0.4 + m.phase) + 1) / 2;
+
+      m.mat.emissiveColor =
+        BABYLON.Color3.Lerp(dark, glow, mix).scale(0.25);
+
+    }else if(m.type === "partner"){
+
+      m.mat.emissiveColor =
+        m.base.scale(0.18);
 
     }else{
 
-      if(m.type === "parent"){
-
-  const dark =
-    BABYLON.Color3.FromHexString("#1a2cff");
-
-  const glow =
-    BABYLON.Color3.FromHexString("#2f5dff");
-
-  const mix =
-    (Math.sin(t * 0.4 + m.phase) + 1) / 2;
-
-  m.mat.emissiveColor =
-    BABYLON.Color3.Lerp(dark, glow, mix)
-    .scale(0.4);
-
-}
-else if(m.type === "partner"){
-
-  m.mat.emissiveColor =
-    m.base.scale(0.3);
-
-}
-else{
-
-  m.mat.emissiveColor =
-    m.base.scale(0.25);
-
-}
-
-  const pulse =
-    1.0 + Math.sin(t * 1.8 + m.phase) * 0.18;
-
-  m.mat.emissiveColor =
-    m.base.scale(pulse);
-
-}else{
-
-  const pulse =
-    1.0 + Math.sin(t * 1.2 + m.phase) * 0.12;
-
-  m.mat.emissiveColor =
-    m.base.scale(pulse);
-
-}
+      m.mat.emissiveColor =
+        m.base.scale(0.12);
 
     }
-
-  }
-Object.values(nodes).forEach(n=>{
-
-  if(n.sphere.metadata && n.sphere.metadata.isChaos){
-
-    const t = performance.now() * 0.001;
-
-    const pulse =
-      1.4 + Math.sin(t * 1.3) * 0.5;
-
-    n.sphere.material.emissiveColor =
-      BABYLON.Color3.White().scale(pulse);
-
   }
 
-});
+  Object.values(nodes).forEach(n=>{
+    if(n.sphere.metadata && n.sphere.metadata.isChaos){
+      const pulse = 1.4 + Math.sin(t * 1.3) * 0.5;
+      n.sphere.material.emissiveColor =
+        BABYLON.Color3.White().scale(pulse);
+    }
+  });
 
-}
   scene.render();
 
 });
+
+
 
 window.addEventListener('resize',()=>engine.resize());
 </script>
