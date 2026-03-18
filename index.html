@@ -874,7 +874,7 @@ engine.runRenderLoop(()=>{
 
     const m = lineMaterials[i];
 
-    ifif(m.type === "flow" && m.path){
+    if(m.type === "flow" && m.path){
       m.offset += 0.00002;
 
       if(m.offset > 1) m.offset -= 1;
