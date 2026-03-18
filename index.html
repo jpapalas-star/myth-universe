@@ -360,8 +360,6 @@ function polarPositions(count,radius,yBase,jitter){
 
 function placeFamily(center,family,famColor){
 
-  if (family.parents.includes("PRIM_CHAOS_001")) return;
-  if (family.children.includes("PRIM_CHAOS_001")) return;
 
   const parents=family.parents.map(id=>dataMap[id]).filter(Boolean); 
   const children=family.children.map(id=>dataMap[id]).filter(Boolean);
@@ -754,7 +752,22 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     const families=buildFamilies(all);
     families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
     const famPos=polarPositions(families.length,82,0,8);
-    families.forEach((f,i)=>placeFamily(famPos[i],f,familyColorByKey.get(f.key)));
+    families.forEach((f,i)=>{
+
+  if(
+    f.parents.includes("PRIM_CHAOS_001") ||
+    f.children.includes("PRIM_CHAOS_001")
+  ){
+    return;
+  }
+
+  placeFamily(
+    famPos[i],
+    f,
+    familyColorByKey.get(f.key)
+  );
+
+});
 
     const leftovers=all.filter(
   d=>d.id!=="PRIM_CHAOS_001" && !placed.has(d.id)
