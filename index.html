@@ -95,30 +95,31 @@ const light2 = new BABYLON.PointLight(
   scene
 );
 light2.intensity = 1.2;
-
-
-// FIX
-const glow = new BABYLON.GlowLayer(
-  "glow",
-  scene,
-  { blurKernelSize: 64 }
-);
+const glow = new BABYLON.GlowLayer("glow", scene, {
+  blurKernelSize: 64
+});
 
 glow.intensity = 0.18;
-glow.referenceMeshToUseItsOwnMaterial = true;
-glow.intensity = 0.18;
-glow.blurKernelSize = 64;
+
 glow.referenceMeshToUseItsOwnMaterial = true;
 
-glow.customEmissiveColorSelector = function(mesh, subMesh, material, result) {
-    if (!material || !material.emissiveColor) return;
-    result.set(
-        material.emissiveColor.r,
-        material.emissiveColor.g,
-        material.emissiveColor.b,
-        1
-    );
+glow.customEmissiveColorSelector = function(
+  mesh,
+  subMesh,
+  material,
+  result
+){
+  if (!material || !material.emissiveColor) return;
+
+  result.set(
+    material.emissiveColor.r,
+    material.emissiveColor.g,
+    material.emissiveColor.b,
+    1
+  );
 };
+
+
 
 const nodes={};
 const dataMap={};
@@ -549,7 +550,7 @@ lineMaterials.push({
 });
      
 
-   
+   }
 
  });
 
