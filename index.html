@@ -517,8 +517,8 @@ if(rec.type === "parent" && path.length > 2){
   const orb = BABYLON.MeshBuilder.CreateCylinder(
   "flow_"+idx,
   {
-    height:0.08,
-diameter:0.04
+    height:0.02,
+diameter:0.01
   },
   scene
 );
@@ -528,7 +528,7 @@ diameter:0.04
     scene
   );
 
-  fm.emissiveColor = BABYLON.Color3.White().scale(8);
+  fm.emissiveColor = BABYLON.Color3.White().scale(25);
 
   orb.material = fm;
 
@@ -538,13 +538,42 @@ diameter:0.04
   type:"flow",
   mesh:orb,
   path:flowPoints,
-  offset:Math.random()
+  offset:1-Math.random(),
+  speed:0.000001
+});
+
+const orb2 = BABYLON.MeshBuilder.CreateCylinder(
+  "flow_"+idx+"_2",
+  {
+    height:0.02,
+    diameter:0.01
+  },
+  scene
+);
+
+const fm2 = new BABYLON.StandardMaterial(
+  "flowMat2",
+  scene
+);
+
+fm2.emissiveColor = BABYLON.Color3.White().scale(30);
+
+orb2.material = fm2;
+
+glow.addIncludedOnlyMesh(orb2);
+
+lineMaterials.push({
+  type:"flow",
+  mesh:orb2,
+  path:flowPoints,
+  offset:Math.random(),
+  speed:0.0000015
 });
 }
 //glow.addIncludedOnlyMesh(tube);
 
-mat.emissiveColor = rec.color.scale(0.7);
-mat.diffuseColor = rec.color.scale(1.1);
+mat.emissiveColor = rec.color.scale(1.1);
+mat.diffuseColor = rec.color.scale(1.2);
 
    lineMaterials.push({
   mat: mat,
@@ -875,22 +904,23 @@ engine.runRenderLoop(()=>{
     const m = lineMaterials[i];
 
     if(m.type === "flow" && m.path){
-      m.offset += 0.0000008;
 
-      if(m.offset > 1) m.offset -= 1;
+  m.offset += m.speed;
 
-      const index = Math.floor(
-        m.offset * (m.path.length - 1)
-      );
+  if(m.offset > 1) m.offset -= 1;
 
-      const p = m.path[index];
+  const index = Math.floor(
+    m.offset * (m.path.length - 1)
+  );
 
-      if(p){
-        m.mesh.position.copyFrom(p);
-      }
+  const p = m.path[index];
 
-      continue;
-    }
+  if(p){
+    m.mesh.position.copyFrom(p);
+  }
+
+  continue;
+}
 
     if(m.type === "arrow"){
 
@@ -926,7 +956,7 @@ const glowBlue =
     }else if(m.type === "partner"){
 
       m.mat.emissiveColor =
-        m.base.scale(0.18);
+        m.base.scale(1.2);
 
     }else{
 
