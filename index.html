@@ -516,8 +516,8 @@ if(rec.type === "parent"){
   const orb = BABYLON.MeshBuilder.CreateCylinder(
   "flow",
   {
-    height:0.03,
-diameter:0.003
+    height:0.003,
+diameter:0.0003
   },
   scene
 );
@@ -537,7 +537,7 @@ diameter:0.003
     type:"flow",
     mesh:orb,
     path:flowPoints,
-    speed:0.25 + Math.random()*0.15,
+    speed:0.02,
     offset:Math.random()
   });
 
@@ -877,7 +877,7 @@ engine.runRenderLoop(()=>{
     const m = lineMaterials[i];
 if(m.type === "flow"){
 
-  m.offset += 0.00015 * m.speed;
+  m.offset += 0.000015;
 
   if(m.offset > 1) m.offset -= 1;
 
