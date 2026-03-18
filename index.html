@@ -511,7 +511,7 @@ const flowPoints = path;
      BABYLON.Material.MATERIAL_ALPHABLEND;
 
    tube.material = mat;
-if(rec.type === "parent"){
+if(rec.type === "parent" && path.length > 2){
 
   const orb = BABYLON.MeshBuilder.CreateCylinder(
   "flow",
