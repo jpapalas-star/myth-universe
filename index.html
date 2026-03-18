@@ -528,7 +528,7 @@ diameter:0.012
     scene
   );
 
-  fm.emissiveColor = BABYLON.Color3.White().scale(50);
+  fm.emissiveColor = BABYLON.Color3.White().scale(8);
 
   orb.material = fm;
 
@@ -875,7 +875,7 @@ engine.runRenderLoop(()=>{
     const m = lineMaterials[i];
 
     if(m.type === "flow" && m.path){
-      m.offset += 0.00002;
+      m.offset += 0.000002;
 
       if(m.offset > 1) m.offset -= 1;
 
@@ -921,7 +921,7 @@ const glowBlue =
   m.mat.emissiveColor =
     BABYLON.Color3.Lerp(dark, glow, mix).scale(1.0);
 
-}
+
 
     }else if(m.type === "partner"){
 
