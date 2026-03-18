@@ -528,20 +528,18 @@ diameter:0.012
     scene
   );
 
-  fm.emissiveColor = BABYLON.Color3.White().scale(20);
+  fm.emissiveColor = BABYLON.Color3.White().scale(50);
 
   orb.material = fm;
 
   glow.addIncludedOnlyMesh(orb);
 
   lineMaterials.push({
-    type:"flow",
-    mesh:orb,
-    path:flowPoints,
-    speed:0.02,
-    offset:Math.random()
-  });
-
+  type:"flow",
+  mesh:orb,
+  path:flowPoints,
+  offset:Math.random()
+});
 }
 //glow.addIncludedOnlyMesh(tube);
 
@@ -876,8 +874,8 @@ engine.runRenderLoop(()=>{
 
     const m = lineMaterials[i];
 
-    if(m.type === "flow"){
-      m.offset += 0.00004;
+    ifif(m.type === "flow" && m.path){
+      m.offset += 0.00002;
 
       if(m.offset > 1) m.offset -= 1;
 
