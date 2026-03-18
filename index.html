@@ -99,7 +99,7 @@ const glow = new BABYLON.GlowLayer("glow", scene, {
   blurKernelSize: 64
 });
 
-glow.intensity = 0.18;
+glow.intensity = 0.7;
 
 glow.referenceMeshToUseItsOwnMaterial = true;
 
@@ -118,7 +118,7 @@ glow.customEmissiveColorSelector = function(
     1
   );
 };
-};
+
 
 const nodes={};
 const dataMap={};
@@ -851,7 +851,7 @@ engine.runRenderLoop(()=>{
     const m = lineMaterials[i];
 if(m.type === "flow"){
 
-  m.offset += m.speed * 0.001;
+  m.offset += m.speed * 0.01;
 
   if(m.offset > 1) m.offset -= 1;
 
@@ -932,6 +932,9 @@ for(let i=0;i<lineMaterials.length;i++){
 
   const m = lineMaterials[i];
 
+  if(m.type === "flow") continue;
+  if(!m.mat) continue;
+
   if(!m.flashTimer){
     m.flashTimer = Math.random() * 3;
   }
@@ -939,15 +942,11 @@ for(let i=0;i<lineMaterials.length;i++){
   m.flashTimer -= 0.016;
 
   if(m.flashTimer < 0){
-
     m.flashTimer = 1 + Math.random() * 4;
-
     m.flashPower = 1.5 + Math.random() * 2.5;
-
   }
 
   if(m.flashPower){
-
     m.flashPower *= 0.92;
 
     if(m.flashPower < 0.05){
@@ -955,7 +954,6 @@ for(let i=0;i<lineMaterials.length;i++){
     }
 
     if(m.flashPower > 0){
-
       const c = m.mat.emissiveColor;
 
       m.mat.emissiveColor =
@@ -964,11 +962,8 @@ for(let i=0;i<lineMaterials.length;i++){
           Math.min(1, c.g * (1 + m.flashPower)),
           Math.min(1, c.b * (1 + m.flashPower))
         );
-
     }
-
   }
-
 }
   scene.render();
 
