@@ -516,8 +516,8 @@ if(rec.type === "parent"){
   const orb = BABYLON.MeshBuilder.CreateCylinder(
   "flow",
   {
-    height:0.04,
-    diameter:0.015
+    height:0.03,
+diameter:0.003
   },
   scene
 );
@@ -537,14 +537,15 @@ if(rec.type === "parent"){
     type:"flow",
     mesh:orb,
     path:flowPoints,
-    speed:1.6 + Math.random()*1.4,
+    speed:0.25 + Math.random()*0.15,
     offset:Math.random()
   });
 
 }
 //glow.addIncludedOnlyMesh(tube);
 
-mat.emissiveColor = rec.color.scale(5);
+mat.emissiveColor = rec.color.scale(0.2);
+mat.diffuseColor = rec.color.scale(0.6);
 
    lineMaterials.push({
   mat: mat,
@@ -605,11 +606,12 @@ mat.emissiveColor = rec.color.scale(5);
 );
 
 am.disableLighting = true;
-am.emissiveColor = BABYLON.Color3.FromHexString("#1536ff").scale(4);
+am.emissiveColor = am.emissiveColor = BABYLON.Color3.Black();
+am.diffuseColor = BABYLON.Color3.FromHexString("#1536ff");
 
 cone.material = am;
 
-glow.addIncludedOnlyMesh(cone);
+//glow.addIncludedOnlyMesh(cone);
 
 lineMaterials.push({
   mat: am,
@@ -875,7 +877,7 @@ engine.runRenderLoop(()=>{
     const m = lineMaterials[i];
 if(m.type === "flow"){
 
-  m.offset += Math.sin(t * m.speed) * 0.0015;
+  m.offset += 0.00015 * m.speed;
 
   if(m.offset > 1) m.offset -= 1;
 
@@ -907,16 +909,32 @@ if(m.type === "flow"){
 
       if(m.type === "parent"){
 
-  const flow = 1.0 + Math.sin(t * 2.6 + m.phase) * 0.35;
+  const dark =
+    BABYLON.Color3.FromHexString("#1a2cff");
+
+  const glow =
+    BABYLON.Color3.FromHexString("#2f5dff");
+
+  const mix =
+    (Math.sin(t * 0.4 + m.phase) + 1) / 2;
 
   m.mat.emissiveColor =
-    BABYLON.Color3.Lerp(
-      BABYLON.Color3.FromHexString("#2a4fff"),
-      BABYLON.Color3.FromHexString("#7fc8ff"),
-      (Math.sin(t * 3.2 + m.phase) + 1) / 2
-    ).scale(flow * 0.85);
+    BABYLON.Color3.Lerp(dark, glow, mix)
+    .scale(0.4);
 
-}else if(m.type === "partner"){
+}
+else if(m.type === "partner"){
+
+  m.mat.emissiveColor =
+    m.base.scale(0.3);
+
+}
+else{
+
+  m.mat.emissiveColor =
+    m.base.scale(0.25);
+
+}
 
   const pulse =
     1.0 + Math.sin(t * 1.8 + m.phase) * 0.18;
@@ -952,42 +970,7 @@ Object.values(nodes).forEach(n=>{
   }
 
 });
-for(let i=0;i<lineMaterials.length;i++){
 
-  const m = lineMaterials[i];
-
-  if(m.type === "flow") continue;
-  if(!m.mat) continue;
-
-  if(!m.flashTimer){
-    m.flashTimer = Math.random() * 3;
-  }
-
-  m.flashTimer -= 0.016;
-
-  if(m.flashTimer < 0){
-    m.flashTimer = 1 + Math.random() * 4;
-    m.flashPower = 1.5 + Math.random() * 2.5;
-  }
-
-  if(m.flashPower){
-    m.flashPower *= 0.92;
-
-    if(m.flashPower < 0.05){
-      m.flashPower = 0;
-    }
-
-    if(m.flashPower > 0){
-      const c = m.mat.emissiveColor;
-
-      m.mat.emissiveColor =
-        new BABYLON.Color3(
-          Math.min(1, c.r * (1 + m.flashPower)),
-          Math.min(1, c.g * (1 + m.flashPower)),
-          Math.min(1, c.b * (1 + m.flashPower))
-        );
-    }
-  }
 }
   scene.render();
 
