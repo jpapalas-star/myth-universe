@@ -513,11 +513,11 @@ const flowPoints = path;
    tube.material = mat;
 if(rec.type === "parent"){
 
-  const orb = BABYLON.MeshBuilder.CreateCylinder(
+  const orb = BABYLON.MeshBuilder.linder(
   "flow",
   {
     height:0.003,
-diameter:0.0003
+diameter:0.006
   },
   scene
 );
@@ -527,7 +527,7 @@ diameter:0.0003
     scene
   );
 
-  fm.emissiveColor = BABYLON.Color3.White().scale(12);
+  fm.emissiveColor = BABYLON.Color3.White().scale(20);
 
   orb.material = fm;
 
@@ -544,8 +544,8 @@ diameter:0.0003
 }
 //glow.addIncludedOnlyMesh(tube);
 
-mat.emissiveColor = rec.color.scale(0.2);
-mat.diffuseColor = rec.color.scale(0.6);
+mat.emissiveColor = rec.color.scale(0.32);
+mat.diffuseColor = rec.color.scale(0.82);
 
    lineMaterials.push({
   mat: mat,
@@ -607,8 +607,7 @@ mat.diffuseColor = rec.color.scale(0.6);
 
 am.disableLighting = true;
 am.emissiveColor = am.emissiveColor = BABYLON.Color3.Black();
-am.diffuseColor = BABYLON.Color3.FromHexString("#1536ff");
-
+am.diffuseColor = BABYLON.Color3.FromHexString("#4f7dff");
 cone.material = am;
 
 //glow.addIncludedOnlyMesh(cone);
@@ -877,7 +876,7 @@ engine.runRenderLoop(()=>{
     const m = lineMaterials[i];
 
     if(m.type === "flow"){
-      m.offset += 0.000015;
+      m.offset += 0.00004;
 
       if(m.offset > 1) m.offset -= 1;
 
@@ -897,10 +896,9 @@ engine.runRenderLoop(()=>{
     if(m.type === "arrow"){
 
       const darkBlue =
-        BABYLON.Color3.FromHexString("#1536ff");
-      const glowBlue =
-        BABYLON.Color3.FromHexString("#2f5dff");
-
+  BABYLON.Color3.FromHexString("#3e66ff");
+const glowBlue =
+  BABYLON.Color3.FromHexString("#7aa6ff");
       const mix =
         (Math.sin((t / m.duration) * (Math.PI * 2) + m.phase) + 1) / 2;
 
