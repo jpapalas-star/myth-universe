@@ -91,13 +91,14 @@ const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene)
 hemi.intensity=0.96;
 const light2=new BABYLON.PointLight('p',new BABYLON.Vector3(0,60,0),scene);
 light2.intensity=1.2;
-const glow=new BABYLON.GlowLayer("glow",scene);
+const glow = new BABYLON.GlowLayer("glow", scene);
 
-glow.intensity = 1.2;
+glow.intensity = 2;
 
-glow.blurKernelSize = 32;
+glow.blurKernelSize = 64;
 
-glow.addExcludedMesh(camera);
+
+glow.referenceMeshToUseItsOwnMaterial = true;
 
 const nodes={};
 const dataMap={};
@@ -178,7 +179,7 @@ function addRing(parentMesh,color,diameter,thickness){
   ring.parent=parentMesh;
   ring.position=BABYLON.Vector3.Zero();
   const rm=new BABYLON.StandardMaterial('rm_'+Math.random(),scene);
-  rm.emissiveColor = color.scale(2);
+  rm.emissiveColor = color.scale(4);
   rm.alpha=0.92;
   ring.material=rm;
   glow.addIncludedOnlyMesh(ring);
@@ -220,10 +221,11 @@ function createNode(d,x,y,z,familyRingColor){
   sm.diffuseColor=baseColor.scale(0.7);
   sm.specularColor=new BABYLON.Color3(1,1,1);
   sm.specularPower=64;
-  sm.emissiveColor=baseColor.scale(0.1);
+  sm.emissiveColor=baseColor.scale(1.5);
   sm.backFaceCulling=false;
   sm.alpha=0.96;
   sphere.material=sm;
+  glow.addIncludedOnlyMesh(sphere);
 
   createLabel(d.Name||d.id,sphere,size);
 
@@ -452,7 +454,7 @@ function renderConnections(filterSet){
 
 glow.addIncludedOnlyMesh(tube);
 
-mat.emissiveColor = rec.color.scale(2);
+mat.emissiveColor = rec.color.scale(4);
 
    lineMaterials.push({
      mat: mat,
