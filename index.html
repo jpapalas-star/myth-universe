@@ -109,14 +109,38 @@ glow.customEmissiveColorSelector = function(
   material,
   result
 ){
-  if (!material || !material.emissiveColor) return;
 
-  result.set(
-    material.emissiveColor.r,
-    material.emissiveColor.g,
-    material.emissiveColor.b,
-    1
-  );
+  if (!mesh) return;
+
+  // μόνο flow
+  if(mesh.name.startsWith("flow")){
+
+    result.set(
+      material.emissiveColor.r,
+      material.emissiveColor.g,
+      material.emissiveColor.b,
+      1
+    );
+
+    return;
+  }
+
+  // chaos glow
+  if(mesh.metadata && mesh.metadata.isChaos){
+
+    result.set(
+      material.emissiveColor.r,
+      material.emissiveColor.g,
+      material.emissiveColor.b,
+      1
+    );
+
+    return;
+  }
+
+  // αλλιώς τίποτα
+  result.set(0,0,0,0);
+
 };
 
 
