@@ -902,23 +902,26 @@ const glowBlue =
         (Math.sin((t / m.duration) * (Math.PI * 2) + m.phase) + 1) / 2;
 
       m.mat.emissiveColor =
-        BABYLON.Color3.Lerp(darkBlue, glowBlue, mix).scale(0.35);
+        BABYLON.Color3.Lerp(darkBlue, glowBlue, mix).scale(1.0);
 
       continue;
     }
 
     if(m.type === "parent"){
 
-      const dark =
-        BABYLON.Color3.FromHexString("#1a2cff");
-      const glow =
-        BABYLON.Color3.FromHexString("#2f5dff");
+  const dark =
+    BABYLON.Color3.FromHexString("#2f5dff");
 
-      const mix =
-        (Math.sin(t * 0.4 + m.phase) + 1) / 2;
+  const glow =
+    BABYLON.Color3.FromHexString("#8ab4ff");
 
-      m.mat.emissiveColor =
-        BABYLON.Color3.Lerp(dark, glow, mix).scale(0.25);
+  const mix =
+    (Math.sin(t * 0.4 + m.phase) + 1) / 2;
+
+  m.mat.emissiveColor =
+    BABYLON.Color3.Lerp(dark, glow, mix).scale(1.0);
+
+}
 
     }else if(m.type === "partner"){
 
@@ -928,7 +931,7 @@ const glowBlue =
     }else{
 
       m.mat.emissiveColor =
-        m.base.scale(0.12);
+        m.base.scale(0.5);
 
     }
   }
