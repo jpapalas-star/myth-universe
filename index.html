@@ -851,7 +851,7 @@ engine.runRenderLoop(()=>{
     const m = lineMaterials[i];
 if(m.type === "flow"){
 
-  m.offset += m.speed * 0.01;
+  m.offset += Math.sin(t * m.speed) * 0.0015;
 
   if(m.offset > 1) m.offset -= 1;
 
