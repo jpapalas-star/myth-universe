@@ -513,7 +513,7 @@ const flowPoints = path;
    tube.material = mat;
 if(rec.type === "parent"){
 
-  const orb = BABYLON.MeshBuilder.linder(
+  const orb = BABYLON.MeshBuilder.CreateCylinder(
   "flow",
   {
     height:0.003,
@@ -606,7 +606,7 @@ mat.diffuseColor = rec.color.scale(0.82);
 );
 
 am.disableLighting = true;
-am.emissiveColor = am.emissiveColor = BABYLON.Color3.Black();
+am.emissiveColor=BABYLON.Color3.Black();
 am.diffuseColor = BABYLON.Color3.FromHexString("#4f7dff");
 cone.material = am;
 
