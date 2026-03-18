@@ -468,7 +468,7 @@ function renderConnections(filterSet){
    );
 
    const path=curve.getPoints();
-
+const flowPoints = path;
    const tube=BABYLON.MeshBuilder.CreateTube(
      'conn_'+idx,
      {path,radius:rec.type==='partner'?0.18:0.06},
@@ -488,7 +488,34 @@ function renderConnections(filterSet){
      BABYLON.Material.MATERIAL_ALPHABLEND;
 
    tube.material = mat;
+if(rec.type === "parent"){
 
+  const orb = BABYLON.MeshBuilder.CreateSphere(
+    "flow",
+    {diameter:0.7},
+    scene
+  );
+
+  const fm = new BABYLON.StandardMaterial(
+    "flowMat",
+    scene
+  );
+
+  fm.emissiveColor = BABYLON.Color3.White().scale(2);
+
+  orb.material = fm;
+
+  glow.addIncludedOnlyMesh(orb);
+
+  lineMaterials.push({
+    type:"flow",
+    mesh:orb,
+    path:flowPoints,
+    speed:0.4 + Math.random()*0.4,
+    offset:Math.random()
+  });
+
+}
 glow.addIncludedOnlyMesh(tube);
 
 mat.emissiveColor = rec.color.scale(5);
@@ -820,7 +847,25 @@ engine.runRenderLoop(()=>{
   for(let i=0;i<lineMaterials.length;i++){
 
     const m = lineMaterials[i];
+if(m.type === "flow"){
 
+  m.offset += m.speed * 0.002;
+
+  if(m.offset > 1) m.offset -= 1;
+
+  const index =
+    Math.floor(
+      m.offset * (m.path.length - 1)
+    );
+
+  const p = m.path[index];
+
+  if(p){
+    m.mesh.position.copyFrom(p);
+  }
+
+  continue;
+}
     if(m.type === "arrow"){
 
       const darkBlue = BABYLON.Color3.FromHexString("#1536ff");
@@ -881,6 +926,48 @@ Object.values(nodes).forEach(n=>{
   }
 
 });
+for(let i=0;i<lineMaterials.length;i++){
+
+  const m = lineMaterials[i];
+
+  if(!m.flashTimer){
+    m.flashTimer = Math.random() * 3;
+  }
+
+  m.flashTimer -= 0.016;
+
+  if(m.flashTimer < 0){
+
+    m.flashTimer = 1 + Math.random() * 4;
+
+    m.flashPower = 1.5 + Math.random() * 2.5;
+
+  }
+
+  if(m.flashPower){
+
+    m.flashPower *= 0.92;
+
+    if(m.flashPower < 0.05){
+      m.flashPower = 0;
+    }
+
+    if(m.flashPower > 0){
+
+      const c = m.mat.emissiveColor;
+
+      m.mat.emissiveColor =
+        new BABYLON.Color3(
+          Math.min(1, c.r * (1 + m.flashPower)),
+          Math.min(1, c.g * (1 + m.flashPower)),
+          Math.min(1, c.b * (1 + m.flashPower))
+        );
+
+    }
+
+  }
+
+}
   scene.render();
 
 });
