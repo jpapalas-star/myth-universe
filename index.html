@@ -91,14 +91,19 @@ const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene)
 hemi.intensity=0.96;
 const light2=new BABYLON.PointLight('p',new BABYLON.Vector3(0,60,0),scene);
 light2.intensity=1.2;
-const glow = new BABYLON.GlowLayer("glow", scene);
-
 glow.intensity = 0.18;
-
 glow.blurKernelSize = 64;
-
-
 glow.referenceMeshToUseItsOwnMaterial = true;
+
+glow.customEmissiveColorSelector = function(mesh, subMesh, material, result) {
+    if (!material || !material.emissiveColor) return;
+    result.set(
+        material.emissiveColor.r,
+        material.emissiveColor.g,
+        material.emissiveColor.b,
+        1
+    );
+};
 
 const nodes={};
 const dataMap={};
