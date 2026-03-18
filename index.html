@@ -514,7 +514,13 @@ mat.emissiveColor = rec.color.scale(4);
        );
 
        am.emissiveColor =
-         BABYLON.Color3.FromHexString('#56a6ff');
+BABYLON.Color3.FromHexString("#3fa9ff");
+
+lineMaterials.push({
+ mat: am,
+ base: BABYLON.Color3.FromHexString("#3fa9ff"),
+ type: "arrow"
+});
 
        am.disableLighting = true;
 
@@ -757,21 +763,44 @@ engine.runRenderLoop(()=>{
 
  for(let i=0;i<lineMaterials.length;i++){
 
-   const m = lineMaterials[i];
+ const m = lineMaterials[i];
 
-   let strength = 0.6;
+ let strength = 0.6;
 
-   if(focusedId){
-     strength = 0.9;
-   }
+ if(focusedId){
+   strength = 0.9;
+ }
 
-   const pulse =
+ let pulse =
  strength +
- Math.sin(t*0.35 + i)*0.15;
+ Math.sin(t*0.6 + i)*0.15;
+
+ if(m.type === "arrow"){
+
+   const blue =
+   BABYLON.Color3.FromHexString("#3fa9ff");
+
+   const cyan =
+   BABYLON.Color3.FromHexString("#7fdfff");
+
+   const mix =
+   (Math.sin(t*1.2 + i)+1)/2;
+
    m.mat.emissiveColor =
-     m.base.scale(pulse);
+   BABYLON.Color3.Lerp(
+     blue,
+     cyan,
+     mix
+   );
+
+ }else{
+
+   m.mat.emissiveColor =
+   m.base.scale(pulse);
 
  }
+
+}
 
  scene.render();
 
