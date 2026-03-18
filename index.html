@@ -503,8 +503,9 @@ const flowPoints = path;
      scene
    );
 
-   mat.emissiveColor = rec.color;
-   mat.alpha = 0.5;
+   mat.emissiveColor = rec.color.scale(0.9);
+mat.diffuseColor = rec.color.scale(1.2);
+mat.alpha = 0.7;
    mat.disableLighting = true;
    mat.backFaceCulling = false;
    mat.transparencyMode =
@@ -516,8 +517,8 @@ if(rec.type === "parent" && path.length > 2){
   const orb = BABYLON.MeshBuilder.CreateCylinder(
   "flow",
   {
-    height:0.003,
-diameter:0.006
+    height:0.04,
+diameter:0.012
   },
   scene
 );
@@ -544,8 +545,8 @@ diameter:0.006
 }
 //glow.addIncludedOnlyMesh(tube);
 
-mat.emissiveColor = rec.color.scale(0.32);
-mat.diffuseColor = rec.color.scale(0.82);
+mat.emissiveColor = rec.color.scale(0.7);
+mat.diffuseColor = rec.color.scale(1.1);
 
    lineMaterials.push({
   mat: mat,
