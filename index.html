@@ -475,7 +475,7 @@ function renderConnections(filterSet){
 
 glow.addIncludedOnlyMesh(tube);
 
-mat.emissiveColor = rec.color.scale(2);
+mat.emissiveColor = rec.color.scale(5);
 
    lineMaterials.push({
      mat: mat,
@@ -535,7 +535,7 @@ mat.emissiveColor = rec.color.scale(2);
 );
 
 am.disableLighting = true;
-am.emissiveColor = BABYLON.Color3.FromHexString("#1536ff");
+am.emissiveColor = BABYLON.Color3.FromHexString("#1536ff").scale(4);
 
 cone.material = am;
 
@@ -798,7 +798,7 @@ engine.runRenderLoop(()=>{
     }else{
 
       const pulse =
-        0.75 + Math.sin(t * 0.7 + i) * 0.08;
+  1.3 + Math.sin(t * 1.5 + i) * 0.35;
 
       m.mat.emissiveColor =
         m.base.scale(pulse);
