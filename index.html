@@ -742,7 +742,10 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     allData=all;
     all.forEach(d=>dataMap[d.id]=d);
     const chaos=all.find(d=>d.id==='PRIM_CHAOS_001');
-    if(chaos)createNode(chaos,0,0,0,null);
+    if(chaos){
+  createNode(chaos,0,0,0,null);
+  placed.add(chaos.id);
+}
 
     const families=buildFamilies(all);
     families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
