@@ -113,7 +113,7 @@ glow.customEmissiveColorSelector = function(
   if (!mesh) return;
 
   // μόνο flow
-  if(mesh.name.startsWith("flow")){
+  if(mesh.name && mesh.name.startsWith("flow_")){
 
     result.set(
       material.emissiveColor.r,
@@ -515,10 +515,10 @@ mat.alpha = 0.7;
 if(rec.type === "parent" && path.length > 2){
 
   const orb = BABYLON.MeshBuilder.CreateCylinder(
-  "flow",
+  "flow_"+idx,
   {
-    height:0.04,
-diameter:0.012
+    height:0.08,
+diameter:0.04
   },
   scene
 );
@@ -875,7 +875,7 @@ engine.runRenderLoop(()=>{
     const m = lineMaterials[i];
 
     if(m.type === "flow" && m.path){
-      m.offset += 0.000002;
+      m.offset += 0.0000008;
 
       if(m.offset > 1) m.offset -= 1;
 
