@@ -519,7 +519,9 @@ BABYLON.Color3.FromHexString("#1536ff");
 lineMaterials.push({
  mat: am,
  base: BABYLON.Color3.FromHexString("#1536ff"),
- type: "arrow"
+ type: "arrow",
+ speed: 0.5 + Math.random() * 1.5,
+ phase: Math.random() * 10
 });
 
        am.disableLighting = true;
@@ -765,11 +767,6 @@ engine.runRenderLoop(()=>{
 
  const m = lineMaterials[i];
 
- // 2 second global pulse
- const pulse =
- 0.7 +
- Math.sin(t * 3.14) * 0.25;
-
  if(m.type === "arrow"){
 
    const darkBlue =
@@ -779,7 +776,10 @@ engine.runRenderLoop(()=>{
    BABYLON.Color3.FromHexString("#3a6bff");
 
    const mix =
-   (Math.sin(t * 3.14) + 1) / 2;
+   (Math.sin(
+     t * m.speed +
+     m.phase
+   ) + 1) / 2;
 
    m.mat.emissiveColor =
    BABYLON.Color3.Lerp(
@@ -790,13 +790,19 @@ engine.runRenderLoop(()=>{
 
  }else{
 
+   const pulse =
+   0.7 +
+   Math.sin(
+     t * 0.7 +
+     i
+   ) * 0.15;
+
    m.mat.emissiveColor =
    m.base.scale(pulse);
 
  }
 
 }
-
  scene.render();
 
 });
