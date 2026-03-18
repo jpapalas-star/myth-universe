@@ -514,11 +514,11 @@ mat.emissiveColor = rec.color.scale(4);
        );
 
        am.emissiveColor =
-BABYLON.Color3.FromHexString("#3fa9ff");
+BABYLON.Color3.FromHexString("#1536ff");
 
 lineMaterials.push({
  mat: am,
- base: BABYLON.Color3.FromHexString("#3fa9ff"),
+ base: BABYLON.Color3.FromHexString("#1536ff"),
  type: "arrow"
 });
 
@@ -765,31 +765,26 @@ engine.runRenderLoop(()=>{
 
  const m = lineMaterials[i];
 
- let strength = 0.6;
-
- if(focusedId){
-   strength = 0.9;
- }
-
- let pulse =
- strength +
- Math.sin(t*0.6 + i)*0.15;
+ // 2 second global pulse
+ const pulse =
+ 0.7 +
+ Math.sin(t * 3.14) * 0.25;
 
  if(m.type === "arrow"){
 
-   const blue =
-   BABYLON.Color3.FromHexString("#3fa9ff");
+   const darkBlue =
+   BABYLON.Color3.FromHexString("#1536ff");
 
-   const cyan =
-   BABYLON.Color3.FromHexString("#7fdfff");
+   const glowBlue =
+   BABYLON.Color3.FromHexString("#3a6bff");
 
    const mix =
-   (Math.sin(t*1.2 + i)+1)/2;
+   (Math.sin(t * 3.14) + 1) / 2;
 
    m.mat.emissiveColor =
    BABYLON.Color3.Lerp(
-     blue,
-     cyan,
+     darkBlue,
+     glowBlue,
      mix
    );
 
