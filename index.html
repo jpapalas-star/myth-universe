@@ -1244,11 +1244,21 @@ homeBtn.addEventListener('click',()=>{
 window.addEventListener('popstate',()=>{if(focusedId)resetFocus(true);});
 
 scene.onPointerObservable.add((pi)=>{
- if(pi.type===BABYLON.PointerEventTypes.POINTERMOVE){
+ 
+if(pi.type===BABYLON.PointerEventTypes.POINTERMOVE){
 
   const evt = pi.event;
 
-  // μόνο 1 finger κάνει custom pan
+  // αν έχει 2 δάχτυλα → stop custom pan
+  if(evt && evt.touches && evt.touches.length > 1){
+
+    lastX = scene.pointerX;
+    lastY = scene.pointerY;
+
+    return;
+  }
+
+  // μόνο 1 finger κάνει pan
   if(evt && evt.touches && evt.touches.length !== 1) return;
 
   const dx = scene.pointerX - lastX;
@@ -1261,19 +1271,21 @@ scene.onPointerObservable.add((pi)=>{
 
   camera.target.x -= dx * speed;
   camera.target.z += dy * speed;
+}
+ if(pi.type===BABYLON.PointerEventTypes.POINTERDOWN){
 
-} if(pi.type===BABYLON.PointerEventTypes.POINTERDOWN){
-lastX = scene.pointerX;
-lastY = scene.pointerY;
-    const evt=pi.event;
-    if(evt && evt.touches && evt.touches.length>1){tapCandidate=null;return;}
-    const pick=scene.pick(scene.pointerX,scene.pointerY);
-    tapCandidate={
-      x:scene.pointerX,
-      y:scene.pointerY,
-      t:Date.now(),
-      id:(pick&&pick.hit&&pick.pickedMesh&&pick.pickedMesh.metadata)?pick.pickedMesh.metadata.id:null
-    };
+  lastX = scene.pointerX;
+  lastY = scene.pointerY;
+
+  const evt = pi.event;
+
+  // αν είναι multi touch → reset
+  if(evt && evt.touches && evt.touches.length > 1){
+
+    lastX = scene.pointerX;
+    lastY = scene.pointerY;
+
+    tapCandidate = null;
     return;
   }
 
