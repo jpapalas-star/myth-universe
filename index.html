@@ -283,12 +283,12 @@ camera.attachControl(canvas, true);
 const pointers = camera.inputs.attached.pointers;
 
 if (pointers) {
-
-  pointers.buttons = []; // disable rotate
-
-  pointers.multiTouchPanAndZoom = true; // ✅ allow pinch + pan together
-
+  pointers.buttons = [];            // no default mouse/touch rotate
+  pointers.multiTouchPanAndZoom = false;
+  pointers.multiTouchPanning = false;
+  pointers.pinchZoom = true;        // keep pinch zoom only
 }
+
 camera.pinchToPanMaxDistance = 0;
 
 
@@ -802,15 +802,42 @@ function placeFamily(center,family,famColor){
   const parents=family.parents.map(id=>dataMap[id]).filter(Boolean);
   const children=family.children.map(id=>dataMap[id]).filter(Boolean);
 
-  if(parents.length===1){
-   if(parents[0].id==="PRIM_CHAOS_001") return;
-if(parents[1] && parents[1].id==="PRIM_CHAOS_001") return; createNode(parents[0],center.x,center.y,center.z,famColor);
-  }else if(parents.length>=2){
-    const gap=9;
-    createNode(parents[0],center.x-gap/2,center.y,center.z,famColor);
-    createNode(parents[1],center.x+gap/2,center.y,center.z,famColor);
-  }
+  if (parents.length === 1) {
 
+  if (parents[0].id === "PRIM_CHAOS_001") return;
+
+  createNode(
+    parents[0],
+    center.x,
+    center.y,
+    center.z,
+    famColor
+  );
+
+}
+else if (parents.length >= 2) {
+
+  if (parents[0].id === "PRIM_CHAOS_001") return;
+  if (parents[1] && parents[1].id === "PRIM_CHAOS_001") return;
+
+  const gap = 9;
+
+  createNode(
+    parents[0],
+    center.x - gap / 2,
+    center.y,
+    center.z,
+    famColor
+  );
+
+  createNode(
+    parents[1],
+    center.x + gap / 2,
+    center.y,
+    center.z,
+    famColor
+  );
+}
   const n=children.length;
   if(!n) return;
 
@@ -1242,78 +1269,139 @@ homeBtn.addEventListener('click',()=>{
 
 });
 window.addEventListener('popstate',()=>{if(focusedId)resetFocus(true);});
+let isSingleFingerPan = false;
+let isMultiTouchGesture = false;
 
-scene.onPointerObservable.add((pi)=>{
- 
-if(pi.type===BABYLON.PointerEventTypes.POINTERMOVE){
 
-  const evt = pi.event;
-
-  // αν έχει 2 δάχτυλα → stop custom pan
-  if(evt && evt.touches && evt.touches.length > 1){
+  // ===== DOWN =====
+  if(pi.type===BABYLON.PointerEventTypes.POINTERDOWN){
 
     lastX = scene.pointerX;
     lastY = scene.pointerY;
 
-    return;
+    const evt = pi.event;
+
+    if(evt && evt.touches && evt.touches.length > 1){
+      tapCandidate = null;
+      return;
+    }
+
+    const pick = scene.pick(scene.pointerX,scene.pointerY);
+
+    tapCandidate={
+      x:scene.pointerX,
+      y:scene.pointerY,
+      t:Date.now(),
+      id:(pick.hit && pick.pickedMesh && pick.pickedMesh.metadata)
+        ? pick.pickedMesh.metadata.id
+        : null
+    };
+  }
+scene.onPointerObservable.add((pi)=>{
+
+  // ===== DOWN =====
+  if (pi.type === BABYLON.PointerEventTypes.POINTERDOWN) {
+    lastX = scene.pointerX;
+    lastY = scene.pointerY;
+
+    const evt = pi.event;
+    const touches = evt && evt.touches ? evt.touches.length : 0;
+
+    if (touches > 1) {
+      isMultiTouchGesture = true;
+      isSingleFingerPan = false;
+      tapCandidate = null;
+      return;
+    }
+
+    isSingleFingerPan = true;
+    isMultiTouchGesture = false;
+
+    const pick = scene.pick(scene.pointerX, scene.pointerY);
+
+    tapCandidate = {
+      x: scene.pointerX,
+      y: scene.pointerY,
+      t: Date.now(),
+      id: (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata)
+        ? pick.pickedMesh.metadata.id
+        : null
+    };
   }
 
-  // μόνο 1 finger κάνει pan
-  if(evt && evt.touches && evt.touches.length !== 1) return;
+  // ===== MOVE =====
+  if (pi.type === BABYLON.PointerEventTypes.POINTERMOVE) {
+    const evt = pi.event;
+    const touches = evt && evt.touches ? evt.touches.length : 0;
 
-  const dx = scene.pointerX - lastX;
-  const dy = scene.pointerY - lastY;
+    if (touches > 1) {
+      isMultiTouchGesture = true;
+      isSingleFingerPan = false;
+      lastX = scene.pointerX;
+      lastY = scene.pointerY;
+      return;
+    }
 
-  lastX = scene.pointerX;
-  lastY = scene.pointerY;
+    if (!isSingleFingerPan || isMultiTouchGesture) return;
 
-  const speed = camera.radius * 0.0014;
-
-  camera.target.x -= dx * speed;
-  camera.target.z += dy * speed;
-}
- if(pi.type===BABYLON.PointerEventTypes.POINTERDOWN){
-
-  lastX = scene.pointerX;
-  lastY = scene.pointerY;
-
-  const evt = pi.event;
-
-  // αν είναι multi touch → reset
-  if(evt && evt.touches && evt.touches.length > 1){
+    const dx = scene.pointerX - lastX;
+    const dy = scene.pointerY - lastY;
 
     lastX = scene.pointerX;
     lastY = scene.pointerY;
+
+    const speed = camera.radius * 0.0014;
+
+    camera.target.x -= dx * speed;
+    camera.target.z += dy * speed;
+  }
+
+  // ===== UP =====
+  if (pi.type === BABYLON.PointerEventTypes.POINTERUP) {
+    const evt = pi.event;
+    const touches = evt && evt.touches ? evt.touches.length : 0;
+
+    if (touches > 0) {
+      lastX = scene.pointerX;
+      lastY = scene.pointerY;
+      return;
+    }
+
+    const wasMultiTouch = isMultiTouchGesture;
+
+    isSingleFingerPan = false;
+    isMultiTouchGesture = false;
+
+    if (wasMultiTouch) {
+      tapCandidate = null;
+      return;
+    }
+
+    if (!tapCandidate) return;
+
+    const dx = scene.pointerX - tapCandidate.x;
+    const dy = scene.pointerY - tapCandidate.y;
+    const moved = Math.hypot(dx, dy);
+    const elapsed = Date.now() - tapCandidate.t;
+    const pickedId = tapCandidate.id;
 
     tapCandidate = null;
-    return;
-  }
 
-  if(pi.type===BABYLON.PointerEventTypes.POINTERUP){
-    if(!tapCandidate)return;
-    const evt=pi.event;
-    if(evt && evt.touches && evt.touches.length>1){tapCandidate=null;return;}
+    if (moved > 8 || elapsed > 450) return;
 
-    const dx=scene.pointerX-tapCandidate.x;
-    const dy=scene.pointerY-tapCandidate.y;
-    const moved=Math.hypot(dx,dy);
-    const elapsed=Date.now()-tapCandidate.t;
-    const pickedId=tapCandidate.id;
-    tapCandidate=null;
-
-    if(moved>8 || elapsed>450) return;
-
-    if(pickedId && nodes[pickedId]){
-      if(focusedId===pickedId) resetFocus(false);
+    if (pickedId && nodes[pickedId]) {
+      if (focusedId === pickedId) resetFocus(false);
       else enterFocus(pickedId);
-    }else{
-      if(focusedId) resetFocus(false);
+    } else {
+      if (focusedId) resetFocus(false);
       else resetInfo();
     }
   }
-},BABYLON.PointerEventTypes.POINTERDOWN |
-BABYLON.PointerEventTypes.POINTERUP | BABYLON.PointerEventTypes.POINTERMOVE);
 
+},
+BABYLON.PointerEventTypes.POINTERDOWN |
+BABYLON.PointerEventTypes.POINTERUP |
+BABYLON.PointerEventTypes.POINTERMOVE);
 fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
   .then(r=>{
     if(!r.ok) throw new Error('HTTP '+r.status);
@@ -1326,13 +1414,15 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     const chaos=all.find(d=>d.id==='PRIM_CHAOS_001');
     if(chaos) createNode(chaos,0,0,0,null);
 
-    const families=buildFamilies(all);
-    families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
+    const families = buildFamilies(all);
 
-     
+families.forEach(f=>{
+  familyColorByKey.set(
+    f.key,
+    hashColor(f.key)
+  );
+});
 
-
-    
     const ZONE = {
 
   center: {x:0,z:0,r:60},
