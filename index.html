@@ -991,7 +991,7 @@ function enterFocus(id){
   const pos=getNodePos(id);
   if(pos){
     const newTarget=pos.clone();
-    const const newRadius=Math.max(18,nodes[id].size*4.5);
+    const newRadius=Math.max(18,nodes[id].size*4.5);
     camera.lowerRadiusLimit=4;
     camera.upperRadiusLimit=2000;
     BABYLON.Animation.CreateAndStartAnimation(
@@ -1279,21 +1279,28 @@ const famsByZone={};
 
 families
 .filter(f=>!f.parents.includes("PRIM_CHAOS_001"))
-.filter(f=>!f.parents.includes("PRIM_CHAOS_001"))
+.forEach(f=>{
 
-  const firstParentId = f.parents && f.parents.length ? f.parents[0] : null;
-  const p = firstParentId ? dataMap[firstParentId] : null;
+  const firstParentId =
+    f.parents && f.parents.length
+      ? f.parents[0]
+      : null;
+
+  const p =
+    firstParentId
+      ? dataMap[firstParentId]
+      : null;
 
   if(!p) return;
 
   const zone = mythGroup(p);
 
-  if(!famsByZone[zone]) famsByZone[zone]=[];
+  if(!famsByZone[zone])
+    famsByZone[zone]=[];
 
   famsByZone[zone].push(f);
 
 });
-
 
 Object.entries(famsByZone).forEach(([zone,fams])=>{
 
