@@ -310,6 +310,7 @@ const camera = new BABYLON.ArcRotateCamera(
 );
 
 camera.attachControl(canvas, true);
+
 let lastX = 0;
 let lastY = 0;
 
@@ -334,15 +335,10 @@ scene.onPointerObservable.add((pi)=>{
   lastX = scene.pointerX;
   lastY = scene.pointerY;
 
-  const speed = camera.radius * 0.002;
+  const speed = camera.radius * 0.0015;
 
-  const right = camera.getDirection(BABYLON.Axis.X);
-  const up = camera.getDirection(BABYLON.Axis.Y);
-
-  camera.target.addInPlace(
-    right.scale(-dx * speed)
-      .add(up.scale(dy * speed))
-  );
+  camera.target.x -= dx * speed;
+  camera.target.y += dy * speed;
 
 });
 // safe camera settings
