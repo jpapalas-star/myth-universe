@@ -283,25 +283,7 @@ camera.inputs.remove(camera.inputs.attached.pointers);
 let lastX = 0;
 let lastY = 0;
 
-scene.onPointerObservable.add((pi)=>{
 
-  if(pi.type !== BABYLON.PointerEventTypes.POINTERMOVE) return;
-  if(!pi.event) return;
-  if(pi.event.touches && pi.event.touches.length > 1) return;
-  if(pi.event.buttons !== 1) return;
-
-  const dx = scene.pointerX - lastX;
-  const dy = scene.pointerY - lastY;
-
-  lastX = scene.pointerX;
-  lastY = scene.pointerY;
-
-  const speed = camera.radius * 0.0012;
-
-  camera.target.x -= dx * speed;
-  camera.target.z += dy * speed;
-
-}, BABYLON.PointerEventTypes.POINTERMOVE);
 // safe camera settings
 camera.inertia = 0.82;
 
@@ -1249,7 +1231,26 @@ homeBtn.addEventListener('click',()=>{
 window.addEventListener('popstate',()=>{if(focusedId)resetFocus(true);});
 
 scene.onPointerObservable.add((pi)=>{
-  if(pi.type===BABYLON.PointerEventTypes.POINTERDOWN){
+ if(pi.type===BABYLON.PointerEventTypes.POINTERMOVE){
+
+  const evt = pi.event;
+
+  if(evt && evt.touches && evt.touches.length > 1) return;
+
+  if(evt.buttons !== 1) return;
+
+  const dx = scene.pointerX - lastX;
+  const dy = scene.pointerY - lastY;
+
+  lastX = scene.pointerX;
+  lastY = scene.pointerY;
+
+  const speed = camera.radius * 0.0014;
+
+  camera.target.x -= dx * speed;
+  camera.target.z += dy * speed;
+
+} if(pi.type===BABYLON.PointerEventTypes.POINTERDOWN){
 lastX = scene.pointerX;
 lastY = scene.pointerY;
     const evt=pi.event;
