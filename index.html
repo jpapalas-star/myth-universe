@@ -248,23 +248,23 @@ const camera=new BABYLON.ArcRotateCamera(
   BABYLON.Vector3.Zero(),
   scene
 );
-camera.lowerRadiusLimit=2;
-camera.upperRadiusLimit=12000;
-camera.angularSensibilityX = 1800;
-camera.angularSensibilityY = 1800;
+camera.angularSensibilityX = 2400;
+camera.angularSensibilityY = 2400;
 
-camera.inertia = 0.85;
+camera.inertia = 0.92;
 
-camera.panningSensibility = 4000;
+camera.panningSensibility = 8000;
 
-camera.wheelDeltaPercentage = 0.02;
+camera.wheelDeltaPercentage = 0.015;
 
-camera.pinchDeltaPercentage = 0.008;
-camera.pinchPrecision = 18;
+camera.pinchDeltaPercentage = 0.006;
+camera.pinchPrecision = 22;
 
-camera.lowerBetaLimit = 0.2;
-camera.upperBetaLimit = Math.PI / 2.1;
+camera.lowerBetaLimit = 0.15;
+camera.upperBetaLimit = Math.PI / 2.05;
 
+camera.lowerRadiusLimit = 2;
+camera.upperRadiusLimit = 12000;
 
 camera.attachControl(canvas,true);
 
