@@ -248,23 +248,23 @@ const camera=new BABYLON.ArcRotateCamera(
   BABYLON.Vector3.Zero(),
   scene
 );
-camera.lowerRadiusLimit=2;
-camera.upperRadiusLimit=12000;
-camera.angularSensibilityX = 3000;
-camera.angularSensibilityY = 3000;
+camera.angularSensibilityX = 900;
+camera.angularSensibilityY = 900;
 
-camera.inertia = 0.95;
+camera.inertia = 0.8;
 
-camera.panningSensibility = 4000;
+camera.panningSensibility = 120;
 
-camera.wheelDeltaPercentage = 0.02;
+camera.wheelDeltaPercentage = 0.006;
 
-camera.pinchDeltaPercentage = 0.008;
-camera.pinchPrecision = 18;
+camera.pinchDeltaPercentage = 0.003;
+camera.pinchPrecision = 12;
 
-camera.lowerBetaLimit = 0.2;
-camera.upperBetaLimit = Math.PI / 2.1;
+camera.lowerBetaLimit = 0.1;
+camera.upperBetaLimit = Math.PI / 2;
 
+camera.lowerRadiusLimit = 4;
+camera.upperRadiusLimit = 12000;
 
 camera.attachControl(canvas,true);
 
@@ -1027,7 +1027,7 @@ saveCameraState();
     const newTarget = pos.clone();
 
 camera.target.copyFrom(newTarget);
-    const newRadius=Math.max(18,nodes[id].size*4.5);
+    const newRadius=Math.max(80,nodes[id].size*4);
     camera.lowerRadiusLimit=4;
     camera.upperRadiusLimit=2000;
     BABYLON.Animation.CreateAndStartAnimation(
