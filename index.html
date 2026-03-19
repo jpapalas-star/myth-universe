@@ -5,6 +5,66 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Myth Universe Final Focus</title>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>
+eruda.init();
+
+window.onerror = function(msg, url, line, col, error) {
+
+  const box = document.createElement("div");
+
+  box.style.position = "fixed";
+  box.style.bottom = "0";
+  box.style.left = "0";
+  box.style.right = "0";
+  box.style.maxHeight = "40%";
+  box.style.overflow = "auto";
+  box.style.background = "black";
+  box.style.color = "red";
+  box.style.fontSize = "12px";
+  box.style.zIndex = "99999";
+  box.style.padding = "5px";
+
+  box.innerText =
+    "ERROR: " + msg +
+    "\nLINE: " + line +
+    "\nCOL: " + col +
+    "\n" + error;
+
+  document.body.appendChild(box);
+
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>
+eruda.init();
+
+window.onerror = function(msg, url, line, col, error) {
+
+  const box = document.createElement("div");
+
+  box.style.position = "fixed";
+  box.style.bottom = "0";
+  box.style.left = "0";
+  box.style.right = "0";
+  box.style.maxHeight = "40%";
+  box.style.overflow = "auto";
+  box.style.background = "black";
+  box.style.color = "red";
+  box.style.fontSize = "12px";
+  box.style.zIndex = "99999";
+  box.style.padding = "5px";
+
+  box.innerText =
+    "ERROR: " + msg +
+    "\nLINE: " + line +
+    "\nCOL: " + col +
+    "\n" + error;
+
+  document.body.appendChild(box);
+
+};
+</script>
 <style>
 html,body{
   margin:0;
@@ -268,9 +328,6 @@ camera.angularSensibilityX = 1400;
 camera.angularSensibilityY = 1400;
 
 camera.panningSensibility = 140;
- 
-
-
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
 hemi.intensity=0.96;
 
