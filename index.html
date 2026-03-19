@@ -649,7 +649,7 @@ function bindInfoLinks(){
 function showInfo(d){
   infoEl.innerHTML=
     `<h2>${d.Name||d.id}</h2>`+
-    `<div class="sub">${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation ?? '-'}</div>`+
+    `<div class="sub">${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation != null ? d.Generation : '-'}</div>`+
     `<div class="sec">Summary</div><div class="txt">${d.Summary||'-'}</div>`+
     `<div class="sec">Parents</div><div class="txt">${listInfoLinks(d.Parents)}</div>`+
     `<div class="sec">Partners</div><div class="txt">${listInfoLinks(d.Partners)}</div>`+
@@ -661,7 +661,7 @@ function resetInfo(){
   infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">Chaos center · generation rings · family clusters</div><div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>`;
 }
 
-function getNodePos(id){return nodes[id]?.sphere.position||null;}
+function getNodePos(id){var n=nodes[id];return n&&n.sphere?n.sphere.position:null;}
 function saveOriginalPositions(){Object.values(nodes).forEach(n=>originalPositions.set(n.id,n.sphere.position.clone()));}
 function restoreOriginalPositions(){Object.values(nodes).forEach(n=>{const p=originalPositions.get(n.id);if(p)n.sphere.position.copyFrom(p);});}
 function coupleKey(a,b){return [a,b].sort().join('|');}
@@ -1012,7 +1012,7 @@ function renderSearchResults(){
   searchMatches.forEach((d,idx)=>{
     const item=document.createElement('div');
     item.className='searchItem'+(idx===activeSearchIndex?' active':'');
-    item.innerHTML=`<div class="searchName">${d.Name||d.id}</div><div class="searchMeta">${d.id||''} · ${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation ?? '-'}</div>`;
+    item.innerHTML=`<div class="searchName">${d.Name||d.id}</div><div class="searchMeta">${d.id||''} · ${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation != null ? d.Generation : '-'}</div>`;
     item.addEventListener('click',()=>{
       searchBox.value=d.Name||d.id;
       hideSearchResults();
