@@ -129,11 +129,60 @@ skyMat.backFaceCulling = false;
 
 skyMat.disableLighting = true;
 
-skyMat.diffuseTexture = new BABYLON.Texture(
-  "https://playground.babylonjs.com/textures/nebula.jpg",
-  scene
+const skyTexture = new BABYLON.DynamicTexture(
+  "skyTex",
+  {width:1024,height:1024},
+  scene,
+  false
 );
 
+const ctx = skyTexture.getContext();
+
+ctx.fillStyle = "#02040a";
+ctx.fillRect(0,0,1024,1024);
+
+// stars
+
+for(let i=0;i<500;i++){
+
+  ctx.fillStyle = "white";
+
+  const x = Math.random()*1024;
+  const y = Math.random()*1024;
+
+  const s = Math.random()*2;
+
+  ctx.fillRect(x,y,s,s);
+
+}
+
+// nebula glow
+
+for(let i=0;i<40;i++){
+
+  const x = Math.random()*1024;
+  const y = Math.random()*1024;
+  const r = Math.random()*200+50;
+
+  const g = ctx.createRadialGradient(
+    x,y,0,
+    x,y,r
+  );
+
+  g.addColorStop(0,"rgba(80,120,255,0.2)");
+  g.addColorStop(1,"rgba(0,0,0,0)");
+
+  ctx.fillStyle = g;
+
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fill();
+
+}
+
+skyTexture.update();
+
+skyMat.diffuseTexture = skyTexture;
 skyMat.diffuseTexture.coordinatesMode =
   BABYLON.Texture.SKYBOX_MODE;
 
@@ -163,7 +212,13 @@ for(let i=0;i<400;i++){
     scene
   );
 
-  sm.emissiveColor = BABYLON.Color3.White();
+  sm.emissiveColor = new BABYLON.Color3(
+  1,
+  1,
+  1
+);
+
+sm.disableLighting = true;
 
   s.material = sm;
 
@@ -176,11 +231,30 @@ const particleSystem = new BABYLON.ParticleSystem(
   scene
 );
 
-particleSystem.particleTexture =
-  new BABYLON.Texture(
-    "https://playground.babylonjs.com/textures/flare.png",
-    scene
-  );
+const pTex = new BABYLON.DynamicTexture(
+  "pTex",
+  {width:64,height:64},
+  scene,
+  false
+);
+
+const pctx = pTex.getContext();
+
+const g = pctx.createRadialGradient(
+  32,32,0,
+  32,32,32
+);
+
+g.addColorStop(0,"white");
+g.addColorStop(1,"transparent");
+
+pctx.fillStyle = g;
+pctx.fillRect(0,0,64,64);
+
+pTex.update();
+
+particleSystem.particleTexture = pTex;
+
 
 particleSystem.emitter = new BABYLON.Vector3(0,0,0);
 
