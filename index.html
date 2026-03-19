@@ -250,11 +250,11 @@ const camera=new BABYLON.ArcRotateCamera(
 );
 camera.lowerRadiusLimit=34;
 camera.upperRadiusLimit=8000;
-camera.wheelDeltaPercentage=0.02;
-camera.pinchDeltaPercentage=0.02;
-camera.pinchPrecision=5;
+camera.wheelDeltaPercentage=0.06;
+camera.pinchDeltaPercentage=0.06;
+camera.pinchPrecision=2.5;
 camera.useNaturalPinchZoom=true;
-camera.panningSensibility=40;
+camera.panningSensibility=15;
 camera.attachControl(canvas,true);
 if(camera.inputs&&camera.inputs.attached&&camera.inputs.attached.pointers){
   camera.inputs.attached.pointers.multiTouchPanAndZoom=true;
@@ -1197,7 +1197,44 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     const families=buildFamilies(all);
     families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
 
-    const GEN_RADII={1:60,2:115,3:180,4:250,5:320,6:390,7:455,8:510,9:560};
+    const const RADIUS = {
+primordial: 70,
+titan: 140,
+olympian: 210,
+hero: 290,
+mortal: 360,
+monster: 430,
+outer: 470
+};
+
+function mythGroup(d){
+
+  const model = (d.ModelType || "").toLowerCase();
+  const cat = (d.Category || "").toLowerCase();
+  const gen = Number(d.Generation || 9);
+
+  if(d.id === "PRIM_CHAOS_001") return "center";
+
+  if(cat.includes("πρωτο") || model==="energy")
+    return "primordial";
+
+  if(cat.includes("τιτά") || model==="giant")
+    return "titan";
+
+  if(cat.includes("ολυμπ") || model==="god" || model==="goddess")
+    return "olympian";
+
+  if(cat.includes("ήρω") || model==="hero")
+    return "hero";
+
+  if(model==="human")
+    return "mortal";
+
+  if(model==="monster" || model==="spirit")
+    return "monster";
+
+  return "outer";
+}
 
     function famGen(f){
       let minG=99;
@@ -1212,32 +1249,50 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
       return Math.min(minG,9);
     }
 
-    const famsByGen={};
-    families
-      .filter(f=>!f.parents.includes('PRIM_CHAOS_001')&&!f.children.includes('PRIM_CHAOS_001'))
-      .forEach(f=>{
-        const g=famGen(f);
-        if(!famsByGen[g]) famsByGen[g]=[];
-        famsByGen[g].push(f);
-      });
+    const famsByType={};
 
-    Object.entries(famsByGen).forEach(([genStr,fams])=>{
-      const gen=Number(genStr);
-      const radius=GEN_RADII[gen]||560;
-      const n=fams.length||1;
-      fams.forEach((f,i)=>{
-        const angle=(Math.PI*2*i/n)-Math.PI/2;
-        const cx=Math.cos(angle)*radius;
-        const cz=Math.sin(angle)*radius;
-        const cy=Math.sin(angle*2+gen)*10;
-        placeFamily({x:cx,y:cy,z:cz},f,familyColorByKey.get(f.key));
-      });
-    });
+families
+.filter(f=>!f.parents.includes("PRIM_CHAOS_001"))
+.forEach(f=>{
+
+  const p = dataMap[f.parents[0]];
+  const type = mythGroup(p);
+
+  if(!famsByType[type]) famsByType[type]=[];
+  famsByType[type].push(f);
+
+});
+
+
+Object.entries(famsByType).forEach(([type,fams])=>{
+
+  const radius = RADIUS[type] || RADIUS.outer;
+
+  const n = fams.length || 1;
+
+  fams.forEach((f,i)=>{
+
+    const angle = (Math.PI*2*i/n) - Math.PI/2;
+
+    const cx = Math.cos(angle)*radius;
+    const cz = Math.sin(angle)*radius;
+
+    const cy = Math.sin(angle*2)*8;
+
+    placeFamily(
+      {x:cx,y:cy,z:cz},
+      f,
+      familyColorByKey.get(f.key)
+    );
+
+  });
+
+});
 
     // leftovers / mortals closer than before
     const leftovers=all.filter(d=>d.id!=='PRIM_CHAOS_001' && !placed.has(d.id));
     if(leftovers.length){
-      const outerR=520;
+      const outerR=450;
       leftovers.forEach((d,i)=>{
         const angle=(Math.PI*2*i/leftovers.length)-Math.PI/2;
         const r2=outerR + (i%7)*4;
