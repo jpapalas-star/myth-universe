@@ -250,11 +250,22 @@ const camera=new BABYLON.ArcRotateCamera(
 );
 camera.lowerRadiusLimit=2;
 camera.upperRadiusLimit=12000;
-camera.wheelDeltaPercentage=0.02;
-camera.pinchDeltaPercentage=0.008;
-camera.pinchPrecision=18;
-camera.useNaturalPinchZoom=true;
-camera.panningSensibility=15;
+camera.angularSensibilityX = 1800;
+camera.angularSensibilityY = 1800;
+
+camera.inertia = 0.85;
+
+camera.panningSensibility = 4000;
+
+camera.wheelDeltaPercentage = 0.02;
+
+camera.pinchDeltaPercentage = 0.008;
+camera.pinchPrecision = 18;
+
+camera.lowerBetaLimit = 0.2;
+camera.upperBetaLimit = Math.PI / 2.1;
+
+
 camera.attachControl(canvas,true);
 
 // custom touch behavior
