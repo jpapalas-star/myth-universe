@@ -251,14 +251,47 @@ const camera=new BABYLON.ArcRotateCamera(
 camera.lowerRadiusLimit=2;
 camera.upperRadiusLimit=12000;
 camera.wheelDeltaPercentage=0.02;
-camera.pinchDeltaPercentage=0.015;
-camera.pinchPrecision=12;
+camera.pinchDeltaPercentage=0.008;
+camera.pinchPrecision=18;
 camera.useNaturalPinchZoom=true;
 camera.panningSensibility=15;
-camera.attachControl(canvas,true);
-if(camera.inputs&&camera.inputs.attached&&camera.inputs.attached.pointers){
-  camera.inputs.attached.pointers.multiTouchPanAndZoom=true;
+camera.attachControl(canvas,false);
+
+// custom touch behavior
+
+const pointers = camera.inputs.attached.pointers;
+
+if(pointers){
+
+  // 1 finger = pan
+  pointers.buttons = [0];
+
+  camera.panningSensibility = 25;
+
+  // disable default multitouch
+  pointers.multiTouchPanAndZoom = false;
+
 }
+
+scene.onPointerObservable.add((pi)=>{
+
+  if(pi.type !== BABYLON.PointerEventTypes.POINTERMOVE) return;
+
+  const evt = pi.event;
+
+  if(!evt.touches) return;
+
+  // 2 fingers = rotate
+  if(evt.touches.length === 2){
+
+    camera.inertia = 0.7;
+
+    camera.alpha -= evt.movementX * 0.002;
+    camera.beta  -= evt.movementY * 0.002;
+
+  }
+
+});
 
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
 hemi.intensity=0.96;
@@ -409,6 +442,7 @@ const lineMaterials=[];
 const connectionMeshes=[];
 let allData=[];
 let focusedId=null;
+let savedCameraState = null;
 let suppressPop=false;
 let tapCandidate=null;
 let panelOpen=false;
@@ -972,8 +1006,29 @@ function applyFocusLayout(centerId,relativeSet){
     )));
   });
 }
+function saveCameraState(){
 
+  savedCameraState = {
+    alpha: camera.alpha,
+    beta: camera.beta,
+    radius: camera.radius,
+    target: camera.target.clone()
+  };
+
+}
+
+function restoreCameraState(){
+
+  if(!savedCameraState) return;
+
+  camera.alpha = savedCameraState.alpha;
+  camera.beta  = savedCameraState.beta;
+  camera.radius = savedCameraState.radius;
+  camera.target.copyFrom(savedCameraState.target);
+
+}
 function enterFocus(id){
+saveCameraState();
   if(!nodes[id]) return;
   if(focusedId===id){resetFocus(false);return;}
 
@@ -991,7 +1046,9 @@ function enterFocus(id){
 
   const pos=getNodePos(id);
   if(pos){
-    const newTarget=pos.clone();
+    const newTarget = pos.clone();
+
+camera.target.copyFrom(newTarget);
     const newRadius=Math.max(18,nodes[id].size*4.5);
     camera.lowerRadiusLimit=4;
     camera.upperRadiusLimit=2000;
@@ -1022,7 +1079,9 @@ function enterFocus(id){
 }
 
 function resetFocus(fromPop){
+
   focusedId=null;
+
   restoreOriginalPositions();
 
   Object.values(nodes).forEach(n=>{
@@ -1033,29 +1092,7 @@ function resetFocus(fromPop){
 
   renderConnections();
 
-  camera.lowerRadiusLimit=6;
-  camera.upperRadiusLimit=8000;
-
-  BABYLON.Animation.CreateAndStartAnimation(
-    'camTargetReset',
-    camera,
-    'target',
-    60,
-    30,
-    camera.target.clone(),
-    BABYLON.Vector3.Zero(),
-    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-  );
-  BABYLON.Animation.CreateAndStartAnimation(
-    'camRadiusReset',
-    camera,
-    'radius',
-    60,
-    30,
-    camera.radius,
-    760,
-    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-  );
+  restoreCameraState();
 
   resetInfo();
   hideSearchResults();
@@ -1167,7 +1204,22 @@ document.addEventListener('click',e=>{
   }
 });
 
-homeBtn.addEventListener('click',()=>resetFocus(false));
+homeBtn.addEventListener('click',()=>{
+
+  focusedId = null;
+
+  restoreOriginalPositions();
+
+  camera.target.set(0,0,0);
+  camera.radius = 760;
+  camera.alpha = -Math.PI/2;
+  camera.beta = Math.PI/3.1;
+
+  renderConnections();
+
+  resetInfo();
+
+});
 window.addEventListener('popstate',()=>{if(focusedId)resetFocus(true);});
 
 scene.onPointerObservable.add((pi)=>{
