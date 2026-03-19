@@ -240,61 +240,35 @@ const engine=new BABYLON.Engine(canvas,true);
 const scene=new BABYLON.Scene(engine);
 scene.clearColor=new BABYLON.Color4(0.01,0.02,0.05,1);
 
-const camera=new BABYLON.ArcRotateCamera(
+const camera = new BABYLON.ArcRotateCamera(
   'cam',
-  -Math.PI/2,
-  Math.PI/3.1,
+  -Math.PI / 2,
+  Math.PI / 3.1,
   760,
-  BABYLON.Vector3.Zero(),
+  new BABYLON.Vector3(0, 0, 0),
   scene
 );
 
+camera.attachControl(canvas, true);
 
-camera.attachControl(canvas,true);
-let lastX = 0;
-let lastY = 0;
+// safe camera settings
+camera.inertia = 0.82;
 
-scene.onPointerObservable.add((pi)=>{
-
-  if(pi.type === BABYLON.PointerEventTypes.POINTERDOWN){
-    lastX = scene.pointerX;
-    lastY = scene.pointerY;
-  }
-
-  if(pi.type !== BABYLON.PointerEventTypes.POINTERMOVE) return;
-
-  if(pi.event.buttons !== 1) return;
-
-  const dx = scene.pointerX - lastX;
-  const dy = scene.pointerY - lastY;
-
-  lastX = scene.pointerX;
-  lastY = scene.pointerY;
-
-  const panSpeed = camera.radius * 0.004;
-
-  const right = camera.getDirection(BABYLON.Axis.X);
-  const up = camera.getDirection(BABYLON.Axis.Y);
-
-  const move =
-    right.scale(-dx * panSpeed)
-    .add(up.scale(dy * panSpeed));
-
-  camera.target.addInPlace(move);
-
-});
-camera.inertia = 0.8;
-
-camera.wheelDeltaPercentage = 0.01;
-camera.pinchDeltaPercentage = 0.004;
-camera.pinchPrecision = 12;
+camera.wheelDeltaPercentage = 0.008;
+camera.pinchDeltaPercentage = 0.003;
+camera.pinchPrecision = 14;
 
 camera.lowerRadiusLimit = 4;
 camera.upperRadiusLimit = 12000;
 
+camera.lowerBetaLimit = 0.08;
+camera.upperBetaLimit = Math.PI / 2.02;
 
+camera.angularSensibilityX = 1400;
+camera.angularSensibilityY = 1400;
 
-// custom touch behavior
+camera.panningSensibility = 140;
+ custom touch behavior
 
 
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
@@ -1052,7 +1026,7 @@ saveCameraState();
   if(pos){
     const newTarget = pos.clone();
 
-camera.target.copyFrom(newTarget);
+
     const newRadius=Math.max(80,nodes[id].size*4);
     camera.lowerRadiusLimit=4;
     camera.upperRadiusLimit=2000;
@@ -1214,7 +1188,7 @@ homeBtn.addEventListener('click',()=>{
 
   restoreOriginalPositions();
 
-  camera.target.set(0,0,0);
+  camera.setTarget(BABYLON.Vector3.Zero());
   camera.radius = 760;
   camera.alpha = -Math.PI/2;
   camera.beta = Math.PI/3.1;
