@@ -264,32 +264,32 @@ const camera = new BABYLON.ArcRotateCamera(
 
 camera.attachControl(canvas, true);
 
+// Let Babylon handle 1-finger rotate and 2-finger pinch natively.
+// Do NOT set buttons=[] — that kills all touch input including pinch.
 const pointers = camera.inputs.attached.pointers;
 if (pointers) {
-  pointers.buttons = [];
+  // Allow left-button (touch) rotation, disable multi-touch panning
+  // so pinch is ONLY zoom, not pan+zoom.
   pointers.multiTouchPanAndZoom = false;
-  pointers.multiTouchPanning = false;
-  pointers.pinchZoom = true;
+  pointers.multiTouchPanning   = false;
 }
-camera.pinchToPanMaxDistance = 0;
 
-// safe camera settings
-camera.inertia = 0.82;
-camera.wheelDeltaPercentage = 0.004;
-camera.pinchDeltaPercentage = 0.003;
-camera.pinchPrecision = 18;
-camera.lowerRadiusLimit = 4;
-camera.upperRadiusLimit = 12000;
-camera.lowerBetaLimit = 0.08;
-camera.upperBetaLimit = Math.PI / 2.02;
-camera.angularSensibilityX = 700;
-camera.angularSensibilityY = 700;
-camera.panningSensibility = 40;
+camera.inertia               = 0.82;
+camera.wheelDeltaPercentage  = 0.008;
+camera.pinchDeltaPercentage  = 0.006;  // pinch zoom speed
+camera.pinchPrecision        = 12;
+camera.lowerRadiusLimit      = 10;
+camera.upperRadiusLimit      = 12000;
+camera.lowerBetaLimit        = 0.08;
+camera.upperBetaLimit        = Math.PI / 2.02;
+camera.angularSensibilityX   = 700;
+camera.angularSensibilityY   = 700;
+camera.panningSensibility     = 0;     // disable pan entirely
 
-let lastX = 0;
-let lastY = 0;
-let isSingleFingerPan = false;
-let isMultiTouchGesture = false;
+// Tap state (native touch events handle mobile, pointer obs handles desktop)
+let tapStart    = null;   // {x, y, t, id} set on touchstart
+let tapMulti    = false;  // true if 2+ fingers involved in current gesture
+let mouseDown   = null;   // {x, y, t, id} for desktop mouse click
 
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
 hemi.intensity=0.96;
@@ -424,7 +424,7 @@ let allData=[];
 let focusedId=null;
 let savedCameraState = null;
 let suppressPop=false;
-let tapCandidate=null;
+// tapCandidate removed — see tapStart above
 let panelOpen=false;
 let searchMatches=[];
 let activeSearchIndex=-1;
@@ -1079,114 +1079,129 @@ document.addEventListener('click',e=>{
 });
 
 homeBtn.addEventListener('click',()=>{
-  focusedId = null;
+  focusedId    = null;
+  tapStart  = null;
+  tapMulti  = false;
+  mouseDown = null;
   restoreOriginalPositions();
-  camera.setTarget(BABYLON.Vector3.Zero());
-  camera.radius = 760;
-  camera.alpha = -Math.PI/2;
-  camera.beta = Math.PI/3.1;
-  renderConnections();
+  Object.values(nodes).forEach(n=>{
+    var mat=n.sphere.material;
+    mat.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
+    mat.alpha=1;
+    n.sphere.setEnabled(true);
+    if(n.label) n.label.scaling.setAll(1);
+  });
+  clearConnectionVisuals();
+  BABYLON.Animation.CreateAndStartAnimation('camT',camera,'target',60,30,camera.target.clone(),BABYLON.Vector3.Zero(),BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  BABYLON.Animation.CreateAndStartAnimation('camR',camera,'radius',60,30,camera.radius,760,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
   resetInfo();
 });
 
 window.addEventListener('popstate',()=>{ if(focusedId) resetFocus(true); });
 
-scene.onPointerObservable.add((pi)=>{
+// ── MOBILE: native touch events (no Babylon interference) ──────────────────
+// Babylon's attachControl owns all camera movement (1-finger rotate, 2-finger
+// pinch zoom). We only intercept touchstart/touchend for tap detection.
+
+canvas.addEventListener('touchstart', function(e) {
+  if (e.touches.length > 1) {
+    // Second finger arrived → definitely a pinch, cancel any pending tap
+    tapMulti = true;
+    tapStart = null;
+    return;
+  }
+  // First finger down
+  tapMulti = false;
+  var t = e.touches[0];
+  var rect = canvas.getBoundingClientRect();
+  var cx = t.clientX - rect.left;
+  var cy = t.clientY - rect.top;
+  // Ray-pick at touch start so we know what was under the finger
+  var pick = scene.pick(cx, cy);
+  tapStart = {
+    x:  cx,
+    y:  cy,
+    t:  Date.now(),
+    id: (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata)
+          ? pick.pickedMesh.metadata.id : null
+  };
+}, { passive: true });
+
+canvas.addEventListener('touchmove', function(e) {
+  if (e.touches.length > 1) {
+    // Finger count grew during move → it's a pinch
+    tapMulti = true;
+    tapStart = null;
+  }
+}, { passive: true });
+
+canvas.addEventListener('touchend', function(e) {
+  if (e.touches.length > 0) {
+    // Still fingers on screen (one of two lifted) → pinch, not tap
+    tapMulti = true;
+    tapStart = null;
+    return;
+  }
+  // All fingers lifted
+  if (tapMulti || !tapStart) {
+    tapMulti = false;
+    tapStart = null;
+    return;
+  }
+  var ct = e.changedTouches[0];
+  var rect = canvas.getBoundingClientRect();
+  var cx = ct.clientX - rect.left;
+  var cy = ct.clientY - rect.top;
+  var moved   = Math.hypot(cx - tapStart.x, cy - tapStart.y);
+  var elapsed = Date.now() - tapStart.t;
+  var pickedId = tapStart.id;
+  tapStart = null;
+  tapMulti = false;
+  if (moved > 14 || elapsed > 500) return; // was a drag, not a tap
+  handleTap(pickedId);
+}, { passive: true });
+
+// ── DESKTOP: mouse click via Babylon observable ──────────────────────────────
+scene.onPointerObservable.add(function(pi) {
+  // Skip entirely on touch devices (handled above)
+  var evt = pi.event;
+  if (evt && evt.pointerType === 'touch') return;
+
   if (pi.type === BABYLON.PointerEventTypes.POINTERDOWN) {
-    lastX = scene.pointerX;
-    lastY = scene.pointerY;
-
-    const evt = pi.event;
-    const touches = evt && evt.touches ? evt.touches.length : 0;
-
-    if (touches > 1) {
-      isMultiTouchGesture = true;
-      isSingleFingerPan = false;
-      tapCandidate = null;
-      return;
-    }
-
-    isSingleFingerPan = true;
-    isMultiTouchGesture = false;
-
-    const pick = scene.pick(scene.pointerX, scene.pointerY);
-    tapCandidate = {
-      x: scene.pointerX,
-      y: scene.pointerY,
-      t: Date.now(),
+    var pick = scene.pick(scene.pointerX, scene.pointerY);
+    mouseDown = {
+      x:  scene.pointerX,
+      y:  scene.pointerY,
+      t:  Date.now(),
       id: (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata)
-        ? pick.pickedMesh.metadata.id
-        : null
+            ? pick.pickedMesh.metadata.id : null
     };
   }
-
-  if (pi.type === BABYLON.PointerEventTypes.POINTERMOVE) {
-    const evt = pi.event;
-    const touches = evt && evt.touches ? evt.touches.length : 0;
-
-    if (touches > 1) {
-      isMultiTouchGesture = true;
-      isSingleFingerPan = false;
-      lastX = scene.pointerX;
-      lastY = scene.pointerY;
-      return;
-    }
-
-    if (!isSingleFingerPan || isMultiTouchGesture) return;
-
-    const dx = scene.pointerX - lastX;
-    const dy = scene.pointerY - lastY;
-
-    lastX = scene.pointerX;
-    lastY = scene.pointerY;
-
-    const speed = camera.radius * 0.0014;
-    camera.target.x -= dx * speed;
-    camera.target.z += dy * speed;
-  }
-
   if (pi.type === BABYLON.PointerEventTypes.POINTERUP) {
-    const evt = pi.event;
-    const touches = evt && evt.touches ? evt.touches.length : 0;
-
-    if (touches > 0) {
-      lastX = scene.pointerX;
-      lastY = scene.pointerY;
-      return;
-    }
-
-    const wasMultiTouch = isMultiTouchGesture;
-    isSingleFingerPan = false;
-    isMultiTouchGesture = false;
-
-    if (wasMultiTouch) {
-      tapCandidate = null;
-      return;
-    }
-
-    if (!tapCandidate) return;
-
-    const dx = scene.pointerX - tapCandidate.x;
-    const dy = scene.pointerY - tapCandidate.y;
-    const moved = Math.hypot(dx, dy);
-    const elapsed = Date.now() - tapCandidate.t;
-    const pickedId = tapCandidate.id;
-    tapCandidate = null;
-
-    if (moved > 8 || elapsed > 450) return;
-
-    if (pickedId && nodes[pickedId]) {
-      if (focusedId === pickedId) resetFocus(false);
-      else enterFocus(pickedId);
-    } else {
-      if (focusedId) resetFocus(false);
-      else resetInfo();
-    }
+    if (!mouseDown) return;
+    var dx      = scene.pointerX - mouseDown.x;
+    var dy      = scene.pointerY - mouseDown.y;
+    var moved   = Math.hypot(dx, dy);
+    var elapsed = Date.now() - mouseDown.t;
+    var pickedId = mouseDown.id;
+    mouseDown = null;
+    if (moved > 8 || elapsed > 400) return;
+    handleTap(pickedId);
   }
 },
 BABYLON.PointerEventTypes.POINTERDOWN |
-BABYLON.PointerEventTypes.POINTERUP |
-BABYLON.PointerEventTypes.POINTERMOVE);
+BABYLON.PointerEventTypes.POINTERUP);
+
+// ── Shared tap handler ───────────────────────────────────────────────────────
+function handleTap(pickedId) {
+  if (pickedId && nodes[pickedId]) {
+    if (focusedId === pickedId) resetFocus(false);
+    else enterFocus(pickedId);
+  } else {
+    if (focusedId) resetFocus(false);
+    else resetInfo();
+  }
+}
 
 fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
   .then(r=>{
