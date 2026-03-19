@@ -95,6 +95,140 @@ const light2 = new BABYLON.PointLight(
   scene
 );
 light2.intensity = 1.2;
+const sunLight = new BABYLON.DirectionalLight(
+  "sun",
+  new BABYLON.Vector3(-1,-2,-1),
+  scene
+);
+
+sunLight.intensity = 1.2;
+const env = BABYLON.CubeTexture.CreateFromPrefilteredData(
+  "https://playground.babylonjs.com/textures/environment.env",
+  scene
+);
+
+scene.environmentTexture = env;
+scene.environmentIntensity = 1.0;
+// ===== NEBULA SKY =====
+
+const sky = BABYLON.MeshBuilder.CreateSphere(
+  "sky",
+  {
+    diameter: 6000,
+    segments: 32
+  },
+  scene
+);
+
+const skyMat = new BABYLON.StandardMaterial(
+  "skyMat",
+  scene
+);
+
+skyMat.backFaceCulling = false;
+
+skyMat.disableLighting = true;
+
+skyMat.diffuseTexture = new BABYLON.Texture(
+  "https://playground.babylonjs.com/textures/nebula.jpg",
+  scene
+);
+
+skyMat.diffuseTexture.coordinatesMode =
+  BABYLON.Texture.SKYBOX_MODE;
+
+skyMat.emissiveColor = new BABYLON.Color3(
+  0.6,
+  0.6,
+  0.7
+);
+
+sky.material = skyMat;
+// ===== STARS =====
+
+for(let i=0;i<400;i++){
+
+  const s = BABYLON.MeshBuilder.CreateSphere(
+    "star",
+    {diameter:1},
+    scene
+  );
+
+  s.position.x = (Math.random()-0.5) * 4000;
+  s.position.y = (Math.random()-0.5) * 4000;
+  s.position.z = (Math.random()-0.5) * 4000;
+
+  const sm = new BABYLON.StandardMaterial(
+    "starMat",
+    scene
+  );
+
+  sm.emissiveColor = BABYLON.Color3.White();
+
+  s.material = sm;
+
+}
+// ===== COSMIC PARTICLES =====
+
+const particleSystem = new BABYLON.ParticleSystem(
+  "spaceDust",
+  2000,
+  scene
+);
+
+particleSystem.particleTexture =
+  new BABYLON.Texture(
+    "https://playground.babylonjs.com/textures/flare.png",
+    scene
+  );
+
+particleSystem.emitter = new BABYLON.Vector3(0,0,0);
+
+particleSystem.minEmitBox =
+  new BABYLON.Vector3(-2000,-2000,-2000);
+
+particleSystem.maxEmitBox =
+  new BABYLON.Vector3(2000,2000,2000);
+
+particleSystem.color1 =
+  new BABYLON.Color4(1,1,1,0.6);
+
+particleSystem.color2 =
+  new BABYLON.Color4(0.6,0.8,1,0.6);
+
+particleSystem.colorDead =
+  new BABYLON.Color4(0,0,0,0);
+
+particleSystem.minSize = 1;
+particleSystem.maxSize = 4;
+
+particleSystem.minLifeTime = 9999;
+particleSystem.maxLifeTime = 9999;
+
+particleSystem.emitRate = 200;
+
+particleSystem.blendMode =
+  BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+
+particleSystem.gravity =
+  new BABYLON.Vector3(0,0,0);
+
+particleSystem.direction1 =
+  new BABYLON.Vector3(0,0,0);
+
+particleSystem.direction2 =
+  new BABYLON.Vector3(0,0,0);
+
+particleSystem.minAngularSpeed = 0;
+particleSystem.maxAngularSpeed = 0;
+
+particleSystem.minEmitPower = 0;
+particleSystem.maxEmitPower = 0;
+
+particleSystem.updateSpeed = 0.01;
+
+particleSystem.start();
+
 const glow = new BABYLON.GlowLayer("glow", scene, {
   blurKernelSize: 64
 });
@@ -254,21 +388,43 @@ plane.material=mat;
 
 function createNode(d,x,y,z,familyRingColor){
   const size=sizeFor(d),baseColor=modelColor(d);
-  const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:28},scene);
+  const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:64},scene);
   sphere.position=new BABYLON.Vector3(x,y,z);
 
-  const sm=new BABYLON.StandardMaterial('sm_'+d.id,scene);
-  const tex=new BABYLON.Texture('./'+spriteFile(d),scene,true,false);
-  tex.hasAlpha=true;
+ const sm = new BABYLON.PBRMaterial(
+  'sm_'+d.id,
+  scene
+);
 
-  sm.diffuseTexture=tex;
-  sm.diffuseColor=baseColor.scale(0.7);
-  sm.specularColor=new BABYLON.Color3(1,1,1);
-  sm.specularPower=64;
-  sm.emissiveColor=baseColor.scale(0.15);
-  sm.backFaceCulling=false;
-  sm.alpha=0.96;
-  sphere.material=sm;
+const tex = new BABYLON.Texture(
+  './'+spriteFile(d),
+  scene,
+  true,
+  false
+);
+
+tex.hasAlpha = true;
+
+sm.albedoTexture = tex;
+
+sm.albedoColor = BABYLON.Color3.White();
+
+// surface clarity
+sm.roughness = 0.35;
+sm.metallic = 0.05;
+
+// light reflection
+sm.environmentIntensity = 1.0;
+
+// small color tint from model
+sm.emissiveColor = modelColor(d).scale(0.03);
+
+// important for sprites with alpha
+sm.useAlphaFromAlbedoTexture = true;
+
+sm.backFaceCulling = false;
+
+sphere.material = sm;
   
 
   createLabel(d.Name||d.id,sphere,size);
@@ -969,6 +1125,12 @@ const glowBlue =
         BABYLON.Color3.White().scale(pulse);
     }
   });
+sky.rotation.y += 0.00005;
+particleSystem.emitter.x =
+  Math.sin(performance.now()*0.00005)*200;
+
+particleSystem.emitter.z =
+  Math.cos(performance.now()*0.00005)*200;
 
   scene.render();
 
