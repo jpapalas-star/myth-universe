@@ -281,8 +281,17 @@ const camera = new BABYLON.ArcRotateCamera(
 camera.attachControl(canvas, true);
 
 const pointers = camera.inputs.attached.pointers;
+
 if (pointers) {
-  pointers.buttons = [];
+
+  pointers.buttons = []; // disable rotate
+
+  pointers.multiTouchPanAndZoom = false; // ❌ αυτό κάνει το pinch pan
+
+  pointers.multiTouchPanning = false;
+
+  pointers.pinchZoom = true;
+
 }
 
 let lastX = 0;
@@ -1241,8 +1250,6 @@ scene.onPointerObservable.add((pi)=>{
   const evt = pi.event;
 
   if(evt && evt.touches && evt.touches.length > 1) return;
-
-  if(evt.buttons !== 1) return;
 
   const dx = scene.pointerX - lastX;
   const dy = scene.pointerY - lastY;
