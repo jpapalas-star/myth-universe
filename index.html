@@ -1223,8 +1223,10 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
 
 function mythGroup(d){
 
-  const model=(d.ModelType||"").toLowerCase();
-  const cat=(d.Category||"").toLowerCase();
+  if(!d) return "outer";
+
+  const model=((d.ModelType)||"").toLowerCase();
+  const cat=((d.Category)||"").toLowerCase();
 
   if(d.id==="PRIM_CHAOS_001") return "center";
 
@@ -1254,9 +1256,12 @@ families
 .filter(f=>!f.parents.includes("PRIM_CHAOS_001"))
 .forEach(f=>{
 
-  const p=dataMap[f.parents[0]];
+  const firstParentId = f.parents && f.parents.length ? f.parents[0] : null;
+  const p = firstParentId ? dataMap[firstParentId] : null;
 
-  const zone=mythGroup(p);
+  if(!p) return;
+
+  const zone = mythGroup(p);
 
   if(!famsByZone[zone]) famsByZone[zone]=[];
 
@@ -1292,7 +1297,7 @@ Object.entries(famsByZone).forEach(([zone,fams])=>{
 
     // leftovers / mortals closer than before
     const mortals = all.filter(
-d=>!placed.has(d.id) && mythGroup(d)==="mortal"
+  d=>d && !placed.has(d.id) && mythGroup(d)==="mortal"
 );
 
 mortals.forEach((d,i)=>{
