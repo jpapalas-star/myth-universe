@@ -1250,21 +1250,21 @@ function mythGroup(d){
 
   if(!d) return "outer";
 
-  const model=((d.ModelType)||"").toLowerCase();
-  const cat=((d.Category)||"").toLowerCase();
+  const model = String(d.ModelType||"").toLowerCase();
+  const cat   = String(d.Category||"").toLowerCase();
 
   if(d.id==="PRIM_CHAOS_001") return "center";
 
-  if(cat.includes("πρωτο") || model==="energy")
+  if(cat.includes("proto") || model==="energy")
     return "primordial";
 
-  if(cat.includes("τιτά") || model==="giant")
+  if(cat.includes("titan") || model==="giant")
     return "titan";
 
-  if(cat.includes("ολυμπ") || model==="god" || model==="goddess")
+  if(cat.includes("olymp") || model==="god" || model==="goddess")
     return "olympian";
 
-  if(cat.includes("ήρω") || model==="hero")
+  if(cat.includes("hero") || model==="hero")
     return "hero";
 
   if(model==="human")
@@ -1310,7 +1310,7 @@ Object.entries(famsByZone).forEach(([zone,fams])=>{
 
   fams.forEach((f,i)=>{
 
-if(f.parents.includes("PRIM_CHAOS_001")) return;
+if(f.parents && f.parents.includes("PRIM_CHAOS_001")) return;
     const angle=(Math.PI*2*i/n)-Math.PI/2;
 
     const cx = Z.x + Math.cos(angle)*Z.r;
@@ -1330,7 +1330,7 @@ if(f.parents.includes("PRIM_CHAOS_001")) return;
 
     // leftovers / mortals closer than before
     const mortals = all.filter(
-  d=>d && !placed.has(d.id) && mythGroup(d)==="mortal"
+  d=>d && d.id && !placed.has(d.id) && mythGroup(d)==="mortal"
 );
 
 mortals.forEach((d,i)=>{
