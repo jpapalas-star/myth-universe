@@ -248,11 +248,11 @@ const camera=new BABYLON.ArcRotateCamera(
   BABYLON.Vector3.Zero(),
   scene
 );
-camera.lowerRadiusLimit=6;
+camera.lowerRadiusLimit=2;
 camera.upperRadiusLimit=12000;
-camera.wheelDeltaPercentage=0.06;
-camera.pinchDeltaPercentage=0.06;
-camera.pinchPrecision=2.5;
+camera.wheelDeltaPercentage=0.02;
+camera.pinchDeltaPercentage=0.015;
+camera.pinchPrecision=12;
 camera.useNaturalPinchZoom=true;
 camera.panningSensibility=15;
 camera.attachControl(canvas,true);
@@ -748,7 +748,8 @@ function placeFamily(center,family,famColor){
   const children=family.children.map(id=>dataMap[id]).filter(Boolean);
 
   if(parents.length===1){
-    createNode(parents[0],center.x,center.y,center.z,famColor);
+   if(parents[0].id==="PRIM_CHAOS_001") return;
+if(parents[1] && parents[1].id==="PRIM_CHAOS_001") return; createNode(parents[0],center.x,center.y,center.z,famColor);
   }else if(parents.length>=2){
     const gap=9;
     createNode(parents[0],center.x-gap/2,center.y,center.z,famColor);
@@ -1278,7 +1279,7 @@ function mythGroup(d){
 const famsByZone={};
 
 families
-.filter(f=>!f.parents.includes("PRIM_CHAOS_001"))
+.filter(f=>f.parents && !f.parents.includes("PRIM_CHAOS_001"))
 .forEach(f=>{
 
   const firstParentId =
@@ -1310,7 +1311,8 @@ Object.entries(famsByZone).forEach(([zone,fams])=>{
 
   fams.forEach((f,i)=>{
 
-if(f.parents && f.parents.includes("PRIM_CHAOS_001")) return;
+  if(!f.parents) return;
+  if(f.parents.includes("PRIM_CHAOS_001")) return;
     const angle=(Math.PI*2*i/n)-Math.PI/2;
 
     const cx = Z.x + Math.cos(angle)*Z.r;
