@@ -279,7 +279,12 @@ const camera = new BABYLON.ArcRotateCamera(
 );
 
 camera.attachControl(canvas, true);
-camera.inputs.remove(camera.inputs.attached.pointers);
+
+const pointers = camera.inputs.attached.pointers;
+if (pointers) {
+  pointers.buttons = [];
+}
+
 let lastX = 0;
 let lastY = 0;
 
