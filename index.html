@@ -300,12 +300,7 @@ pointLight.intensity=1.15;
 const sunLight=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-1,-2,-1),scene);
 sunLight.intensity=1.1;
 
-const env=new BABYLON.CubeTexture.CreateFromPrefilteredData(
-  "https://playground.babylonjs.com/textures/environment.env",
-  scene
-);
-scene.environmentTexture=env;
-scene.environmentIntensity=1.0;
+// Environment texture skipped — not needed and can fail on mobile
 
 const glow=new BABYLON.GlowLayer("glow",scene,{blurKernelSize:64});
 glow.intensity=0.55;
@@ -512,10 +507,14 @@ function sizeFor(d){
   const id=String(d.id||'');
 
   if(id==="PRIM_CHAOS_001") return 18;
-  if(cat.includes("ολυμπ") || model==="god" || model==="goddess") return 10;
-  if(cat.includes("τιτά") || model==="giant") return 8.5;
-  if(model==="hero" || model==="spirit") return 7;
-  return 5.8;
+  if(model==="god"||model==="goddess") return 10;
+  if(model==="giant") return 8.5;
+  if(model==="energy") return 9;
+  if(model==="group") return 8;
+  if(model==="human"||model==="nymph") return 6.5;
+  if(model==="monster") return 7.5;
+  if(model==="spirit"||model==="wind"||model==="underworld") return 6.2;
+  return 6.0;
 }
 
 function addRing(parentMesh,color,diameter,thickness){
@@ -587,6 +586,7 @@ function createLabel(text,parentMesh,size){
 }
 
 function createNode(d,x,y,z,familyRingColor){
+  if(!d||placed.has(d.id))return; // guard against duplicates
   const size=sizeFor(d);
   const tint=genderPlanetTint(d);
 
@@ -598,10 +598,10 @@ function createNode(d,x,y,z,familyRingColor){
   tex.hasAlpha=true;
   sm.albedoTexture=tex;
   sm.albedoColor=tint;
-  sm.roughness=0.38;
-  sm.metallic=0.04;
-  sm.environmentIntensity=1.0;
-  sm.emissiveColor=tint.scale(0.03);
+  sm.roughness=0.55;
+  sm.metallic=0.12;
+  sm.environmentIntensity=0; // no env texture loaded
+  sm.emissiveColor=tint.scale(0.18); // more self-glow so spheres are visible
   sm.useAlphaFromAlbedoTexture=true;
   sm.backFaceCulling=false;
   sphere.material=sm;
@@ -944,8 +944,11 @@ function enterFocus(id){
 
   Object.values(nodes).forEach(n=>{
     n.sphere.setEnabled(true);
-    n.sphere.material.alpha=relatives.has(n.id)?1:0.12;
-    if(n.label) n.label.scaling.setAll(relatives.has(n.id)?1.18:0.92);
+    const rel=relatives.has(n.id);
+    const mat=n.sphere.material;
+    mat.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+    mat.alpha=rel?1:0.1;
+    if(n.label) n.label.scaling.setAll(rel?1:0.7);
   });
 
   applyFocusLayout(id,relatives);
@@ -970,12 +973,14 @@ function resetFocus(fromPop){
   restoreOriginalPositions();
 
   Object.values(nodes).forEach(n=>{
-    n.sphere.material.alpha=1;
+    const mat=n.sphere.material;
+    mat.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
+    mat.alpha=1;
     n.sphere.setEnabled(true);
     if(n.label) n.label.scaling.setAll(1);
   });
 
-  renderConnections();
+  clearConnectionVisuals(); // clear lines — clean galaxy view on reset
   restoreCameraState();
   resetInfo();
   hideSearchResults();
@@ -1212,15 +1217,28 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     function mythGroup(d){
       if(!d) return "outer";
       const model = String(d.ModelType||"").toLowerCase();
-      const cat   = String(d.Category||"").toLowerCase();
-      if(d.id==="PRIM_CHAOS_001") return "center";
-      if(cat.includes("proto") || model==="energy") return "primordial";
-      if(cat.includes("titan") || model==="giant") return "titan";
-      if(cat.includes("olymp") || model==="god" || model==="goddess") return "olympian";
-      if(cat.includes("hero") || model==="hero") return "hero";
+      const cat   = normalizeText(String(d.Category||""));
+      const id    = String(d.id||"");
+      if(id==="PRIM_CHAOS_001") return "center";
+      // ModelType is the most reliable field
+      if(model==="energy") return "primordial";
+      if(model==="giant") return "titan";
+      if(model==="god"||model==="goddess") return "olympian";
       if(model==="human") return "mortal";
-      if(model==="monster" || model==="spirit") return "monster";
-      return "outer";
+      if(model==="monster"||model==="spirit") return "monster";
+      if(model==="nymph") return "mortal";
+      if(model==="wind") return "olympian";
+      if(model==="group") return "outer";
+      if(model==="underworld") return "monster";
+      if(model==="creature") return "hero";
+      // Fallback: category text (normalised so Greek diacritics stripped)
+      if(cat.includes("primordial")||cat.includes("prwtogen")) return "primordial";
+      if(cat.includes("titan")) return "titan";
+      if(cat.includes("olymp")||cat.includes("olumpios")) return "olympian";
+      if(cat.includes("hrows")||cat.includes("hero")) return "hero";
+      if(cat.includes("thnit")||cat.includes("mortal")) return "mortal";
+      if(cat.includes("teras")||cat.includes("monster")) return "monster";
+      return "hero"; // default: hero zone rather than outer clump
     }
 
     const famsByZone={};
@@ -1271,9 +1289,9 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
       );
     });
 
-    saveOriginalPositions();
+    saveOriginalPositions(); // must be AFTER all createNode calls
     buildConnections();
-    renderConnections();
+    // No connections rendered at startup — only on focus tap
     resetInfo();
   })
   .catch(err=>{
@@ -1300,8 +1318,9 @@ engine.runRenderLoop(()=>{
         if(index < m.path.length-1){
           const next=m.path[Math.min(m.path.length-1,index+1)];
           const dir=next.subtract(p).normalize();
-          m.mesh.rotationQuaternion=BABYLON.Quaternion.FromLookDirectionLH(dir,BABYLON.Vector3.Up());
-          m.mesh.rotate(BABYLON.Axis.X,Math.PI/2,BABYLON.Space.LOCAL);
+          // align capsule along direction (no .rotate() after setting quaternion)
+          const up = Math.abs(dir.y) < 0.99 ? BABYLON.Vector3.Up() : BABYLON.Vector3.Right();
+          m.mesh.rotationQuaternion = BABYLON.Quaternion.FromLookDirectionLH(dir, up);
         }
       }
       continue;
