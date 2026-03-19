@@ -286,11 +286,10 @@ if (pointers) {
 
   pointers.buttons = []; // disable rotate
 
-  pointers.multiTouchPanAndZoom = false; // ❌ αυτό κάνει το pinch pan
+  pointers.multiTouchPanAndZoom = true; // ✅ allow pinch + pan together
 
-  pointers.multiTouchPanning = false;
-
-  pointers.pinchZoom = true;
+}
+camera.pinchToPanMaxDistance = 0;
 
 }
 
@@ -1249,7 +1248,8 @@ scene.onPointerObservable.add((pi)=>{
 
   const evt = pi.event;
 
-  if(evt && evt.touches && evt.touches.length > 1) return;
+  // μόνο 1 finger κάνει custom pan
+  if(evt && evt.touches && evt.touches.length !== 1) return;
 
   const dx = scene.pointerX - lastX;
   const dy = scene.pointerY - lastY;
