@@ -1197,30 +1197,10 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     const families=buildFamilies(all);
     families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
 
-    const RADIUS = {
-primordial: 70,
-titan: 140,
-olympian: 210,
-hero: 290,
-mortal: 360,
-monster: 430,
-outer: 470
-};
+     
 
 
-    function famGen(f){
-      let minG=99;
-      f.parents.forEach(id=>{
-        const g=Number(dataMap[id]?.Generation||9);
-        if(g<minG) minG=g;
-      });
-      f.children.forEach(id=>{
-        const g=Number(dataMap[id]?.Generation||9);
-        if(g<minG) minG=g;
-      });
-      return Math.min(minG,9);
-    }
-
+    
     const ZONE = {
 
   center: {x:0,z:0,r:60},
