@@ -310,13 +310,47 @@ const camera = new BABYLON.ArcRotateCamera(
 );
 
 camera.attachControl(canvas, true);
+let lastX = 0;
+let lastY = 0;
 
+scene.onPointerObservable.add((pi)=>{
+
+  if(pi.type === BABYLON.PointerEventTypes.POINTERDOWN){
+
+    lastX = scene.pointerX;
+    lastY = scene.pointerY;
+
+  }
+
+  if(pi.type !== BABYLON.PointerEventTypes.POINTERMOVE) return;
+
+  if(pi.event.touches && pi.event.touches.length > 1) return;
+
+  if(pi.event.buttons !== 1) return;
+
+  const dx = scene.pointerX - lastX;
+  const dy = scene.pointerY - lastY;
+
+  lastX = scene.pointerX;
+  lastY = scene.pointerY;
+
+  const speed = camera.radius * 0.002;
+
+  const right = camera.getDirection(BABYLON.Axis.X);
+  const up = camera.getDirection(BABYLON.Axis.Y);
+
+  camera.target.addInPlace(
+    right.scale(-dx * speed)
+      .add(up.scale(dy * speed))
+  );
+
+});
 // safe camera settings
 camera.inertia = 0.82;
 
-camera.wheelDeltaPercentage = 0.008;
-camera.pinchDeltaPercentage = 0.003;
-camera.pinchPrecision = 14;
+camera.wheelDeltaPercentage = 0.08;
+camera.pinchDeltaPercentage = 0.03;
+camera.pinchPrecision = 10;
 
 camera.lowerRadiusLimit = 4;
 camera.upperRadiusLimit = 12000;
@@ -324,10 +358,10 @@ camera.upperRadiusLimit = 12000;
 camera.lowerBetaLimit = 0.08;
 camera.upperBetaLimit = Math.PI / 2.02;
 
-camera.angularSensibilityX = 1400;
-camera.angularSensibilityY = 1400;
+camera.angularSensibilityX = 700;
+camera.angularSensibilityY = 700;
 
-camera.panningSensibility = 140;
+camera.panningSensibility = 40;
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
 hemi.intensity=0.96;
 
@@ -642,7 +676,7 @@ function createLabel(text,parentMesh,size){
   ctx.clearRect(0,0,1024,256);
   ctx.textAlign='center';
   ctx.fillStyle='#ead271';
-  ctx.font='bold 44px Arial';
+  ctx.font='bold 56px Arial';
   if(lines.length===1){
     ctx.fillText(lines[0],512,120);
   }else{
@@ -655,14 +689,14 @@ function createLabel(text,parentMesh,size){
   const plane=BABYLON.MeshBuilder.CreatePlane(
     'label_'+Math.random(),
     {
-      width:Math.max(7,size*1.8+longest*0.18),
-      height:Math.max(2.2,size*0.75)
+      width:Math.max(10,size*2.4+longest*0.3),
+height:Math.max(3.2,size*1.1)
     },
     scene
   );
   plane.parent=parentMesh;
-  plane.position=new BABYLON.Vector3(0,size*1.05,0);
-  plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+  plane.position=new BABYLON.Vector3(0,size*1.6,0);
+ plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
 
   const mat=new BABYLON.StandardMaterial('lmat_'+Math.random(),scene);
   mat.diffuseTexture=dt;
