@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="el">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,9 +8,7 @@
 
 <script>
 window.onerror = function(msg, url, line, col, error) {
-
   const box = document.createElement("div");
-
   box.style.position = "fixed";
   box.style.bottom = "0";
   box.style.left = "0";
@@ -22,15 +20,12 @@ window.onerror = function(msg, url, line, col, error) {
   box.style.fontSize = "12px";
   box.style.zIndex = "99999";
   box.style.padding = "5px";
-
   box.innerText =
     "ERROR: " + msg +
     "\nLINE: " + line +
     "\nCOL: " + col +
     "\n" + error;
-
   document.body.appendChild(box);
-
 };
 </script>
 
@@ -219,25 +214,14 @@ html,body{
 
 <div id="panel">
   <div class="panelTitle">Myth Universe</div>
-
-  <div class="panelRow">
-    <label><input id="toggleLines" type="checkbox" checked> Show lines</label>
-  </div>
-  <div class="panelRow">
-    <label><input id="toggleParticles" type="checkbox" checked> Show particles</label>
-  </div>
-  <div class="panelRow">
-    <label><input id="toggleNebula" type="checkbox" checked> Show nebula</label>
-  </div>
-  <div class="panelRow">
-    <label><input id="toggleStars" type="checkbox" checked> Show stars</label>
-  </div>
-
+  <div class="panelRow"><label><input id="toggleLines" type="checkbox" checked> Show lines</label></div>
+  <div class="panelRow"><label><input id="toggleParticles" type="checkbox" checked> Show particles</label></div>
+  <div class="panelRow"><label><input id="toggleNebula" type="checkbox" checked> Show nebula</label></div>
+  <div class="panelRow"><label><input id="toggleStars" type="checkbox" checked> Show stars</label></div>
   <div class="panelSep"></div>
-
   <div>Drag = rotate</div>
   <div>Pinch / wheel = zoom</div>
-  <div>Shift + drag = pan</div>
+  <div>1 finger drag = pan</div>
   <div>Blue arrows = parent → child</div>
   <div>Red = partners</div>
   <div>Tap entity = family focus</div>
@@ -281,50 +265,39 @@ const camera = new BABYLON.ArcRotateCamera(
 camera.attachControl(canvas, true);
 
 const pointers = camera.inputs.attached.pointers;
-
 if (pointers) {
-  pointers.buttons = [];            // no default mouse/touch rotate
+  pointers.buttons = [];
   pointers.multiTouchPanAndZoom = false;
   pointers.multiTouchPanning = false;
-  pointers.pinchZoom = true;        // keep pinch zoom only
+  pointers.pinchZoom = true;
 }
-
 camera.pinchToPanMaxDistance = 0;
-
-
-
-let lastX = 0;
-let lastY = 0;
-
 
 // safe camera settings
 camera.inertia = 0.82;
-
 camera.wheelDeltaPercentage = 0.004;
 camera.pinchDeltaPercentage = 0.003;
 camera.pinchPrecision = 18;
-
 camera.lowerRadiusLimit = 4;
 camera.upperRadiusLimit = 12000;
-
 camera.lowerBetaLimit = 0.08;
 camera.upperBetaLimit = Math.PI / 2.02;
-
 camera.angularSensibilityX = 700;
 camera.angularSensibilityY = 700;
-
 camera.panningSensibility = 40;
+
+let lastX = 0;
+let lastY = 0;
+let isSingleFingerPan = false;
+let isMultiTouchGesture = false;
+
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
 hemi.intensity=0.96;
 
 const pointLight=new BABYLON.PointLight('p',new BABYLON.Vector3(0,60,0),scene);
 pointLight.intensity=1.15;
 
-const sunLight=new BABYLON.DirectionalLight(
-  'sun',
-  new BABYLON.Vector3(-1,-2,-1),
-  scene
-);
+const sunLight=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-1,-2,-1),scene);
 sunLight.intensity=1.1;
 
 const env=new BABYLON.CubeTexture.CreateFromPrefilteredData(
@@ -344,12 +317,7 @@ const skyMat=new BABYLON.StandardMaterial("skyMat",scene);
 skyMat.backFaceCulling=false;
 skyMat.disableLighting=true;
 
-const skyTexture=new BABYLON.DynamicTexture(
-  "skyTex",
-  {width:1024,height:1024},
-  scene,
-  false
-);
+const skyTexture=new BABYLON.DynamicTexture("skyTex",{width:1024,height:1024},scene,false);
 const skyCtx=skyTexture.getContext();
 skyCtx.fillStyle="#01030a";
 skyCtx.fillRect(0,0,1024,1024);
@@ -432,12 +400,9 @@ particleSystem.maxAngularSpeed=0;
 particleSystem.updateSpeed=0.01;
 particleSystem.start();
 
-// glow only for flow + arrows + chaos + rings
 glow.customEmissiveColorSelector=function(mesh,subMesh,material,result){
   if(!mesh||!material){result.set(0,0,0,0);return;}
-
   const n=mesh.name||"";
-
   if(
     n.startsWith("flow_") ||
     n.startsWith("arrow_") ||
@@ -448,7 +413,6 @@ glow.customEmissiveColorSelector=function(mesh,subMesh,material,result){
     result.set(c.r,c.g,c.b,1);
     return;
   }
-
   result.set(0,0,0,0);
 };
 
@@ -515,7 +479,9 @@ function genderPlanetTint(d){
 }
 
 function spriteFile(d){
-  const sprite=String(d.sprite||''),model=String(d.ModelType||''),gender=String(d.Gender||'').toLowerCase();
+  const sprite=String(d.sprite||''),
+        model=String(d.ModelType||''),
+        gender=String(d.Gender||'').toLowerCase();
 
   if(sprite==='orb-group')return 'group.png';
   if(sprite==='energy-neutral'||sprite==='energy-female')return 'energy.png';
@@ -541,48 +507,19 @@ function spriteFile(d){
 }
 
 function sizeFor(d){
-
   const model=String(d.ModelType||'').toLowerCase();
   const cat=String(d.Category||'').toLowerCase();
   const id=String(d.id||'');
 
-  // CHAOS
   if(id==="PRIM_CHAOS_001") return 18;
-
-  // OLYMPIANS (12 gods)
-  if(
-    cat.includes("ολυμπ") ||
-    model==="god" ||
-    model==="goddess"
-  ){
-    return 10;
-  }
-
-  // TITANS
-  if(
-    cat.includes("τιτά") ||
-    model==="giant"
-  ){
-    return 8.5;
-  }
-
-  // HERO / DEMIGOD / SPIRIT
-  if(
-    model==="hero" ||
-    model==="spirit"
-  ){
-    return 7;
-  }
-
-  // HUMANS / MONSTERS / REST
+  if(cat.includes("ολυμπ") || model==="god" || model==="goddess") return 10;
+  if(cat.includes("τιτά") || model==="giant") return 8.5;
+  if(model==="hero" || model==="spirit") return 7;
   return 5.8;
 }
+
 function addRing(parentMesh,color,diameter,thickness){
-  const ring=BABYLON.MeshBuilder.CreateTorus(
-    'ring_'+Math.random(),
-    {diameter,thickness:thickness||0.11,tessellation:70},
-    scene
-  );
+  const ring=BABYLON.MeshBuilder.CreateTorus('ring_'+Math.random(),{diameter,thickness:thickness||0.11,tessellation:70},scene);
   ring.rotation.x=Math.PI/2;
   ring.parent=parentMesh;
   ring.position=BABYLON.Vector3.Zero();
@@ -591,7 +528,6 @@ function addRing(parentMesh,color,diameter,thickness){
   rm.emissiveColor=color.scale(1.4);
   rm.alpha=0.92;
   ring.material=rm;
-
   glow.addIncludedOnlyMesh(ring);
   return ring;
 }
@@ -600,7 +536,6 @@ function wrapName(text,maxChars){
   const words=String(text||'').split(' ');
   const lines=[];
   let current='';
-
   words.forEach(w=>{
     const next=(current?current+' ':'')+w;
     if(next.length>maxChars && current){
@@ -610,19 +545,13 @@ function wrapName(text,maxChars){
       current=next;
     }
   });
-
   if(current) lines.push(current);
   return lines.slice(0,2);
 }
 
 function createLabel(text,parentMesh,size){
   const lines=wrapName(text,14);
-  const dt=new BABYLON.DynamicTexture(
-    'dt_'+Math.random(),
-    {width:1024,height:256},
-    scene,
-    true
-  );
+  const dt=new BABYLON.DynamicTexture('dt_'+Math.random(),{width:1024,height:256},scene,true);
   dt.hasAlpha=true;
   const ctx=dt.getContext();
   ctx.clearRect(0,0,1024,256);
@@ -638,17 +567,14 @@ function createLabel(text,parentMesh,size){
   dt.update();
 
   const longest=Math.max(...lines.map(s=>s.length),6);
-  const plane=BABYLON.MeshBuilder.CreatePlane(
-    'label_'+Math.random(),
-    {
-      width:Math.max(10,size*2.4+longest*0.3),
-height:Math.max(3.2,size*1.1)
-    },
-    scene
-  );
+  const plane=BABYLON.MeshBuilder.CreatePlane('label_'+Math.random(),{
+    width:Math.max(10,size*2.4+longest*0.3),
+    height:Math.max(3.2,size*1.1)
+  },scene);
+
   plane.parent=parentMesh;
   plane.position=new BABYLON.Vector3(0,size*1.6,0);
- plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+  plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
 
   const mat=new BABYLON.StandardMaterial('lmat_'+Math.random(),scene);
   mat.diffuseTexture=dt;
@@ -657,7 +583,6 @@ height:Math.max(3.2,size*1.1)
   mat.emissiveColor=BABYLON.Color3.White().scale(0.88);
   mat.backFaceCulling=false;
   plane.material=mat;
-
   return plane;
 }
 
@@ -665,17 +590,12 @@ function createNode(d,x,y,z,familyRingColor){
   const size=sizeFor(d);
   const tint=genderPlanetTint(d);
 
-  const sphere=BABYLON.MeshBuilder.CreateSphere(
-    'sphere_'+d.id,
-    {diameter:size,segments:56},
-    scene
-  );
+  const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:56},scene);
   sphere.position=new BABYLON.Vector3(x,y,z);
 
   const sm=new BABYLON.PBRMaterial('sm_'+d.id,scene);
   const tex=new BABYLON.Texture('./'+spriteFile(d),scene,true,false);
   tex.hasAlpha=true;
-
   sm.albedoTexture=tex;
   sm.albedoColor=tint;
   sm.roughness=0.38;
@@ -695,17 +615,7 @@ function createNode(d,x,y,z,familyRingColor){
   if(familyRingColor) rings.push(addRing(sphere,familyRingColor,size*1.12,0.09));
 
   sphere.metadata=Object.assign({},d,{isChaos:String(d.id)==='PRIM_CHAOS_001'});
-
-  nodes[d.id]={
-    id:d.id,
-    data:d,
-    sphere,
-    rings,
-    label,
-    size,
-    familyRingColor:familyRingColor||null
-  };
-
+  nodes[d.id]={id:d.id,data:d,sphere,rings,label,size,familyRingColor:familyRingColor||null};
   placed.add(d.id);
 }
 
@@ -751,7 +661,6 @@ function resetInfo(){
   infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">Chaos center · generation rings · family clusters</div><div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>`;
 }
 
-function setNodeEnabled(id,enabled){const n=nodes[id]; if(n) n.sphere.setEnabled(enabled);}
 function getNodePos(id){return nodes[id]?.sphere.position||null;}
 function saveOriginalPositions(){Object.values(nodes).forEach(n=>originalPositions.set(n.id,n.sphere.position.clone()));}
 function restoreOriginalPositions(){Object.values(nodes).forEach(n=>{const p=originalPositions.get(n.id);if(p)n.sphere.position.copyFrom(p);});}
@@ -764,7 +673,6 @@ function buildFamilies(all){
   all.forEach(d=>{
     const partners=idsFromField(d.Partners);
     const kidsA=new Set(idsFromField(d.Children));
-
     partners.forEach(pid=>{
       const p=dataMap[pid];
       if(!p)return;
@@ -803,41 +711,16 @@ function placeFamily(center,family,famColor){
   const children=family.children.map(id=>dataMap[id]).filter(Boolean);
 
   if (parents.length === 1) {
+    if (parents[0].id === "PRIM_CHAOS_001") return;
+    createNode(parents[0], center.x, center.y, center.z, famColor);
+  } else if (parents.length >= 2) {
+    if (parents[0].id === "PRIM_CHAOS_001") return;
+    if (parents[1] && parents[1].id === "PRIM_CHAOS_001") return;
+    const gap = 9;
+    createNode(parents[0], center.x - gap / 2, center.y, center.z, famColor);
+    createNode(parents[1], center.x + gap / 2, center.y, center.z, famColor);
+  }
 
-  if (parents[0].id === "PRIM_CHAOS_001") return;
-
-  createNode(
-    parents[0],
-    center.x,
-    center.y,
-    center.z,
-    famColor
-  );
-
-}
-else if (parents.length >= 2) {
-
-  if (parents[0].id === "PRIM_CHAOS_001") return;
-  if (parents[1] && parents[1].id === "PRIM_CHAOS_001") return;
-
-  const gap = 9;
-
-  createNode(
-    parents[0],
-    center.x - gap / 2,
-    center.y,
-    center.z,
-    famColor
-  );
-
-  createNode(
-    parents[1],
-    center.x + gap / 2,
-    center.y,
-    center.z,
-    famColor
-  );
-}
   const n=children.length;
   if(!n) return;
 
@@ -915,11 +798,7 @@ function renderConnections(filterSet){
     const curve=BABYLON.Curve3.CreateQuadraticBezier(a.clone(),ctrl,b.clone(),28);
     const path=curve.getPoints();
 
-    const tube=BABYLON.MeshBuilder.CreateTube(
-      'conn_'+idx,
-      {path,radius:rec.type==='partner'?0.10:0.055},
-      scene
-    );
+    const tube=BABYLON.MeshBuilder.CreateTube('conn_'+idx,{path,radius:rec.type==='partner'?0.10:0.055},scene);
     connectionMeshes.push(tube);
 
     const mat=new BABYLON.StandardMaterial('conn_mat_'+idx,scene);
@@ -938,20 +817,10 @@ function renderConnections(filterSet){
     }
 
     tube.material=mat;
-
-    lineMaterials.push({
-      mat,
-      base:rec.color,
-      type:rec.type,
-      phase:Math.random()*Math.PI*2
-    });
+    lineMaterials.push({mat,base:rec.color,type:rec.type,phase:Math.random()*Math.PI*2});
 
     if(rec.type==='parent' && path.length>2){
-      const orb=BABYLON.MeshBuilder.CreateCylinder(
-        'flow_'+idx,
-        {height:0.022,diameter:0.008,tessellation:10},
-        scene
-      );
+      const orb=BABYLON.MeshBuilder.CreateCylinder('flow_'+idx,{height:0.022,diameter:0.008,tessellation:10},scene);
       connectionMeshes.push(orb);
 
       const fm=new BABYLON.StandardMaterial('flowMat_'+idx,scene);
@@ -960,17 +829,11 @@ function renderConnections(filterSet){
       orb.material=fm;
       glow.addIncludedOnlyMesh(orb);
 
-      lineMaterials.push({
-        type:'flow',
-        mesh:orb,
-        path:path,
-        offset:Math.random()
-      });
+      lineMaterials.push({type:'flow',mesh:orb,path:path,offset:Math.random()});
     }
 
     if(rec.type==='parent' && path.length>4){
       const points=[Math.floor(path.length*0.38),Math.floor(path.length*0.68)];
-
       points.forEach((pIdx,arrowIdx)=>{
         const i=Math.max(1,Math.min(path.length-2,pIdx));
         const prev=path[i-1];
@@ -1054,29 +917,25 @@ function applyFocusLayout(centerId,relativeSet){
     )));
   });
 }
-function saveCameraState(){
 
+function saveCameraState(){
   savedCameraState = {
     alpha: camera.alpha,
     beta: camera.beta,
     radius: camera.radius,
     target: camera.target.clone()
   };
-
 }
-
 function restoreCameraState(){
-
   if(!savedCameraState) return;
-
   camera.alpha = savedCameraState.alpha;
   camera.beta  = savedCameraState.beta;
   camera.radius = savedCameraState.radius;
   camera.target.copyFrom(savedCameraState.target);
-
 }
+
 function enterFocus(id){
-saveCameraState();
+  saveCameraState();
   if(!nodes[id]) return;
   if(focusedId===id){resetFocus(false);return;}
 
@@ -1095,31 +954,11 @@ saveCameraState();
   const pos=getNodePos(id);
   if(pos){
     const newTarget = pos.clone();
-
-
     const newRadius=Math.max(80,nodes[id].size*4);
     camera.lowerRadiusLimit=4;
     camera.upperRadiusLimit=2000;
-    BABYLON.Animation.CreateAndStartAnimation(
-      'camTargetFocus',
-      camera,
-      'target',
-      60,
-      30,
-      camera.target.clone(),
-      newTarget,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-    );
-    BABYLON.Animation.CreateAndStartAnimation(
-      'camRadiusFocus',
-      camera,
-      'radius',
-      60,
-      30,
-      camera.radius,
-      newRadius,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-    );
+    BABYLON.Animation.CreateAndStartAnimation('camTargetFocus', camera, 'target', 60, 30, camera.target.clone(), newTarget, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+    BABYLON.Animation.CreateAndStartAnimation('camRadiusFocus', camera, 'radius', 60, 30, camera.radius, newRadius, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
   }
 
   showInfo(dataMap[id]);
@@ -1127,9 +966,7 @@ saveCameraState();
 }
 
 function resetFocus(fromPop){
-
   focusedId=null;
-
   restoreOriginalPositions();
 
   Object.values(nodes).forEach(n=>{
@@ -1139,9 +976,7 @@ function resetFocus(fromPop){
   });
 
   renderConnections();
-
   restoreCameraState();
-
   resetInfo();
   hideSearchResults();
 
@@ -1198,27 +1033,16 @@ indexBtn.addEventListener('click',()=>{
   panelOpen=!panelOpen;
   panelEl.style.display=panelOpen?'block':'none';
 });
-
 toggleLines.addEventListener('change',()=>{
   linesVisible=toggleLines.checked;
   renderConnections(focusedId ? getRelativesSet(focusedId) : null);
 });
-
 toggleParticles.addEventListener('change',()=>{
-  if(toggleParticles.checked){
-    particleSystem.start();
-  }else{
-    particleSystem.stop();
-  }
+  if(toggleParticles.checked) particleSystem.start();
+  else particleSystem.stop();
 });
-
-toggleNebula.addEventListener('change',()=>{
-  sky.setEnabled(toggleNebula.checked);
-});
-
-toggleStars.addEventListener('change',()=>{
-  starMeshes.forEach(s=>s.setEnabled(toggleStars.checked));
-});
+toggleNebula.addEventListener('change',()=>{ sky.setEnabled(toggleNebula.checked); });
+toggleStars.addEventListener('change',()=>{ starMeshes.forEach(s=>s.setEnabled(toggleStars.checked)); });
 
 searchBox.addEventListener('input',e=>runSearch(e.target.value));
 searchBox.addEventListener('keydown',e=>{
@@ -1245,61 +1069,24 @@ searchBox.addEventListener('keydown',e=>{
     hideSearchResults();
   }
 });
-
 document.addEventListener('click',e=>{
-  if(e.target!==searchBox && !searchResults.contains(e.target)){
-    hideSearchResults();
-  }
+  if(e.target!==searchBox && !searchResults.contains(e.target)) hideSearchResults();
 });
 
 homeBtn.addEventListener('click',()=>{
-
   focusedId = null;
-
   restoreOriginalPositions();
-
   camera.setTarget(BABYLON.Vector3.Zero());
   camera.radius = 760;
   camera.alpha = -Math.PI/2;
   camera.beta = Math.PI/3.1;
-
   renderConnections();
-
   resetInfo();
-
 });
-window.addEventListener('popstate',()=>{if(focusedId)resetFocus(true);});
-let isSingleFingerPan = false;
-let isMultiTouchGesture = false;
 
+window.addEventListener('popstate',()=>{ if(focusedId) resetFocus(true); });
 
-  // ===== DOWN =====
-  if(pi.type===BABYLON.PointerEventTypes.POINTERDOWN){
-
-    lastX = scene.pointerX;
-    lastY = scene.pointerY;
-
-    const evt = pi.event;
-
-    if(evt && evt.touches && evt.touches.length > 1){
-      tapCandidate = null;
-      return;
-    }
-
-    const pick = scene.pick(scene.pointerX,scene.pointerY);
-
-    tapCandidate={
-      x:scene.pointerX,
-      y:scene.pointerY,
-      t:Date.now(),
-      id:(pick.hit && pick.pickedMesh && pick.pickedMesh.metadata)
-        ? pick.pickedMesh.metadata.id
-        : null
-    };
-  }
 scene.onPointerObservable.add((pi)=>{
-
-  // ===== DOWN =====
   if (pi.type === BABYLON.PointerEventTypes.POINTERDOWN) {
     lastX = scene.pointerX;
     lastY = scene.pointerY;
@@ -1318,7 +1105,6 @@ scene.onPointerObservable.add((pi)=>{
     isMultiTouchGesture = false;
 
     const pick = scene.pick(scene.pointerX, scene.pointerY);
-
     tapCandidate = {
       x: scene.pointerX,
       y: scene.pointerY,
@@ -1329,7 +1115,6 @@ scene.onPointerObservable.add((pi)=>{
     };
   }
 
-  // ===== MOVE =====
   if (pi.type === BABYLON.PointerEventTypes.POINTERMOVE) {
     const evt = pi.event;
     const touches = evt && evt.touches ? evt.touches.length : 0;
@@ -1351,12 +1136,10 @@ scene.onPointerObservable.add((pi)=>{
     lastY = scene.pointerY;
 
     const speed = camera.radius * 0.0014;
-
     camera.target.x -= dx * speed;
     camera.target.z += dy * speed;
   }
 
-  // ===== UP =====
   if (pi.type === BABYLON.PointerEventTypes.POINTERUP) {
     const evt = pi.event;
     const touches = evt && evt.touches ? evt.touches.length : 0;
@@ -1368,7 +1151,6 @@ scene.onPointerObservable.add((pi)=>{
     }
 
     const wasMultiTouch = isMultiTouchGesture;
-
     isSingleFingerPan = false;
     isMultiTouchGesture = false;
 
@@ -1384,7 +1166,6 @@ scene.onPointerObservable.add((pi)=>{
     const moved = Math.hypot(dx, dy);
     const elapsed = Date.now() - tapCandidate.t;
     const pickedId = tapCandidate.id;
-
     tapCandidate = null;
 
     if (moved > 8 || elapsed > 450) return;
@@ -1397,11 +1178,11 @@ scene.onPointerObservable.add((pi)=>{
       else resetInfo();
     }
   }
-
 },
 BABYLON.PointerEventTypes.POINTERDOWN |
 BABYLON.PointerEventTypes.POINTERUP |
 BABYLON.PointerEventTypes.POINTERMOVE);
+
 fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
   .then(r=>{
     if(!r.ok) throw new Error('HTTP '+r.status);
@@ -1415,140 +1196,80 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     if(chaos) createNode(chaos,0,0,0,null);
 
     const families = buildFamilies(all);
-
-families.forEach(f=>{
-  familyColorByKey.set(
-    f.key,
-    hashColor(f.key)
-  );
-});
+    families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
 
     const ZONE = {
+      center: {x:0,z:0,r:60},
+      primordial: {x:0,z:-110,r:70},
+      titan: {x:-180,z:0,r:90},
+      olympian: {x:180,z:0,r:90},
+      hero: {x:0,z:170,r:105},
+      mortal: {x:0,z:230,r:115},
+      monster: {x:0,z:-200,r:110},
+      outer: {x:0,z:300,r:130}
+    };
 
-  center: {x:0,z:0,r:60},
+    function mythGroup(d){
+      if(!d) return "outer";
+      const model = String(d.ModelType||"").toLowerCase();
+      const cat   = String(d.Category||"").toLowerCase();
+      if(d.id==="PRIM_CHAOS_001") return "center";
+      if(cat.includes("proto") || model==="energy") return "primordial";
+      if(cat.includes("titan") || model==="giant") return "titan";
+      if(cat.includes("olymp") || model==="god" || model==="goddess") return "olympian";
+      if(cat.includes("hero") || model==="hero") return "hero";
+      if(model==="human") return "mortal";
+      if(model==="monster" || model==="spirit") return "monster";
+      return "outer";
+    }
 
-  primordial: {x:0,z:-110,r:70},
+    const famsByZone={};
 
-  titan: {x:-180,z:0,r:90},
+    families
+      .filter(f=>f.parents && !f.parents.includes("PRIM_CHAOS_001"))
+      .forEach(f=>{
+        const firstParentId = f.parents && f.parents.length ? f.parents[0] : null;
+        const p = firstParentId ? dataMap[firstParentId] : null;
+        if(!p) return;
 
-  olympian: {x:180,z:0,r:90},
+        const zone = mythGroup(p);
+        if(!famsByZone[zone]) famsByZone[zone]=[];
+        famsByZone[zone].push(f);
+      });
 
-  hero: {x:0,z:170,r:105},
+    Object.entries(famsByZone).forEach(([zone,fams])=>{
+      const Z = ZONE[zone] || ZONE.outer;
+      const n=fams.length||1;
 
-  mortal: {x:0,z:230,r:115},
+      fams.forEach((f,i)=>{
+        if(!f.parents) return;
+        if(f.parents.includes("PRIM_CHAOS_001")) return;
 
-  monster: {x:0,z:-200,r:110},
+        const angle=(Math.PI*2*i/n)-Math.PI/2;
+        const cx = Z.x + Math.cos(angle)*Z.r;
+        const cz = Z.z + Math.sin(angle)*Z.r;
+        const cy = Math.sin(angle*2)*10;
 
-  outer: {x:0,z:300,r:130}
+        placeFamily({x:cx,y:cy,z:cz}, f, familyColorByKey.get(f.key));
+      });
+    });
 
-};
-
-function mythGroup(d){
-
-  if(!d) return "outer";
-
-  const model = String(d.ModelType||"").toLowerCase();
-  const cat   = String(d.Category||"").toLowerCase();
-
-  if(d.id==="PRIM_CHAOS_001") return "center";
-
-  if(cat.includes("proto") || model==="energy")
-    return "primordial";
-
-  if(cat.includes("titan") || model==="giant")
-    return "titan";
-
-  if(cat.includes("olymp") || model==="god" || model==="goddess")
-    return "olympian";
-
-  if(cat.includes("hero") || model==="hero")
-    return "hero";
-
-  if(model==="human")
-    return "mortal";
-
-  if(model==="monster" || model==="spirit")
-    return "monster";
-
-  return "outer";
-}
-const famsByZone={};
-
-families
-.filter(f=>f.parents && !f.parents.includes("PRIM_CHAOS_001"))
-.forEach(f=>{
-
-  const firstParentId =
-    f.parents && f.parents.length
-      ? f.parents[0]
-      : null;
-
-  const p =
-    firstParentId
-      ? dataMap[firstParentId]
-      : null;
-
-  if(!p) return;
-
-  const zone = mythGroup(p);
-
-  if(!famsByZone[zone])
-    famsByZone[zone]=[];
-
-  famsByZone[zone].push(f);
-
-});
-
-Object.entries(famsByZone).forEach(([zone,fams])=>{
-
-  const Z = ZONE[zone] || ZONE.outer;
-
-  const n=fams.length||1;
-
-  fams.forEach((f,i)=>{
-
-  if(!f.parents) return;
-  if(f.parents.includes("PRIM_CHAOS_001")) return;
-    const angle=(Math.PI*2*i/n)-Math.PI/2;
-
-    const cx = Z.x + Math.cos(angle)*Z.r;
-    const cz = Z.z + Math.sin(angle)*Z.r;
-
-    const cy = Math.sin(angle*2)*10;
-
-    placeFamily(
-      {x:cx,y:cy,z:cz},
-      f,
-      familyColorByKey.get(f.key)
+    const mortals = all.filter(
+      d=>d && d.id && !placed.has(d.id) && mythGroup(d)==="mortal"
     );
 
-  });
-
-});
-
-    // leftovers / mortals closer than before
-    const mortals = all.filter(
-  d=>d && d.id && !placed.has(d.id) && mythGroup(d)==="mortal"
-);
-
-mortals.forEach((d,i)=>{
-
-  const Z=ZONE.mortal;
-
-  const angle=(Math.PI*2*i/mortals.length);
-
-  const r=Z.r + (i%6)*5;
-
-  createNode(
-    d,
-    Z.x + Math.cos(angle)*r,
-    Math.sin(angle*3)*10,
-    Z.z + Math.sin(angle)*r,
-    null
-  );
-
-});
-
+    mortals.forEach((d,i)=>{
+      const Z=ZONE.mortal;
+      const angle=(Math.PI*2*i/Math.max(1,mortals.length));
+      const r=Z.r + (i%6)*5;
+      createNode(
+        d,
+        Z.x + Math.cos(angle)*r,
+        Math.sin(angle*3)*10,
+        Z.z + Math.sin(angle)*r,
+        null
+      );
+    });
 
     saveOriginalPositions();
     buildConnections();
@@ -1616,7 +1337,6 @@ engine.runRenderLoop(()=>{
   sky.rotation.y += 0.00004;
   particleSystem.emitter.x=Math.sin(performance.now()*0.00005)*200;
   particleSystem.emitter.z=Math.cos(performance.now()*0.00005)*200;
-
   scene.render();
 });
 
