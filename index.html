@@ -316,14 +316,9 @@ let lastY = 0;
 
 scene.onPointerObservable.add((pi)=>{
 
-  if(pi.type === BABYLON.PointerEventTypes.POINTERDOWN){
-
-    lastX = scene.pointerX;
-    lastY = scene.pointerY;
-
-  }
-
   if(pi.type !== BABYLON.PointerEventTypes.POINTERMOVE) return;
+
+  if(!pi.event) return;
 
   if(pi.event.touches && pi.event.touches.length > 1) return;
 
@@ -335,12 +330,12 @@ scene.onPointerObservable.add((pi)=>{
   lastX = scene.pointerX;
   lastY = scene.pointerY;
 
-  const speed = camera.radius * 0.0015;
+  const speed = camera.radius * 0.0012;
 
   camera.target.x -= dx * speed;
-  camera.target.y += dy * speed;
+  camera.target.z += dy * speed;
 
-});
+}, BABYLON.PointerEventTypes.POINTERMOVE);
 // safe camera settings
 camera.inertia = 0.82;
 
@@ -1289,6 +1284,8 @@ window.addEventListener('popstate',()=>{if(focusedId)resetFocus(true);});
 
 scene.onPointerObservable.add((pi)=>{
   if(pi.type===BABYLON.PointerEventTypes.POINTERDOWN){
+lastX = scene.pointerX;
+lastY = scene.pointerY;
     const evt=pi.event;
     if(evt && evt.touches && evt.touches.length>1){tapCandidate=null;return;}
     const pick=scene.pick(scene.pointerX,scene.pointerY);
