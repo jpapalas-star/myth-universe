@@ -248,26 +248,58 @@ const camera=new BABYLON.ArcRotateCamera(
   BABYLON.Vector3.Zero(),
   scene
 );
-camera.angularSensibilityX = 900;
-camera.angularSensibilityY = 900;
+
+
+camera.attachControl(canvas,true);
+scene.onPointerObservable.add((pi)=>{
+
+  if(pi.type !== BABYLON.PointerEventTypes.POINTERMOVE) return;
+
+  if(pi.event.buttons !== 1) return;
+
+  const dx = scene.pointerX - scene._prevPointerX;
+  const dy = scene.pointerY - scene._prevPointerY;
+
+  const panSpeed = camera.radius * 0.004;
+
+  const right = camera.getDirection(BABYLON.Axis.X);
+  const up = camera.getDirection(BABYLON.Axis.Y);
+
+  const move =
+    right.scale(-dx * panSpeed)
+    .add(up.scale(dy * panSpeed));
+
+  camera.target.addInPlace(move);
+
+});
 
 camera.inertia = 0.8;
 
-camera.panningSensibility = 120;
-
-camera.wheelDeltaPercentage = 0.006;
-
-camera.pinchDeltaPercentage = 0.003;
+camera.wheelDeltaPercentage = 0.01;
+camera.pinchDeltaPercentage = 0.004;
 camera.pinchPrecision = 12;
-
-camera.lowerBetaLimit = 0.1;
-camera.upperBetaLimit = Math.PI / 2;
 
 camera.lowerRadiusLimit = 4;
 camera.upperRadiusLimit = 12000;
 
-camera.attachControl(canvas,true);
 
+const pointers = new BABYLON.ArcRotateCameraPointersInput();
+
+pointers.buttons = [0]; // 1 finger = pan
+
+pointers.angularSensibilityX = 2000;
+pointers.angularSensibilityY = 2000;
+
+pointers.panningSensibility = 80;
+
+camera.inputs.add(pointers);
+
+const multiTouch = new BABYLON.ArcRotateCameraMultiTouchInput();
+
+multiTouch.multiTouchPanAndZoom = false;
+multiTouch.multiTouchPanAndZoom = false;
+
+camera.inputs.add(multiTouch);
 // custom touch behavior
 
 
