@@ -255,43 +255,10 @@ camera.pinchDeltaPercentage=0.008;
 camera.pinchPrecision=18;
 camera.useNaturalPinchZoom=true;
 camera.panningSensibility=15;
-camera.attachControl(canvas,false);
+camera.attachControl(canvas,true);
 
 // custom touch behavior
 
-const pointers = camera.inputs.attached.pointers;
-
-if(pointers){
-
-  // 1 finger = pan
-  pointers.buttons = [0];
-
-  camera.panningSensibility = 25;
-
-  // disable default multitouch
-  pointers.multiTouchPanAndZoom = false;
-
-}
-
-scene.onPointerObservable.add((pi)=>{
-
-  if(pi.type !== BABYLON.PointerEventTypes.POINTERMOVE) return;
-
-  const evt = pi.event;
-
-  if(!evt.touches) return;
-
-  // 2 fingers = rotate
-  if(evt.touches.length === 2){
-
-    camera.inertia = 0.7;
-
-    camera.alpha -= evt.movementX * 0.002;
-    camera.beta  -= evt.movementY * 0.002;
-
-  }
-
-});
 
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
 hemi.intensity=0.96;
