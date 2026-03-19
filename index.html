@@ -1207,34 +1207,6 @@ monster: 430,
 outer: 470
 };
 
-function mythGroup(d){
-
-  const model = (d.ModelType || "").toLowerCase();
-  const cat = (d.Category || "").toLowerCase();
-  const gen = Number(d.Generation || 9);
-
-  if(d.id === "PRIM_CHAOS_001") return "center";
-
-  if(cat.includes("πρωτο") || model==="energy")
-    return "primordial";
-
-  if(cat.includes("τιτά") || model==="giant")
-    return "titan";
-
-  if(cat.includes("ολυμπ") || model==="god" || model==="goddess")
-    return "olympian";
-
-  if(cat.includes("ήρω") || model==="hero")
-    return "hero";
-
-  if(model==="human")
-    return "mortal";
-
-  if(model==="monster" || model==="spirit")
-    return "monster";
-
-  return "outer";
-}
 
     function famGen(f){
       let minG=99;
