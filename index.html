@@ -1249,35 +1249,83 @@ function mythGroup(d){
       return Math.min(minG,9);
     }
 
-    const famsByType={};
+    const ZONE = {
+  center: {x:0,z:0,r:60},
+
+  primordial: {x:0,z:-120,r:80},
+
+  titan: {x:-220,z:0,r:110},
+
+  olympian: {x:220,z:0,r:110},
+
+  hero: {x:0,z:220,r:130},
+
+  mortal: {x:0,z:320,r:140},
+
+  monster: {x:0,z:-260,r:140},
+
+  outer: {x:0,z:420,r:160}
+};
+
+
+function mythGroup(d){
+
+  const model=(d.ModelType||"").toLowerCase();
+  const cat=(d.Category||"").toLowerCase();
+
+  if(d.id==="PRIM_CHAOS_001") return "center";
+
+  if(cat.includes("πρωτο") || model==="energy")
+    return "primordial";
+
+  if(cat.includes("τιτά") || model==="giant")
+    return "titan";
+
+  if(cat.includes("ολυμπ") || model==="god" || model==="goddess")
+    return "olympian";
+
+  if(cat.includes("ήρω") || model==="hero")
+    return "hero";
+
+  if(model==="human")
+    return "mortal";
+
+  if(model==="monster" || model==="spirit")
+    return "monster";
+
+  return "outer";
+}
+const famsByZone={};
 
 families
 .filter(f=>!f.parents.includes("PRIM_CHAOS_001"))
 .forEach(f=>{
 
-  const p = dataMap[f.parents[0]];
-  const type = mythGroup(p);
+  const p=dataMap[f.parents[0]];
 
-  if(!famsByType[type]) famsByType[type]=[];
-  famsByType[type].push(f);
+  const zone=mythGroup(p);
+
+  if(!famsByZone[zone]) famsByZone[zone]=[];
+
+  famsByZone[zone].push(f);
 
 });
 
 
-Object.entries(famsByType).forEach(([type,fams])=>{
+Object.entries(famsByZone).forEach(([zone,fams])=>{
 
-  const radius = RADIUS[type] || RADIUS.outer;
+  const Z = ZONE[zone] || ZONE.outer;
 
-  const n = fams.length || 1;
+  const n=fams.length||1;
 
   fams.forEach((f,i)=>{
 
-    const angle = (Math.PI*2*i/n) - Math.PI/2;
+    const angle=(Math.PI*2*i/n)-Math.PI/2;
 
-    const cx = Math.cos(angle)*radius;
-    const cz = Math.sin(angle)*radius;
+    const cx = Z.x + Math.cos(angle)*Z.r;
+    const cz = Z.z + Math.sin(angle)*Z.r;
 
-    const cy = Math.sin(angle*2)*8;
+    const cy = Math.sin(angle*2)*10;
 
     placeFamily(
       {x:cx,y:cy,z:cz},
@@ -1290,21 +1338,28 @@ Object.entries(famsByType).forEach(([type,fams])=>{
 });
 
     // leftovers / mortals closer than before
-    const leftovers=all.filter(d=>d.id!=='PRIM_CHAOS_001' && !placed.has(d.id));
-    if(leftovers.length){
-      const outerR=450;
-      leftovers.forEach((d,i)=>{
-        const angle=(Math.PI*2*i/leftovers.length)-Math.PI/2;
-        const r2=outerR + (i%7)*4;
-        createNode(
-          d,
-          Math.cos(angle)*r2,
-          Math.sin(angle*3)*12,
-          Math.sin(angle)*r2,
-          null
-        );
-      });
-    }
+    const mortals = all.filter(
+d=>!placed.has(d.id) && mythGroup(d)==="mortal"
+);
+
+mortals.forEach((d,i)=>{
+
+  const Z=ZONE.mortal;
+
+  const angle=(Math.PI*2*i/mortals.length);
+
+  const r=Z.r + (i%6)*5;
+
+  createNode(
+    d,
+    Z.x + Math.cos(angle)*r,
+    Math.sin(angle*3)*10,
+    Z.z + Math.sin(angle)*r,
+    null
+  );
+
+});
+
 
     saveOriginalPositions();
     buildConnections();
