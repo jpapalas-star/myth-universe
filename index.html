@@ -262,34 +262,118 @@ const camera = new BABYLON.ArcRotateCamera(
   scene
 );
 
-camera.attachControl(canvas, true);
+camera.detachControl();
+camera.lowerRadiusLimit = 10;
+camera.upperRadiusLimit = 12000;
+camera.lowerBetaLimit   = 0.08;
+camera.upperBetaLimit   = Math.PI / 2.02;
 
-// Let Babylon handle 1-finger rotate and 2-finger pinch natively.
-// Do NOT set buttons=[] — that kills all touch input including pinch.
-const pointers = camera.inputs.attached.pointers;
-if (pointers) {
-  // Allow left-button (touch) rotation, disable multi-touch panning
-  // so pinch is ONLY zoom, not pan+zoom.
-  pointers.multiTouchPanAndZoom = false;
-  pointers.multiTouchPanning   = false;
+// ── FULLY CUSTOM TOUCH + MOUSE CAMERA CONTROL ────────────────────────────────
+// camera.detachControl() stops ALL Babylon pointer processing including:
+//   - The ghost highlight (Babylon pick ray on every touch point)
+//   - Pinch conflict (Babylon's own pinch handler fighting our observers)
+// We implement rotate/pinch/tap from scratch with canvas touch/mouse events.
+
+var _t1    = null;  // 1st finger: {x,y,t,id,alpha,beta}
+var _multi = false; // true if 2+ fingers touched this gesture
+var _pdist = 0;     // finger distance at last pinch move
+var _mdn   = null;  // mouse: {x,y,t,id,alpha,beta}
+
+function _pick(cx, cy) {
+  var r = canvas.getBoundingClientRect();
+  var p = scene.pick(cx - r.left, cy - r.top);
+  return (p && p.hit && p.pickedMesh && p.pickedMesh.metadata)
+    ? p.pickedMesh.metadata.id : null;
+}
+function _cb(b) {
+  return Math.max(camera.lowerBetaLimit, Math.min(camera.upperBetaLimit, b));
+}
+function _cr(r) {
+  return Math.max(camera.lowerRadiusLimit, Math.min(camera.upperRadiusLimit, r));
 }
 
-camera.inertia               = 0.82;
-camera.wheelDeltaPercentage  = 0.008;
-camera.pinchDeltaPercentage  = 0.006;  // pinch zoom speed
-camera.pinchPrecision        = 12;
-camera.lowerRadiusLimit      = 10;
-camera.upperRadiusLimit      = 12000;
-camera.lowerBetaLimit        = 0.08;
-camera.upperBetaLimit        = Math.PI / 2.02;
-camera.angularSensibilityX   = 700;
-camera.angularSensibilityY   = 700;
-camera.panningSensibility     = 0;     // disable pan entirely
+// non-passive: e.preventDefault() stops browser from sending pointer events to Babylon
+canvas.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    var t = e.touches[0];
+    _multi = false;
+    _t1 = { x: t.clientX, y: t.clientY, t: Date.now(),
+             id: _pick(t.clientX, t.clientY),
+             alpha: camera.alpha, beta: camera.beta };
+  } else if (e.touches.length >= 2) {
+    _multi = true; _t1 = null;
+    var dx = e.touches[0].clientX - e.touches[1].clientX;
+    var dy = e.touches[0].clientY - e.touches[1].clientY;
+    _pdist = Math.hypot(dx, dy);
+  }
+}, { passive: false });
 
-// Tap state (native touch events handle mobile, pointer obs handles desktop)
-let tapStart    = null;   // {x, y, t, id} set on touchstart
-let tapMulti    = false;  // true if 2+ fingers involved in current gesture
-let mouseDown   = null;   // {x, y, t, id} for desktop mouse click
+canvas.addEventListener('touchmove', function(e) {
+  e.preventDefault();
+  if (e.touches.length >= 2) {
+    _multi = true; _t1 = null;
+    var dx = e.touches[0].clientX - e.touches[1].clientX;
+    var dy = e.touches[0].clientY - e.touches[1].clientY;
+    var d  = Math.hypot(dx, dy);
+    // Ratio-based pinch: smoother and distance-independent
+    if (_pdist > 0 && d > 0) {
+      camera.radius = _cr(camera.radius * (_pdist / d));
+    }
+    _pdist = d;
+  } else if (e.touches.length === 1 && !_multi && _t1) {
+    var t = e.touches[0];
+    camera.alpha = _t1.alpha - (t.clientX - _t1.x) * 0.005;
+    camera.beta  = _cb(_t1.beta  - (t.clientY - _t1.y) * 0.005);
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', function(e) {
+  e.preventDefault();
+  if (e.touches.length > 0) { _multi = true; _t1 = null; return; }
+  if (!_multi && _t1) {
+    var ct = e.changedTouches[0];
+    var mv = Math.hypot(ct.clientX - _t1.x, ct.clientY - _t1.y);
+    var el = Date.now() - _t1.t;
+    var id = _t1.id;
+    _t1 = null; _multi = false;
+    if (mv < 14 && el < 500) { _doTap(id); return; }
+  }
+  _t1 = null; _multi = false; _pdist = 0;
+}, { passive: false });
+
+canvas.addEventListener('mousedown', function(e) {
+  _mdn = { x: e.clientX, y: e.clientY, t: Date.now(),
+            id: _pick(e.clientX, e.clientY),
+            alpha: camera.alpha, beta: camera.beta };
+});
+canvas.addEventListener('mousemove', function(e) {
+  if (!_mdn || !(e.buttons & 1)) return;
+  camera.alpha = _mdn.alpha - (e.clientX - _mdn.x) * 0.005;
+  camera.beta  = _cb(_mdn.beta  - (e.clientY - _mdn.y) * 0.005);
+});
+canvas.addEventListener('mouseup', function(e) {
+  if (!_mdn) return;
+  var mv = Math.hypot(e.clientX - _mdn.x, e.clientY - _mdn.y);
+  var el = Date.now() - _mdn.t;
+  var id = _mdn.id;
+  _mdn = null;
+  if (mv < 8 && el < 400) _doTap(id);
+});
+canvas.addEventListener('wheel', function(e) {
+  camera.radius = _cr(camera.radius + e.deltaY * 0.5);
+}, { passive: true });
+
+function _doTap(pickedId) {
+  if (pickedId && nodes[pickedId]) {
+    if (focusedId === pickedId) resetFocus(false);
+    else enterFocus(pickedId);
+  } else {
+    if (focusedId) resetFocus(false);
+    else resetInfo();
+  }
+}
+
 
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
 hemi.intensity=0.96;
@@ -300,7 +384,7 @@ pointLight.intensity=1.15;
 const sunLight=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-1,-2,-1),scene);
 sunLight.intensity=1.1;
 
-// Environment texture skipped — not needed and can fail on mobile
+// env texture removed
 
 const glow=new BABYLON.GlowLayer("glow",scene,{blurKernelSize:64});
 glow.intensity=0.55;
@@ -424,7 +508,7 @@ let allData=[];
 let focusedId=null;
 let savedCameraState = null;
 let suppressPop=false;
-// tapCandidate removed — see tapStart above
+let tapCandidate=null;
 let panelOpen=false;
 let searchMatches=[];
 let activeSearchIndex=-1;
@@ -586,7 +670,7 @@ function createLabel(text,parentMesh,size){
 }
 
 function createNode(d,x,y,z,familyRingColor){
-  if(!d||placed.has(d.id))return; // guard against duplicates
+  if(!d||placed.has(d.id))return;
   const size=sizeFor(d);
   const tint=genderPlanetTint(d);
 
@@ -598,10 +682,10 @@ function createNode(d,x,y,z,familyRingColor){
   tex.hasAlpha=true;
   sm.albedoTexture=tex;
   sm.albedoColor=tint;
-  sm.roughness=0.55;
-  sm.metallic=0.12;
-  sm.environmentIntensity=0; // no env texture loaded
-  sm.emissiveColor=tint.scale(0.18); // more self-glow so spheres are visible
+  sm.roughness=0.38;
+  sm.metallic=0.04;
+  sm.environmentIntensity=0;
+  sm.emissiveColor=tint.scale(0.18);
   sm.useAlphaFromAlbedoTexture=true;
   sm.backFaceCulling=false;
   sphere.material=sm;
@@ -649,7 +733,7 @@ function bindInfoLinks(){
 function showInfo(d){
   infoEl.innerHTML=
     `<h2>${d.Name||d.id}</h2>`+
-    `<div class="sub">${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation != null ? d.Generation : '-'}</div>`+
+    `<div class="sub">${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation!=null?d.Generation:'-'}</div>`+
     `<div class="sec">Summary</div><div class="txt">${d.Summary||'-'}</div>`+
     `<div class="sec">Parents</div><div class="txt">${listInfoLinks(d.Parents)}</div>`+
     `<div class="sec">Partners</div><div class="txt">${listInfoLinks(d.Partners)}</div>`+
@@ -661,7 +745,7 @@ function resetInfo(){
   infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">Chaos center · generation rings · family clusters</div><div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>`;
 }
 
-function getNodePos(id){var n=nodes[id];return n&&n.sphere?n.sphere.position:null;}
+function getNodePos(id){return nodes[id]&&nodes[id].sphere?nodes[id].sphere.position:null;}
 function saveOriginalPositions(){Object.values(nodes).forEach(n=>originalPositions.set(n.id,n.sphere.position.clone()));}
 function restoreOriginalPositions(){Object.values(nodes).forEach(n=>{const p=originalPositions.get(n.id);if(p)n.sphere.position.copyFrom(p);});}
 function coupleKey(a,b){return [a,b].sort().join('|');}
@@ -944,10 +1028,9 @@ function enterFocus(id){
 
   Object.values(nodes).forEach(n=>{
     n.sphere.setEnabled(true);
-    const rel=relatives.has(n.id);
-    const mat=n.sphere.material;
-    mat.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
-    mat.alpha=rel?1:0.1;
+    var rel=relatives.has(n.id);
+    n.sphere.material.transparencyMode=rel?BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE:BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+    n.sphere.material.alpha=rel?1:0.1;
     if(n.label) n.label.scaling.setAll(rel?1:0.7);
   });
 
@@ -973,14 +1056,13 @@ function resetFocus(fromPop){
   restoreOriginalPositions();
 
   Object.values(nodes).forEach(n=>{
-    const mat=n.sphere.material;
-    mat.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
-    mat.alpha=1;
+    n.sphere.material.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
+    n.sphere.material.alpha=1;
     n.sphere.setEnabled(true);
     if(n.label) n.label.scaling.setAll(1);
   });
 
-  clearConnectionVisuals(); // clear lines — clean galaxy view on reset
+  clearConnectionVisuals();
   restoreCameraState();
   resetInfo();
   hideSearchResults();
@@ -1012,7 +1094,7 @@ function renderSearchResults(){
   searchMatches.forEach((d,idx)=>{
     const item=document.createElement('div');
     item.className='searchItem'+(idx===activeSearchIndex?' active':'');
-    item.innerHTML=`<div class="searchName">${d.Name||d.id}</div><div class="searchMeta">${d.id||''} · ${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation != null ? d.Generation : '-'}</div>`;
+    item.innerHTML=`<div class="searchName">${d.Name||d.id}</div><div class="searchMeta">${d.id||''} · ${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation!=null?d.Generation:'-'}</div>`;
     item.addEventListener('click',()=>{
       searchBox.value=d.Name||d.id;
       hideSearchResults();
@@ -1079,129 +1161,22 @@ document.addEventListener('click',e=>{
 });
 
 homeBtn.addEventListener('click',()=>{
-  focusedId    = null;
-  tapStart  = null;
-  tapMulti  = false;
-  mouseDown = null;
+  focusedId=null; _t1=null; _multi=false; _mdn=null;
   restoreOriginalPositions();
-  Object.values(nodes).forEach(n=>{
-    var mat=n.sphere.material;
-    mat.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
-    mat.alpha=1;
-    n.sphere.setEnabled(true);
-    if(n.label) n.label.scaling.setAll(1);
-  });
+  BABYLON.Animation.CreateAndStartAnimation("camT",camera,"target",60,30,camera.target.clone(),BABYLON.Vector3.Zero(),BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  BABYLON.Animation.CreateAndStartAnimation("camR",camera,"radius",60,30,camera.radius,760,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
   clearConnectionVisuals();
-  BABYLON.Animation.CreateAndStartAnimation('camT',camera,'target',60,30,camera.target.clone(),BABYLON.Vector3.Zero(),BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
-  BABYLON.Animation.CreateAndStartAnimation('camR',camera,'radius',60,30,camera.radius,760,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  Object.values(nodes).forEach(n=>{
+    n.sphere.material.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
+    n.sphere.material.alpha=1;
+    n.sphere.setEnabled(true);
+    if(n.label)n.label.scaling.setAll(1);
+  });
   resetInfo();
 });
 
 window.addEventListener('popstate',()=>{ if(focusedId) resetFocus(true); });
 
-// ── MOBILE: native touch events (no Babylon interference) ──────────────────
-// Babylon's attachControl owns all camera movement (1-finger rotate, 2-finger
-// pinch zoom). We only intercept touchstart/touchend for tap detection.
-
-canvas.addEventListener('touchstart', function(e) {
-  if (e.touches.length > 1) {
-    // Second finger arrived → definitely a pinch, cancel any pending tap
-    tapMulti = true;
-    tapStart = null;
-    return;
-  }
-  // First finger down
-  tapMulti = false;
-  var t = e.touches[0];
-  var rect = canvas.getBoundingClientRect();
-  var cx = t.clientX - rect.left;
-  var cy = t.clientY - rect.top;
-  // Ray-pick at touch start so we know what was under the finger
-  var pick = scene.pick(cx, cy);
-  tapStart = {
-    x:  cx,
-    y:  cy,
-    t:  Date.now(),
-    id: (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata)
-          ? pick.pickedMesh.metadata.id : null
-  };
-}, { passive: true });
-
-canvas.addEventListener('touchmove', function(e) {
-  if (e.touches.length > 1) {
-    // Finger count grew during move → it's a pinch
-    tapMulti = true;
-    tapStart = null;
-  }
-}, { passive: true });
-
-canvas.addEventListener('touchend', function(e) {
-  if (e.touches.length > 0) {
-    // Still fingers on screen (one of two lifted) → pinch, not tap
-    tapMulti = true;
-    tapStart = null;
-    return;
-  }
-  // All fingers lifted
-  if (tapMulti || !tapStart) {
-    tapMulti = false;
-    tapStart = null;
-    return;
-  }
-  var ct = e.changedTouches[0];
-  var rect = canvas.getBoundingClientRect();
-  var cx = ct.clientX - rect.left;
-  var cy = ct.clientY - rect.top;
-  var moved   = Math.hypot(cx - tapStart.x, cy - tapStart.y);
-  var elapsed = Date.now() - tapStart.t;
-  var pickedId = tapStart.id;
-  tapStart = null;
-  tapMulti = false;
-  if (moved > 14 || elapsed > 500) return; // was a drag, not a tap
-  handleTap(pickedId);
-}, { passive: true });
-
-// ── DESKTOP: mouse click via Babylon observable ──────────────────────────────
-scene.onPointerObservable.add(function(pi) {
-  // Skip entirely on touch devices (handled above)
-  var evt = pi.event;
-  if (evt && evt.pointerType === 'touch') return;
-
-  if (pi.type === BABYLON.PointerEventTypes.POINTERDOWN) {
-    var pick = scene.pick(scene.pointerX, scene.pointerY);
-    mouseDown = {
-      x:  scene.pointerX,
-      y:  scene.pointerY,
-      t:  Date.now(),
-      id: (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata)
-            ? pick.pickedMesh.metadata.id : null
-    };
-  }
-  if (pi.type === BABYLON.PointerEventTypes.POINTERUP) {
-    if (!mouseDown) return;
-    var dx      = scene.pointerX - mouseDown.x;
-    var dy      = scene.pointerY - mouseDown.y;
-    var moved   = Math.hypot(dx, dy);
-    var elapsed = Date.now() - mouseDown.t;
-    var pickedId = mouseDown.id;
-    mouseDown = null;
-    if (moved > 8 || elapsed > 400) return;
-    handleTap(pickedId);
-  }
-},
-BABYLON.PointerEventTypes.POINTERDOWN |
-BABYLON.PointerEventTypes.POINTERUP);
-
-// ── Shared tap handler ───────────────────────────────────────────────────────
-function handleTap(pickedId) {
-  if (pickedId && nodes[pickedId]) {
-    if (focusedId === pickedId) resetFocus(false);
-    else enterFocus(pickedId);
-  } else {
-    if (focusedId) resetFocus(false);
-    else resetInfo();
-  }
-}
 
 fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
   .then(r=>{
@@ -1230,30 +1205,17 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     };
 
     function mythGroup(d){
-      if(!d) return "outer";
-      const model = String(d.ModelType||"").toLowerCase();
-      const cat   = normalizeText(String(d.Category||""));
-      const id    = String(d.id||"");
-      if(id==="PRIM_CHAOS_001") return "center";
-      // ModelType is the most reliable field
-      if(model==="energy") return "primordial";
-      if(model==="giant") return "titan";
-      if(model==="god"||model==="goddess") return "olympian";
-      if(model==="human") return "mortal";
+      if(!d) return "hero";
+      var model=String(d.ModelType||"").toLowerCase();
+      if(d.id==="PRIM_CHAOS_001") return "center";
+      if(model==="energy")                    return "primordial";
+      if(model==="giant")                     return "titan";
+      if(model==="god"||model==="goddess")    return "olympian";
+      if(model==="human"||model==="nymph")    return "mortal";
       if(model==="monster"||model==="spirit") return "monster";
-      if(model==="nymph") return "mortal";
-      if(model==="wind") return "olympian";
-      if(model==="group") return "outer";
-      if(model==="underworld") return "monster";
-      if(model==="creature") return "hero";
-      // Fallback: category text (normalised so Greek diacritics stripped)
-      if(cat.includes("primordial")||cat.includes("prwtogen")) return "primordial";
-      if(cat.includes("titan")) return "titan";
-      if(cat.includes("olymp")||cat.includes("olumpios")) return "olympian";
-      if(cat.includes("hrows")||cat.includes("hero")) return "hero";
-      if(cat.includes("thnit")||cat.includes("mortal")) return "mortal";
-      if(cat.includes("teras")||cat.includes("monster")) return "monster";
-      return "hero"; // default: hero zone rather than outer clump
+      if(model==="wind")                      return "olympian";
+      if(model==="group"||model==="underworld")return "outer";
+      return "hero";
     }
 
     const famsByZone={};
@@ -1304,9 +1266,8 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
       );
     });
 
-    saveOriginalPositions(); // must be AFTER all createNode calls
+    saveOriginalPositions();
     buildConnections();
-    // No connections rendered at startup — only on focus tap
     resetInfo();
   })
   .catch(err=>{
@@ -1333,9 +1294,8 @@ engine.runRenderLoop(()=>{
         if(index < m.path.length-1){
           const next=m.path[Math.min(m.path.length-1,index+1)];
           const dir=next.subtract(p).normalize();
-          // align capsule along direction (no .rotate() after setting quaternion)
-          const up = Math.abs(dir.y) < 0.99 ? BABYLON.Vector3.Up() : BABYLON.Vector3.Right();
-          m.mesh.rotationQuaternion = BABYLON.Quaternion.FromLookDirectionLH(dir, up);
+          var _up=Math.abs(dir.y)<0.99?BABYLON.Vector3.Up():BABYLON.Vector3.Right();
+          m.mesh.rotationQuaternion=BABYLON.Quaternion.FromLookDirectionLH(dir,_up);
         }
       }
       continue;
