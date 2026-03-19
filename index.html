@@ -248,8 +248,8 @@ const camera=new BABYLON.ArcRotateCamera(
   BABYLON.Vector3.Zero(),
   scene
 );
-camera.lowerRadiusLimit=34;
-camera.upperRadiusLimit=8000;
+camera.lowerRadiusLimit=6;
+camera.upperRadiusLimit=12000;
 camera.wheelDeltaPercentage=0.06;
 camera.pinchDeltaPercentage=0.06;
 camera.pinchPrecision=2.5;
@@ -486,17 +486,42 @@ function spriteFile(d){
 }
 
 function sizeFor(d){
-  const model=String(d.ModelType||''),id=String(d.id||'');
-  if(id==='PRIM_CHAOS_001')return 14;
-  if(model==='group')return 7.8;
-  if(model==='energy')return 8.5;
-  if(model==='giant')return 7.8;
-  if(model==='god'||model==='goddess')return 6.8;
-  if(model==='human')return 6.1;
-  if(model==='spirit')return 5.8;
-  return 6.3;
-}
 
+  const model=String(d.ModelType||'').toLowerCase();
+  const cat=String(d.Category||'').toLowerCase();
+  const id=String(d.id||'');
+
+  // CHAOS
+  if(id==="PRIM_CHAOS_001") return 18;
+
+  // OLYMPIANS (12 gods)
+  if(
+    cat.includes("ολυμπ") ||
+    model==="god" ||
+    model==="goddess"
+  ){
+    return 10;
+  }
+
+  // TITANS
+  if(
+    cat.includes("τιτά") ||
+    model==="giant"
+  ){
+    return 8.5;
+  }
+
+  // HERO / DEMIGOD / SPIRIT
+  if(
+    model==="hero" ||
+    model==="spirit"
+  ){
+    return 7;
+  }
+
+  // HUMANS / MONSTERS / REST
+  return 5.8;
+}
 function addRing(parentMesh,color,diameter,thickness){
   const ring=BABYLON.MeshBuilder.CreateTorus(
     'ring_'+Math.random(),
@@ -966,8 +991,8 @@ function enterFocus(id){
   const pos=getNodePos(id);
   if(pos){
     const newTarget=pos.clone();
-    const newRadius=Math.max(48,nodes[id].size*7.5);
-    camera.lowerRadiusLimit=20;
+    const const newRadius=Math.max(18,nodes[id].size*4.5);
+    camera.lowerRadiusLimit=4;
     camera.upperRadiusLimit=2000;
     BABYLON.Animation.CreateAndStartAnimation(
       'camTargetFocus',
@@ -1007,7 +1032,7 @@ function resetFocus(fromPop){
 
   renderConnections();
 
-  camera.lowerRadiusLimit=34;
+  camera.lowerRadiusLimit=6;
   camera.upperRadiusLimit=8000;
 
   BABYLON.Animation.CreateAndStartAnimation(
@@ -1254,7 +1279,7 @@ const famsByZone={};
 
 families
 .filter(f=>!f.parents.includes("PRIM_CHAOS_001"))
-.forEach(f=>{
+.filter(f=>!f.parents.includes("PRIM_CHAOS_001"))
 
   const firstParentId = f.parents && f.parents.length ? f.parents[0] : null;
   const p = firstParentId ? dataMap[firstParentId] : null;
@@ -1278,6 +1303,7 @@ Object.entries(famsByZone).forEach(([zone,fams])=>{
 
   fams.forEach((f,i)=>{
 
+if(f.parents.includes("PRIM_CHAOS_001")) return;
     const angle=(Math.PI*2*i/n)-Math.PI/2;
 
     const cx = Z.x + Math.cos(angle)*Z.r;
