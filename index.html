@@ -342,7 +342,7 @@ canvas.addEventListener('touchstart', function(e) {
     var t = e.touches[0];
     var rect = canvas.getBoundingClientRect();
     var sx = t.clientX - rect.left, sy = t.clientY - rect.top;
-    _t1 = { x: t.clientX, y: t.clientY, t: Date.now(), id: _pick(sx, sy) };
+    _t1 = { x: t.clientX, y: t.clientY, t: Date.now(), id: _pick(sx, sy), firstMove: true };
 
   } else if (e.touches.length >= 2) {
     _multi = true; _t1 = null;
@@ -365,16 +365,32 @@ canvas.addEventListener('touchmove', function(e) {
   if (e.touches.length === 1 && !_multi && _t1) {
     var t = e.touches[0];
     var dmx2 = t.clientX - _t1.x, dmy2 = t.clientY - _t1.y;
+
+    // Skip first move frame to avoid teleport on initial touch
+    if (_t1.firstMove) { _t1.firstMove=false; _t1.x=t.clientX; _t1.y=t.clientY; return; }
+
     if (Math.hypot(dmx2, dmy2) > 10) _t1.id = null; // cancel tap
 
-    // 1 finger = ORBIT around Chaos (target stays at 0,0,0 unless focused)
-    camera.alpha -= dmx2 * 0.0015;
-    camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
-    // In free mode snap target back to Chaos centre so we orbit it
-    if(!focusedId){
-      camera.target.x *= 0.85;
-      camera.target.y *= 0.85;
-      camera.target.z *= 0.85;
+    if (focusedId) {
+      // In focus mode: orbit around focused planet
+      camera.alpha -= dmx2 * 0.0015;
+      camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
+    } else {
+      // Free mode: PAN left/right/up/down
+      _panDelta(dmx2, dmy2);
+
+      // Boundary: soft curvature when reaching system edge (~600 units)
+      var WALL = 580;
+      var tx = camera.target.x, tz = camera.target.z;
+      var dist = Math.sqrt(tx*tx + tz*tz);
+      if (dist > WALL) {
+        // Push target back inside + add gentle orbit so user curves around edge
+        var push = (dist - WALL) / dist;
+        camera.target.x -= tx * push * 0.25;
+        camera.target.z -= tz * push * 0.25;
+        // Slight auto-orbit so they don't get stuck at wall
+        camera.alpha -= dmx2 * 0.0006;
+      }
     }
     _t1.x = t.clientX; _t1.y = t.clientY;
 
