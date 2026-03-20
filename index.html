@@ -1510,137 +1510,174 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
 
     // ══════════════════════════════════════════════════════════════════════
-    // FAMILY CLUSTER LAYOUT
-    // Each family = a small circular subsystem:
-    //   · parents at center of cluster
-    //   · children orbiting tightly around them
-    // Family clusters are grouped by mythology tier into concentric bands.
-    // Within each band, clusters are packed around a ring so lines stay short.
+    // SOLAR SYSTEM LAYOUT
+    //
+    // Each mythology group = its own mini solar system.
+    // • A glowing "group sun" sits at the hub of each system.
+    // • All members of that group orbit around the hub.
+    // • Families stay together: parents close to hub, children in arcs.
+    // • Minimum spacing enforced so no planet touches another.
+    //
+    // Group hubs are placed on large rings around Chaos:
+    //   Ring 1 (r=220): Primordials
+    //   Ring 2 (r=220): Titans  (opposite side)
+    //   Ring 3 (r=420): Olympians
+    //   Ring 4 (r=420): Heroes + Nymphs
+    //   Ring 5 (r=420): Mortals
+    //   Ring 6 (r=620): Monsters + Spirits
+    //   Ring 7 (r=620): Groups / Outer
     // ══════════════════════════════════════════════════════════════════════
 
-    function mythTier(d){
-      if(!d) return 4;
+    function mythGroup2(d){
+      if(!d||d.id==='PRIM_CHAOS_001') return null;
       var model=String(d.ModelType||'').toLowerCase();
-      if(d.id==='PRIM_CHAOS_001') return 0;
-      if(model==='energy')   return 1; // primordials
-      if(model==='giant')    return 2; // titans
-      if(model==='god'||model==='goddess'||model==='wind') return 3; // olympians
-      if(model==='nymph'||model==='hero'||model==='human') return 4; // heroes/mortals
-      if(model==='monster'||model==='spirit'||model==='underworld') return 5;
-      return 4;
+      if(model==='energy')   return 'primordial';
+      if(model==='giant')    return 'titan';
+      if(model==='god'||model==='goddess'||model==='wind') return 'olympian';
+      if(model==='nymph')    return 'nymph';
+      if(model==='human')    return 'mortal';
+      if(model==='hero')     return 'hero';
+      if(model==='monster'||model==='spirit'||model==='underworld') return 'monster';
+      if(model==='group')    return 'outer';
+      return 'hero';
     }
 
-    // Tier ring radii — centre of each band
-    var TIER_R = [0, 90, 175, 265, 360, 450];
+    // Hub positions: [x, z] on the world plane (y=0 initially)
+    var GROUP_HUBS = {
+      primordial: { x:  0,    z: -220 },
+      titan:      { x:  0,    z:  220 },
+      olympian:   { x: -420,  z:    0 },
+      nymph:      { x:  260,  z: -320 },
+      hero:       { x:  420,  z:    0 },
+      mortal:     { x:  260,  z:  320 },
+      monster:    { x: -440,  z: -440 },
+      outer:      { x: -440,  z:  440 }
+    };
 
-    // ── Step 1: build all families ──────────────────────────────────────────
-    // families already built above into `families` array
+    var GROUP_COLORS = {
+      primordial: '#b080ff', titan: '#c89040', olympian: '#ffd060',
+      nymph: '#40c8a0', hero: '#c06040', mortal: '#a08060',
+      monster: '#60a040', outer: '#6080c0'
+    };
 
-    // ── Step 2: assign each family to a tier ────────────────────────────────
-    var famsByTier = {1:[], 2:[], 3:[], 4:[], 5:[]};
-    families.forEach(function(f){
-      if(f.parents.indexOf('PRIM_CHAOS_001') >= 0) return;
-      // Tier = min tier of parents
-      var minTier = 99;
-      f.parents.forEach(function(pid){
-        var t = mythTier(dataMap[pid]);
-        if(t < minTier) minTier = t;
-      });
-      if(minTier < 1) minTier = 1;
-      if(minTier > 5) minTier = 5;
-      if(!famsByTier[minTier]) famsByTier[minTier] = [];
-      famsByTier[minTier].push(f);
+    // ── Create a glowing sun mesh for each group hub ──────────────────────
+    var groupSuns = {};
+    Object.keys(GROUP_HUBS).forEach(function(grp){
+      var hub = GROUP_HUBS[grp];
+      var sun = BABYLON.MeshBuilder.CreateSphere('grpsun_'+grp,
+        {diameter: 14, segments: 16}, scene);
+      sun.position = new BABYLON.Vector3(hub.x, 0, hub.z);
+
+      var sm2 = new BABYLON.StandardMaterial('grpsunmat_'+grp, scene);
+      var col = BABYLON.Color3.FromHexString(GROUP_COLORS[grp]);
+      sm2.emissiveColor = col.scale(1.8);
+      sm2.diffuseColor  = col;
+      sm2.specularColor = BABYLON.Color3.Black();
+      sun.material = sm2;
+      glow.addIncludedOnlyMesh(sun);
+
+      // Label
+      var ldt = new BABYLON.DynamicTexture('sunlbl_'+grp,{width:512,height:128},scene,true);
+      var lctx = ldt.getContext();
+      lctx.clearRect(0,0,512,128);
+      lctx.fillStyle='#ffffff';
+      lctx.font='bold 52px Arial';
+      lctx.textAlign='center';
+      lctx.fillText(grp.toUpperCase(),256,80);
+      ldt.update();
+      var lplane = BABYLON.MeshBuilder.CreatePlane('sunlbl_p_'+grp,{width:22,height:6},scene);
+      lplane.position = new BABYLON.Vector3(hub.x, 12, hub.z);
+      lplane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+      var lmat = new BABYLON.StandardMaterial('sunlblmat_'+grp,scene);
+      lmat.diffuseTexture = ldt; lmat.opacityTexture = ldt;
+      lmat.disableLighting = true; lmat.emissiveColor = BABYLON.Color3.White();
+      lplane.material = lmat;
+
+      groupSuns[grp] = sun;
     });
 
-    // ── Step 3: place each family as a tight circular cluster ───────────────
-    // cluster radius = just enough to fit all children around the parents
-    function clusterRadius(nChildren, parentSize){
-      if(nChildren === 0) return 0;
-      // min arc: each child needs ~2*childSize spacing
-      var childSize = 5.5;
-      var minR = (nChildren * childSize * 2.2) / (Math.PI * 2);
-      return Math.max(minR, parentSize + childSize + 4);
-    }
+    // ── Collect members per group ─────────────────────────────────────────
+    var groupMembers = {};
+    all.forEach(function(d){
+      if(!d||d.id==='PRIM_CHAOS_001') return;
+      var grp = mythGroup2(d);
+      if(!grp) return;
+      if(!groupMembers[grp]) groupMembers[grp]=[];
+      groupMembers[grp].push(d);
+    });
 
-    var placed_families = [];
+    // ── Place each group as a solar system ───────────────────────────────
+    // Min spacing between planet surfaces
+    var MIN_GAP = 6;
 
-    Object.keys(famsByTier).forEach(function(tierStr){
-      var tier = Number(tierStr);
-      var fams = famsByTier[tier];
-      if(!fams || !fams.length) return;
+    Object.keys(groupMembers).forEach(function(grp){
+      var members = groupMembers[grp];
+      var hub = GROUP_HUBS[grp];
+      var hx = hub.x, hz = hub.z;
+      var n = members.length;
+      if(!n) return;
 
-      var bandR = TIER_R[tier] || 360;
+      // Sort: parents before children (so parents land closer to hub)
+      // Use family grouping: parents at inner orbit, children at outer
+      // Simple approach: assign each member an orbit radius
+      // based on whether they are a "parent" (has children) or "child" (no children)
 
-      // Estimate how much arc each cluster needs
-      var clusterSizes = fams.map(function(f){
-        var parents = f.parents.map(function(id){return dataMap[id];}).filter(Boolean);
-        var children = f.children.map(function(id){return dataMap[id];}).filter(Boolean);
-        var pSize = parents.length ? 10 : 6; // approx parent size
-        var cr = clusterRadius(children.length, pSize);
-        return { f:f, parents:parents, children:children, cr:cr,
-                 angularWidth: (cr * 2 + 8) / bandR }; // arc needed in radians
+      var parentSet = {};
+      members.forEach(function(d){
+        if(idsFromField(d.Children).length > 0) parentSet[d.id] = true;
       });
 
-      // Total arc needed
-      var totalArc = clusterSizes.reduce(function(s,c){return s+c.angularWidth;}, 0);
-      // If it overflows, scale band outward slightly
-      var effectiveBandR = bandR;
-      if(totalArc > Math.PI * 2 * 0.92){
-        effectiveBandR = bandR * (totalArc / (Math.PI * 2 * 0.92));
+      var parents  = members.filter(function(d){ return  parentSet[d.id]; });
+      var children = members.filter(function(d){ return !parentSet[d.id]; });
+
+      // Inner orbit = parents, outer orbit = children
+      // Multiple orbits if needed to avoid crowding
+      function placeOnOrbits(items, startR, minR){
+        if(!items.length) return startR;
+        var r = startR;
+        var placed2 = [];
+
+        // Pack items onto concentric orbits
+        var remaining = items.slice();
+        while(remaining.length > 0){
+          // How many fit on this orbit?
+          var circumference = Math.PI * 2 * r;
+          // Each slot needs ~(maxSize + MIN_GAP) arc
+          var slotArc = 18 + MIN_GAP; // approx diameter + gap
+          var fits = Math.max(1, Math.floor(circumference / slotArc));
+          var batch = remaining.splice(0, fits);
+
+          batch.forEach(function(d, i){
+            var angle = (Math.PI * 2 * i / batch.length) - Math.PI/2;
+            // Add slight Y variation per orbit
+            var yOff = Math.sin(angle * 2) * (r * 0.06);
+            createNode(d,
+              hx + Math.cos(angle) * r,
+              yOff,
+              hz + Math.sin(angle) * r,
+              BABYLON.Color3.FromHexString(GROUP_COLORS[grp])
+            );
+          });
+
+          r += slotArc * 0.85; // next orbit slightly larger
+        }
+        return r;
       }
 
-      // Distribute clusters evenly around the band
-      var angle = -Math.PI / 2; // start from top
-      clusterSizes.forEach(function(cs){
-        var halfArc = cs.angularWidth / 2;
-        angle += halfArc;
-
-        var cx = Math.cos(angle) * effectiveBandR;
-        var cz = Math.sin(angle) * effectiveBandR;
-        var cy = Math.sin(angle * 1.7) * 12; // gentle vertical wave
-
-        // Place parents at cluster center
-        if(cs.parents.length === 1){
-          createNode(cs.parents[0], cx, cy, cz, familyColorByKey.get(cs.f.key));
-        } else if(cs.parents.length >= 2){
-          // Side by side, perpendicular to radial direction
-          var perpX = -Math.sin(angle), perpZ = Math.cos(angle);
-          var gap = 9;
-          createNode(cs.parents[0], cx-perpX*gap/2, cy, cz-perpZ*gap/2, familyColorByKey.get(cs.f.key));
-          createNode(cs.parents[1], cx+perpX*gap/2, cy, cz+perpZ*gap/2, familyColorByKey.get(cs.f.key));
-        }
-
-        // Place children in a tight circle around the cluster center
-        var nc = cs.children.length;
-        var cr = cs.cr;
-        cs.children.forEach(function(child, ci){
-          var childAngle = (Math.PI * 2 * ci / Math.max(nc, 1)) - Math.PI / 2;
-          createNode(child,
-            cx + Math.cos(childAngle) * cr,
-            cy + Math.sin(childAngle * 2) * 3,
-            cz + Math.sin(childAngle) * cr,
-            familyColorByKey.get(cs.f.key)
-          );
-        });
-
-        angle += halfArc + 0.04; // small gap between clusters
-      });
+      // Inner ring: parents starting at r=35 (clear of sun size 14/2=7 + gap)
+      var nextR = placeOnOrbits(parents, 35, 35);
+      // Outer ring: children starting right after parents
+      placeOnOrbits(children, Math.max(nextR + 8, 55), 55);
     });
 
-    // ── Step 4: place leftovers (not in any family) ─────────────────────────
-    var leftovers = all.filter(function(d){
+    // ── Leftovers ────────────────────────────────────────────────────────
+    var leftovers2 = all.filter(function(d){
       return d && d.id && d.id !== 'PRIM_CHAOS_001' && !placed.has(d.id);
     });
-    leftovers.forEach(function(d, i){
-      var tier = mythTier(d);
-      var R2 = (TIER_R[tier] || 360) + 30;
-      var ang2 = Math.PI * 2 * i / Math.max(leftovers.length, 1);
-      createNode(d,
-        Math.cos(ang2) * R2,
-        Math.sin(ang2 * 2) * 8,
-        Math.sin(ang2) * R2,
-        null
-      );
+    leftovers2.forEach(function(d, i){
+      var R2 = 700;
+      var ang2 = Math.PI * 2 * i / Math.max(leftovers2.length, 1);
+      createNode(d, Math.cos(ang2)*R2, Math.sin(ang2*2)*8, Math.sin(ang2)*R2, null);
     });
 
         saveOriginalPositions();
