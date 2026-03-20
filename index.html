@@ -1499,6 +1499,7 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     allData=all;
     all.forEach(d=>dataMap[d.id]=d);
 
+    try{
     const chaos=all.find(d=>d.id==='PRIM_CHAOS_001');
     if(chaos) createNode(chaos,0,0,0,null);
 
@@ -1615,24 +1616,24 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
       });
     });
 
-    // Solo entities (no family)
-    var solos = all.filter(function(d){
-      return d && d.id!=='PRIM_CHAOS_001' && !placed.has(d.id);
-    });
-    solos.forEach(function(d,i){
+    // Solo entities (no family) — use placed Set which is already maintained
+    var soloIdx=0;
+    all.forEach(function(d){
+      if(!d || d.id==='PRIM_CHAOS_001' || placed.has(d.id)) return;
       var tier = getTier(d);
       var z2   = ZONES[tier]||[370,460];
-      var r2   = z2[1] + 20 + i*6;
-      var a2   = i * GOLDEN;
+      var r2   = z2[1] + 20 + soloIdx*6;
+      var a2   = soloIdx * GOLDEN;
       createNode(d, Math.cos(a2)*r2, Math.sin(a2*2)*8, Math.sin(a2)*r2, null);
+      soloIdx++;
     });
 
         saveOriginalPositions();
     buildConnections();
     renderConnections();
     resetInfo();
+    }catch(layoutErr){console.error('Layout error:',layoutErr);}
     if(window._hideLoader) window._hideLoader();
-// disappears after 15 sec
   })
   .catch(err=>{
     infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';
