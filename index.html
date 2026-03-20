@@ -827,26 +827,41 @@ function createNode(d,x,y,z,familyRingColor){
 
   var sm=new BABYLON.StandardMaterial('sm_'+d.id,scene);
 
-  // Custom photo: wrap directly on sphere + slow rotation in render loop
+  // Custom photo: sphere invisible, image shown on a disc that spins outward
   if(d.photo){
+    // Make the sphere invisible — used only for picking/metadata
+    sm.alpha=0;
+    sphere.material=sm;
+    sphere.isPickable=true;
+    sphere.renderingGroupId=1;
+
     var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
     photoTex.hasAlpha=false;
-    // Offset U by 0.5 so the front face (not the seam) faces outward initially
-    photoTex.uOffset=0.5;
 
-    sm.diffuseTexture=photoTex;
-    sm.emissiveTexture=photoTex;
-    sm.emissiveColor=new BABYLON.Color3(0.55,0.55,0.55); // bright enough without env
-    sm.specularColor=new BABYLON.Color3(0.04,0.03,0.02);
-    sm.specularPower=8;
-    sm.backFaceCulling=false;
-    sphere.material=sm;
-    sphere.renderingGroupId=1;
-    // Tag for rotation in render loop
+    var discMat=new BABYLON.StandardMaterial('discmat_'+d.id,scene);
+    discMat.diffuseTexture=photoTex;
+    discMat.emissiveTexture=photoTex;
+    discMat.emissiveColor=new BABYLON.Color3(0.7,0.7,0.7);
+    discMat.specularColor=BABYLON.Color3.Black();
+    discMat.backFaceCulling=false;
+    discMat.disableLighting=true;
+
+    // Create a disc the same size as the sphere
+    var disc=BABYLON.MeshBuilder.CreateDisc('disc_'+d.id,{radius:size/2,tessellation:48},scene);
+    disc.parent=sphere;
+    disc.position=BABYLON.Vector3.Zero();
+    disc.renderingGroupId=1;
+    disc.material=discMat;
+
+    // Orient disc to face outward from Chaos
+    var outAng=Math.atan2(z,x);
+    disc.rotation.y=outAng+Math.PI/2;
+
     sphere.metadata=Object.assign({},d,{
       isChaos: String(d.id)==='PRIM_CHAOS_001',
       hasPhoto: true,
-      rotSpeed: 0.0015 + Math.random()*0.0008 // slightly different speed per god
+      disc: disc,
+      rotSpeed: 0.004 + Math.random()*0.002
     });
 
     var photoLabel=createLabel(d.Name||d.id,sphere,size);
@@ -1736,9 +1751,9 @@ engine.runRenderLoop(()=>{
   }
 
   Object.values(nodes).forEach(n=>{
-    // Rotate photo spheres slowly around Y axis
-    if(n.sphere.metadata && n.sphere.metadata.hasPhoto){
-      n.sphere.rotation.y += n.sphere.metadata.rotSpeed;
+    // Spin photo discs around their outward axis (like a coin spinning)
+    if(n.sphere.metadata && n.sphere.metadata.hasPhoto && n.sphere.metadata.disc){
+      n.sphere.metadata.disc.rotation.y += n.sphere.metadata.rotSpeed;
     }
     if(n.sphere.metadata && n.sphere.metadata.isChaos){
       var pulse=0.7 + Math.sin(t*0.9)*0.3;
