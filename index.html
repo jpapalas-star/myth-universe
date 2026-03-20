@@ -386,12 +386,11 @@ canvas.addEventListener('touchmove', function(e) {
     var dmy = my - _tf.my;
     _panDelta(dmx, dmy);
 
-    // 2. PINCH ZOOM — linear, proportional to movement
-    if (_tf.dist > 1 && dist > 1) {
-      var dd = _tf.dist - dist; // pixels fingers moved closer/further
-      // Scale by radius so it's consistent at any distance
-      var step = dd * (camera.radius / 800) * 0.7;
-      camera.radius = _cr(camera.radius + step);
+    // 2. PINCH ZOOM — ratio based, capped per frame for consistency
+    if (_tf.dist > 5 && dist > 5) {
+      var ratio = _tf.dist / dist;          // >1 = fingers closer = zoom in
+      ratio = 1 + (ratio - 1) * 0.18;      // dampen to 18% of raw change
+      camera.radius = _cr(camera.radius * ratio);
     }
 
     _tf.mx = mx; _tf.my = my; _tf.dist = dist;
@@ -458,8 +457,7 @@ window.addEventListener('mouseup', function(e) {
 // Mouse wheel: zoom toward cursor
 canvas.addEventListener('wheel', function(e) {
   // Additive zoom: step size proportional to current distance for linear feel
-  var step = camera.radius * 0.04;
-  camera.radius = _cr(camera.radius + (e.deltaY > 0 ? step : -step));
+  camera.radius = _cr(camera.radius * (e.deltaY > 0 ? 1.08 : 0.926));
 }, { passive: true });
 
 
@@ -1186,6 +1184,7 @@ function restoreCameraState(){
     camera.target.y = lrp(sTy, st.target.y, p);
     camera.target.z = lrp(sTz, st.target.z, p);
     if(fr<mxF) setTimeout(stpR,16);
+    else renderConnections(); // redraw lines after restore
   }
   stpR();
 }
@@ -1200,18 +1199,27 @@ function enterFocus(id){
 
   Object.values(nodes).forEach(function(n){
     var rel = relatives.has(n.id);
-    // Sphere: 100% if relative, 18% if not — use ALPHABLEND for both
-    n.sphere.material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
-    n.sphere.material.alpha = rel ? 1.0 : 0.18;
+    if(rel){
+      // Relatives: fully opaque, render in front (group 1)
+      n.sphere.material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
+      n.sphere.material.alpha = 1.0;
+      n.sphere.renderingGroupId = 1;
+    } else {
+      // Non-relatives: semi-transparent, render behind (group 0)
+      n.sphere.material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+      n.sphere.material.alpha = 0.18;
+      n.sphere.renderingGroupId = 0;
+    }
     n.sphere.setEnabled(true);
-    // Rings: keep visible but dim
     if(n.rings) n.rings.forEach(function(r){
-      if(r && r.material) r.material.alpha = rel ? 0.92 : 0.10;
+      if(r && r.material){
+        r.material.alpha = rel ? 0.92 : 0.08;
+        r.renderingGroupId = rel ? 1 : 0;
+      }
     });
-    // Labels: show relatives, hide others
     if(n.label){
-      n.label.setEnabled(true);
-      n.label.material.alpha = rel ? 0.88 : 0.0;
+      n.label.setEnabled(rel);
+      if(rel) n.label.renderingGroupId = 1;
     }
   });
 
@@ -1224,22 +1232,10 @@ function enterFocus(id){
     var minDist = nodes[id].size * 1.2 + 18; // don't enter sphere
     camera.lowerRadiusLimit = minDist;
     var newRadius = nodes[id].size * 10 + 60;
-    // Determine the direction from Chaos (0,0,0) to the planet
-    // so we approach from OUTSIDE the galaxy (not from inside)
-    var toX = newTarget.x, toZ = newTarget.z;
-    var dist2D = Math.sqrt(toX*toX + toZ*toZ);
-    // Alpha: angle to look AT the planet from outside (planet direction + PI = approach from outside)
-    var targetAlpha = dist2D > 5
-      ? Math.atan2(toZ, toX) + Math.PI  // approach from outside the ring
-      : camera.alpha;                     // near chaos: keep current angle
-    // Beta: slightly above horizon for a clear 3/4 view
-    var targetBeta = Math.PI / 4;
-
-    // Normalise alpha difference to shortest rotation path
-    var dA = targetAlpha - camera.alpha;
-    while(dA >  Math.PI) dA -= Math.PI*2;
-    while(dA < -Math.PI) dA += Math.PI*2;
-    var destAlpha = camera.alpha + dA;
+    // Keep current camera angle — just move target and zoom
+    // This avoids any rotation jitter
+    var destAlpha  = camera.alpha;
+    var targetBeta = camera.beta;
 
     var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
     var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
@@ -1286,15 +1282,10 @@ function resetFocus(fromPop){
   camera.lowerRadiusLimit = 35; // restore free-roam min
   restoreOriginalPositions();
 
-  Object.values(nodes).forEach(n=>{
-    n.sphere.material.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
-    n.sphere.material.alpha=1;
-    n.sphere.setEnabled(true);
-    if(n.label) { n.label.setEnabled(true); n.label.scaling.setAll(1); }
-  });
+  // (handled above with rings+labels)
 
   clearConnectionVisuals();
-  restoreCameraState();
+  restoreCameraState(); // renderConnections called at end of restore animation
   resetInfo();
   hideSearchResults();
 
@@ -1401,9 +1392,12 @@ homeBtn.addEventListener('click',function(){
   Object.values(nodes).forEach(function(n){
     n.sphere.material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
     n.sphere.material.alpha = 1.0;
+    n.sphere.renderingGroupId = 1; // all in front group
     n.sphere.setEnabled(true);
-    if(n.rings) n.rings.forEach(function(r){ if(r && r.material) r.material.alpha=0.92; });
-    if(n.label){ n.label.setEnabled(true); n.label.material.alpha=0.88; n.label.scaling.setAll(1); }
+    if(n.rings) n.rings.forEach(function(r){
+      if(r && r.material){ r.material.alpha=0.92; r.renderingGroupId=1; }
+    });
+    if(n.label){ n.label.setEnabled(true); n.label.renderingGroupId=1; n.label.scaling.setAll(1); }
   });
   resetInfo();
   hideSearchResults();
