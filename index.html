@@ -1510,136 +1510,135 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
 
     // ══════════════════════════════════════════════════════════════════════
-    // FAMILY SOLAR SYSTEMS LAYOUT
-    //
-    // Each family = a tight circle: parents at center, children on a ring.
-    // Families grouped by tier into concentric galaxy bands.
+    // DIRECT FAMILY CIRCLE LAYOUT
+    // Build family clusters directly from dataMap without relying on
+    // buildFamilies(). Each parent+its children = one circle.
     // ══════════════════════════════════════════════════════════════════════
 
-    // Mythology tier assignment
     function getTier(d){
       if(!d) return 'hero';
       var m=String(d.ModelType||'').toLowerCase();
-      if(m==='energy')   return 'primordial';
-      if(m==='giant')    return 'titan';
-      if(m==='god'||m==='goddess'||m==='wind') return 'olympian';
-      if(m==='nymph')    return 'nymph';
-      if(m==='hero')     return 'hero';
-      if(m==='human')    return 'mortal';
-      if(m==='monster'||m==='spirit'||m==='underworld') return 'monster';
-      if(m==='group')    return 'outer';
+      if(m==='energy')                                    return 'primordial';
+      if(m==='giant')                                     return 'titan';
+      if(m==='god'||m==='goddess'||m==='wind')            return 'olympian';
+      if(m==='nymph')                                     return 'nymph';
+      if(m==='hero'||m==='human')                        return 'hero';
+      if(m==='monster'||m==='spirit'||m==='underworld')  return 'monster';
       return 'hero';
     }
 
-    // Band radius for each tier (distance of family clusters from Chaos center)
     var BANDS = {
-      primordial: 110, titan: 210, olympian: 330,
-      nymph: 440,      hero:  440, mortal:   440,
-      monster: 560,    outer: 560
+      primordial:110, titan:210, olympian:330,
+      nymph:450, hero:450, mortal:450, monster:570, outer:570
     };
 
-    // Collect families per tier (based on first parent's tier)
-    var tierFams = {};
-    families.forEach(function(f){
-      if(f.parents.indexOf('PRIM_CHAOS_001')>=0) return;
-      var p0 = dataMap[f.parents[0]];
-      var tier = getTier(p0);
-      if(!tierFams[tier]) tierFams[tier]=[];
-      tierFams[tier].push(f);
+    // Build clusters: one cluster per parent that has children
+    // Children point to parents via Parents field
+    var clusterMap = {}; // parentId → {parent:d, children:[d,...]}
+    var childrenAssigned = {};
+
+    // First pass: find all parents
+    all.forEach(function(d){
+      if(!d||d.id==='PRIM_CHAOS_001') return;
+      var kids = idsFromField(d.Children).filter(function(id){
+        return dataMap[id] && id!=='PRIM_CHAOS_001';
+      });
+      if(kids.length>0){
+        clusterMap[d.id]={parent:d, children:[]};
+      }
     });
 
-    // For each tier, compute cluster layout and place around the band ring
-    Object.keys(tierFams).forEach(function(tier){
-      var fams = tierFams[tier];
-      var bandR = BANDS[tier]||440;
+    // Second pass: assign each child to its first known parent
+    all.forEach(function(d){
+      if(!d||d.id==='PRIM_CHAOS_001') return;
+      var parents = idsFromField(d.Parents).filter(function(id){
+        return clusterMap[id];
+      });
+      if(parents.length>0 && !childrenAssigned[d.id]){
+        clusterMap[parents[0]].children.push(d);
+        childrenAssigned[d.id]=true;
+      }
+    });
 
-      // Pre-compute cluster radius for each family
-      // Cluster radius = distance from family center to outermost child planet
-      var clusters = fams.map(function(f){
-        var parents  = f.parents.map(function(id){return dataMap[id];}).filter(Boolean);
-        var children = f.children.map(function(id){return dataMap[id];}).filter(Boolean);
+    // Group clusters by tier
+    var tierClusters={};
+    Object.keys(clusterMap).forEach(function(pid){
+      var cl=clusterMap[pid];
+      var tier=getTier(cl.parent);
+      if(!tierClusters[tier]) tierClusters[tier]=[];
+      tierClusters[tier].push(cl);
+    });
 
-        // Size of largest parent (for center gap)
-        var maxPSize = parents.length
-          ? Math.max.apply(null, parents.map(function(d){return sizeFor(d);})) : 7;
+    var GAP=10; // minimum gap between planet surfaces
 
-        // Cluster radius for children
-        // Formula: r = max(parentSize/2 + gap + childSize/2, circumference/2pi)
-        var nc = children.length;
-        var maxCSize = nc
-          ? Math.max.apply(null, children.map(function(d){return sizeFor(d);})) : 0;
+    // Place each tier's clusters around its band ring
+    var tierOrder=['primordial','titan','olympian','nymph','hero','mortal','monster','outer'];
+    tierOrder.forEach(function(tier){
+      var clusters=tierClusters[tier];
+      if(!clusters||!clusters.length) return;
+      var bandR=BANDS[tier]||450;
 
-        var clR;
-        if(nc===0){
-          clR = maxPSize/2 + 4; // solo parent — tiny footprint
-        } else {
-          var gapNeeded = maxPSize/2 + maxCSize/2 + 10; // radial gap parent→child
-          var circNeeded = nc * (maxCSize + 10); // arc for all children
-          clR = Math.max(gapNeeded, circNeeded / (2*Math.PI));
-        }
-
-        // Total footprint radius (including outermost child's own radius)
-        var footprint = clR + (nc>0 ? maxCSize/2 + 5 : maxPSize/2+4);
-
-        return {f:f, parents:parents, children:children,
-                clR:clR, footprint:footprint, maxPSize:maxPSize, nc:nc};
+      // Compute footprint of each cluster
+      var clData=clusters.map(function(cl){
+        var pSize=sizeFor(cl.parent);
+        var nc=cl.children.length;
+        var maxCS=nc?Math.max.apply(null,cl.children.map(function(c){return sizeFor(c);})):0;
+        // Orbit radius: children circle around parent
+        var orbitR=nc===0?0:Math.max(
+          pSize/2+maxCS/2+GAP,         // radial clearance
+          (nc*(maxCS+GAP))/(2*Math.PI) // circumference
+        );
+        // Footprint = outermost surface of outermost child
+        var fp=orbitR+(nc>0?maxCS/2:pSize/2)+GAP/2;
+        return {cl:cl, pSize:pSize, nc:nc, maxCS:maxCS, orbitR:orbitR, fp:fp};
       });
 
-      // Total arc = sum of all footprint diameters + spacing
-      var spacing = 14; // gap between cluster edges
-      var totalArc = clusters.reduce(function(s,c){return s+c.footprint*2+spacing;}, 0);
-      var effectiveBandR = Math.max(bandR, totalArc / (2*Math.PI));
+      // Total arc needed on band ring
+      var totalArc=clData.reduce(function(s,cd){return s+cd.fp*2+GAP;},0);
+      var effR=Math.max(bandR, totalArc/(2*Math.PI));
 
-      // Place clusters evenly around the band
-      var angle = -Math.PI/2; // start from top
-      clusters.forEach(function(cl){
-        var angStep = (cl.footprint*2 + spacing) / effectiveBandR;
-        angle += angStep/2;
+      // Place clusters
+      var angle=-Math.PI/2;
+      clData.forEach(function(cd){
+        var angStep=(cd.fp*2+GAP)/effR;
+        angle+=angStep/2;
 
-        // Family circle center
-        var cx = Math.cos(angle)*effectiveBandR;
-        var cz = Math.sin(angle)*effectiveBandR;
-        var cy = Math.sin(angle*1.3)*16; // gentle 3D wave
+        var cx=Math.cos(angle)*effR;
+        var cz=Math.sin(angle)*effR;
+        var cy=Math.sin(angle*1.4)*14;
 
-        var fColor = familyColorByKey.get(cl.f.key);
+        // Place parent at cluster center
+        createNode(cd.cl.parent, cx, cy, cz, null);
 
-        // ── Place parent(s) at cluster center ──────────────────────────
-        if(cl.parents.length===1){
-          createNode(cl.parents[0], cx, cy, cz, fColor);
-        } else if(cl.parents.length>=2){
-          // Two parents: side by side perpendicular to radial direction
-          var px=-Math.sin(angle), pz=Math.cos(angle);
-          var pg = cl.maxPSize + 8;
-          createNode(cl.parents[0], cx-px*pg/2, cy, cz-pz*pg/2, fColor);
-          createNode(cl.parents[1], cx+px*pg/2, cy, cz+pz*pg/2, fColor);
-        }
-
-        // ── Place children in a circle around the parents ───────────────
-        var nc = cl.nc;
-        if(nc>0){
-          cl.children.forEach(function(child, ci){
-            var childAngle = (2*Math.PI*ci/nc) - Math.PI/2;
+        // Place children in a circle around parent
+        if(cd.nc>0){
+          cd.cl.children.forEach(function(child,ci){
+            var ca=(2*Math.PI*ci/cd.nc)-Math.PI/2;
             createNode(child,
-              cx + Math.cos(childAngle)*cl.clR,
-              cy + Math.sin(childAngle*2)*4,
-              cz + Math.sin(childAngle)*cl.clR,
-              fColor
+              cx+Math.cos(ca)*cd.orbitR,
+              cy+Math.sin(ca*2)*3,
+              cz+Math.sin(ca)*cd.orbitR,
+              null
             );
           });
         }
 
-        angle += angStep/2;
+        angle+=angStep/2;
       });
     });
 
-    // Place solo entities not caught by any family
-    var solos = all.filter(function(d){
-      return d && d.id && d.id!=='PRIM_CHAOS_001' && !placed.has(d.id);
-    });
-    solos.forEach(function(d,i){
-      var tier = getTier(d);
-      var R2 = (BANDS[tier]||440)+50;
-      var a2 = (2*Math.PI*i/Math.max(solos.length,1)) - Math.PI/2;
+    // Place everyone else (no parent, no children, or Chaos children)
+    all.forEach(function(d){
+      if(!d||d.id==='PRIM_CHAOS_001'||placed.has(d.id)){return;}
+      var tier=getTier(d);
+      var R2=(BANDS[tier]||450)+60;
+      // Distribute evenly on a slightly larger ring
+      var allUnplaced=all.filter(function(x){
+        return x&&x.id!=='PRIM_CHAOS_001'&&!placed.has(x.id);
+      });
+      var idx2=allUnplaced.indexOf(d);
+      var n2=allUnplaced.length||1;
+      var a2=(2*Math.PI*idx2/n2)-Math.PI/2;
       createNode(d, Math.cos(a2)*R2, Math.sin(a2*2)*10, Math.sin(a2)*R2, null);
     });
 
@@ -1755,17 +1754,25 @@ window.addEventListener('resize',()=>engine.resize());
 <script>
 (function(){
   var dots=document.querySelectorAll('.ldot');
-  var i=0;
-  var iv=setInterval(function(){
-    dots.forEach(function(d){d.style.opacity='0.2';});
-    dots[i%3].style.opacity='1';
-    i++;
-  },400);
-  // Hide once Babylon scene is loaded — hook onto fetch success
+  var cur=0;
+  // Each dot lights up in sequence: dot0 → dot1 → dot2 → dot0 → ...
+  function tick(){
+    dots.forEach(function(d,i){
+      d.style.transition='opacity 0.15s';
+      d.style.opacity= i===cur ? '1' : '0.15';
+    });
+    cur=(cur+1)%3;
+  }
+  tick();
+  var iv=setInterval(tick,500);
   window._hideLoader=function(){
     clearInterval(iv);
     var ls=document.getElementById('loadScreen');
-    if(ls){ls.style.transition='opacity 0.6s';ls.style.opacity='0';setTimeout(function(){ls.remove();},700);}
+    if(ls){
+      ls.style.transition='opacity 0.7s';
+      ls.style.opacity='0';
+      setTimeout(function(){ls.remove();},750);
+    }
   };
 })();
 </script>
