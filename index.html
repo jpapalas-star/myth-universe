@@ -863,19 +863,17 @@ function createNode(d,x,y,z,familyRingColor){
   var spriteTex=new BABYLON.Texture('./'+spriteFile(d),scene,true,false);
   spriteTex.hasAlpha=true;
 
-  // ── Bump map: 2 octaves of smooth noise ──────────────────────────────────
+  // ── Bump map ──────────────────────────────────────────────────────────────
   var btex=new BABYLON.DynamicTexture('btex_'+d.id,{width:64,height:64},scene,true);
   var bpc=btex.getContext();
-  // Draw large soft grey blobs as bump
   bpc.fillStyle='#808080'; bpc.fillRect(0,0,64,64);
   for(var bi2=0;bi2<5;bi2++){
-    var bx=rng()*64,by=rng()*64,brad=12+rng()*22;
-    var bgr=pc.createRadialGradient(bx,by,0,bx,by,brad); // reuse pc
-    var bv=150+Math.round(rng()*80);
-    var bgr2=bpc.createRadialGradient(bx,by,0,bx,by,brad);
-    bgr2.addColorStop(0,'rgba('+bv+','+bv+','+bv+',1)');
-    bgr2.addColorStop(1,'rgba(128,128,128,0)');
-    bpc.fillStyle=bgr2; bpc.beginPath(); bpc.arc(bx,by,brad,0,Math.PI*2); bpc.fill();
+    var bxb=rng()*64, byb=rng()*64, bradb=12+rng()*22;
+    var bvb=150+Math.round(rng()*80);
+    var bgrb=bpc.createRadialGradient(bxb,byb,0,bxb,byb,bradb);
+    bgrb.addColorStop(0,'rgb('+bvb+','+bvb+','+bvb+')');
+    bgrb.addColorStop(1,'rgba(128,128,128,0)');
+    bpc.fillStyle=bgrb; bpc.beginPath(); bpc.arc(bxb,byb,bradb,0,Math.PI*2); bpc.fill();
   }
   btex.update();
 
