@@ -1354,19 +1354,29 @@ function enterFocus(id){
 
   Object.values(nodes).forEach(function(n){
     var rel = relatives.has(n.id);
+    var hasPhoto = n.sphere.metadata && n.sphere.metadata.hasPhoto;
+    var disc = n.sphere.metadata && n.sphere.metadata.disc;
+
     if(rel){
-      // Relatives: fully opaque, render in front (group 1)
-      n.sphere.material.alpha = 1.0;
+      // Relatives: fully visible in front
       n.sphere.renderingGroupId = 1;
+      if(hasPhoto){
+        // Photo sphere: keep natural transparent look
+        n.sphere.material.alpha = 0.22;
+      } else {
+        n.sphere.material.alpha = 1.0;
+      }
+      if(disc){ disc.setEnabled(true); disc.renderingGroupId = 1; }
     } else {
-      // Non-relatives: semi-transparent, render behind (group 0)
-      n.sphere.material.alpha = 0.18;
+      // Non-relatives: dim and push behind
       n.sphere.renderingGroupId = 0;
+      n.sphere.material.alpha = hasPhoto ? 0.05 : 0.12;
+      if(disc){ disc.setEnabled(false); } // hide disc for non-relatives
     }
     n.sphere.setEnabled(true);
     if(n.rings) n.rings.forEach(function(r){
       if(r && r.material){
-        r.material.alpha = rel ? 0.92 : 0.08;
+        r.material.alpha = rel ? 0.92 : 0.05;
         r.renderingGroupId = rel ? 1 : 0;
       }
     });
@@ -1435,9 +1445,12 @@ function resetFocus(fromPop){
 
   // Restore ALL nodes to full opacity immediately
   Object.values(nodes).forEach(function(n){
-    n.sphere.material.alpha = 1.0;
+    var hasPhoto2 = n.sphere.metadata && n.sphere.metadata.hasPhoto;
+    var disc2 = n.sphere.metadata && n.sphere.metadata.disc;
+    n.sphere.material.alpha = hasPhoto2 ? 0.22 : 1.0;
     n.sphere.renderingGroupId = 1;
     n.sphere.setEnabled(true);
+    if(disc2){ disc2.setEnabled(true); disc2.renderingGroupId = 1; }
     if(n.rings) n.rings.forEach(function(r){
       if(r && r.material){ r.material.alpha = 0.92; r.renderingGroupId = 1; }
     });
@@ -1551,8 +1564,9 @@ homeBtn.addEventListener('click',function(){
   restoreOriginalPositions();
   renderConnections();
   Object.values(nodes).forEach(function(n){
-    n.sphere.material.alpha = 1.0;
-    n.sphere.renderingGroupId = 1; // all in front group
+    n.sphere.material.alpha = (n.sphere.metadata&&n.sphere.metadata.hasPhoto)?0.22:1.0;
+    n.sphere.renderingGroupId = 1;
+    var d3=n.sphere.metadata&&n.sphere.metadata.disc; if(d3){d3.setEnabled(true);d3.renderingGroupId=1;}
     n.sphere.setEnabled(true);
     if(n.rings) n.rings.forEach(function(r){
       if(r && r.material){ r.material.alpha=0.92; r.renderingGroupId=1; }
