@@ -315,7 +315,7 @@ function _cb(b){ return Math.max(camera.lowerBetaLimit,  Math.min(camera.upperBe
 // Stable delta pan: moves camera target in camera-local right/up axes.
 // No ray casting = no ghost teleport.
 function _panDelta(dx, dy) {
-  var speed = camera.radius * 0.0006;
+  var speed = camera.radius * 0.0003;
   var sinA = Math.sin(camera.alpha), cosA = Math.cos(camera.alpha);
   // Fingers right (dx>0) → target moves right → galaxy follows fingers
   camera.target.x -= dx * speed * sinA;
@@ -390,7 +390,7 @@ canvas.addEventListener('touchmove', function(e) {
     if (_tf.dist > 1 && dist > 1) {
       var dd = _tf.dist - dist; // pixels fingers moved closer/further
       // Scale by radius so it's consistent at any distance
-      var step = dd * (camera.radius / 400) * 1.8;
+      var step = dd * (camera.radius / 800) * 0.7;
       camera.radius = _cr(camera.radius + step);
     }
 
@@ -458,7 +458,7 @@ window.addEventListener('mouseup', function(e) {
 // Mouse wheel: zoom toward cursor
 canvas.addEventListener('wheel', function(e) {
   // Additive zoom: step size proportional to current distance for linear feel
-  var step = camera.radius * 0.08;
+  var step = camera.radius * 0.04;
   camera.radius = _cr(camera.radius + (e.deltaY > 0 ? step : -step));
 }, { passive: true });
 
@@ -1198,12 +1198,21 @@ function enterFocus(id){
   focusedId=id;
   const relatives=getRelativesSet(id);
 
-  Object.values(nodes).forEach(n=>{
+  Object.values(nodes).forEach(function(n){
+    var rel = relatives.has(n.id);
+    // Sphere: 100% if relative, 18% if not — use ALPHABLEND for both
+    n.sphere.material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+    n.sphere.material.alpha = rel ? 1.0 : 0.18;
     n.sphere.setEnabled(true);
-    var rel=relatives.has(n.id);
-    n.sphere.material.transparencyMode=rel?BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE:BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
-    n.sphere.material.alpha=rel?1:0.04;  // non-relatives nearly invisible
-    if(n.label) n.label.setEnabled(rel); // hide labels of non-relatives
+    // Rings: keep visible but dim
+    if(n.rings) n.rings.forEach(function(r){
+      if(r && r.material) r.material.alpha = rel ? 0.92 : 0.10;
+    });
+    // Labels: show relatives, hide others
+    if(n.label){
+      n.label.setEnabled(true);
+      n.label.material.alpha = rel ? 0.88 : 0.0;
+    }
   });
 
   applyFocusLayout(id,relatives);
@@ -1232,21 +1241,38 @@ function enterFocus(id){
     while(dA < -Math.PI) dA += Math.PI*2;
     var destAlpha = camera.alpha + dA;
 
-    var frames2=0, maxF2=45;
     var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
     var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
+    var pullR = Math.max(sR, newRadius*2.2, 300); // pull-back radius
+    var frames2=0, maxF2=60;
     function lerp2(a,b,t){return a+(b-a)*t;}
-    function ease2(t){return t;} // linear zoom — no acceleration
     function stepFocus(){
       frames2++;
-      var p=ease2(Math.min(frames2/maxF2,1));
-      camera.alpha    = lerp2(sA,   destAlpha,   p);
-      camera.beta     = lerp2(sB,   targetBeta,  p);
-      camera.radius   = lerp2(sR,   newRadius,   p);
-      camera.target.x = lerp2(sTx,  newTarget.x, p);
-      camera.target.y = lerp2(sTy,  newTarget.y, p);
-      camera.target.z = lerp2(sTz,  newTarget.z, p);
-      if(frames2<maxF2) setTimeout(stepFocus,16);
+      var raw = Math.min(frames2/maxF2, 1);
+      // Phase 1 (0→0.4): pull back + rotate to face planet
+      // Phase 2 (0.4→0.7): glide target to planet at pull-back distance
+      // Phase 3 (0.7→1.0): zoom in to final radius
+      if(raw <= 0.4){
+        var p = raw/0.4;
+        camera.alpha  = lerp2(sA, destAlpha, p);
+        camera.beta   = lerp2(sB, targetBeta, p);
+        camera.radius = lerp2(sR, pullR, p);
+        camera.target.x = lerp2(sTx, newTarget.x, p*0.25);
+        camera.target.y = lerp2(sTy, newTarget.y, p*0.25);
+        camera.target.z = lerp2(sTz, newTarget.z, p*0.25);
+      } else if(raw <= 0.7){
+        var p = (raw-0.4)/0.3;
+        camera.alpha  = destAlpha; camera.beta = targetBeta; camera.radius = pullR;
+        camera.target.x = lerp2(sTx, newTarget.x, 0.25+p*0.75);
+        camera.target.y = lerp2(sTy, newTarget.y, 0.25+p*0.75);
+        camera.target.z = lerp2(sTz, newTarget.z, 0.25+p*0.75);
+      } else {
+        var p = (raw-0.7)/0.3;
+        camera.alpha=destAlpha; camera.beta=targetBeta;
+        camera.radius = lerp2(pullR, newRadius, p);
+        camera.target.x=newTarget.x; camera.target.y=newTarget.y; camera.target.z=newTarget.z;
+      }
+      if(frames2 < maxF2) setTimeout(stepFocus, 16);
     }
     stepFocus();
   }
@@ -1373,10 +1399,10 @@ homeBtn.addEventListener('click',function(){
   restoreOriginalPositions();
   renderConnections();
   Object.values(nodes).forEach(function(n){
-    n.sphere.material.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
-    n.sphere.material.alpha=1;
+    n.sphere.material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
+    n.sphere.material.alpha = 1.0;
     n.sphere.setEnabled(true);
-    n.rings.forEach(function(r){ if(r.material) r.material.alpha=0.92; });
+    if(n.rings) n.rings.forEach(function(r){ if(r && r.material) r.material.alpha=0.92; });
     if(n.label){ n.label.setEnabled(true); n.label.material.alpha=0.88; n.label.scaling.setAll(1); }
   });
   resetInfo();
