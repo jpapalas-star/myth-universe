@@ -828,19 +828,16 @@ function createNode(d,x,y,z,familyRingColor){
   var pc=ptex.getContext();
   // Base colour
   pc.fillStyle='rgb('+br+','+bg_+','+bb+')'; pc.fillRect(0,0,256,128);
-  // 4 large soft terrain blobs — blurred by large radial gradients
+  // 4 large soft terrain blobs
   for(var li=0;li<4;li++){
     var lx=rng()*256, ly=rng()*128, lr=50+rng()*90;
     var ld=Math.round((rng()-0.5)*60);
-    var lc=Math.max(0,Math.min(255,br+ld));
-    var lg=pc.createRadialGradient(lx,ly,0,lx,ly,lr);
-    lg.addColorStop(0,'rgba('+lc+','+(Math.max(0,Math.min(255,bg_+ld)))+','+(Math.max(0,Math.min(255,bb+ld)))+',0.55)');
-    lg.addColorStop(1,'rgba('+lc+','+lg+','+bb+',0)');
-    // Fix: use separate var to avoid name collision
-    var lrc=Math.max(0,Math.min(255,bg_+ld)), lbc=Math.max(0,Math.min(255,bb+ld));
+    var lrc=Math.max(0,Math.min(255,br+ld));
+    var lgc=Math.max(0,Math.min(255,bg_+ld));
+    var lbc=Math.max(0,Math.min(255,bb+ld));
     var lg2=pc.createRadialGradient(lx,ly,0,lx,ly,lr);
-    lg2.addColorStop(0,'rgba('+lc+','+lrc+','+lbc+',0.50)');
-    lg2.addColorStop(1,'rgba('+lc+','+lrc+','+lbc+',0)');
+    lg2.addColorStop(0,'rgba('+lrc+','+lgc+','+lbc+',0.55)');
+    lg2.addColorStop(1,'rgba('+lrc+','+lgc+','+lbc+',0)');
     pc.fillStyle=lg2; pc.beginPath(); pc.arc(lx,ly,lr,0,Math.PI*2); pc.fill();
   }
   // 2 subtle fault lines
