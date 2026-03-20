@@ -263,7 +263,7 @@ const camera = new BABYLON.ArcRotateCamera(
 );
 
 camera.detachControl();
-camera.lowerRadiusLimit = 20;
+camera.lowerRadiusLimit = 35;
 camera.upperRadiusLimit = 12000;
 camera.lowerBetaLimit   = 0.08;
 camera.upperBetaLimit   = Math.PI / 2.02;
@@ -299,7 +299,7 @@ function _cb(b){ return Math.max(camera.lowerBetaLimit,  Math.min(camera.upperBe
 // Stable delta pan: moves camera target in camera-local right/up axes.
 // No ray casting = no ghost teleport.
 function _panDelta(dx, dy) {
-  var speed = camera.radius * 0.0014;
+  var speed = camera.radius * 0.0006;
   var sinA = Math.sin(camera.alpha), cosA = Math.cos(camera.alpha);
   // Fingers right (dx>0) → target moves right → galaxy follows fingers
   camera.target.x -= dx * speed * sinA;
@@ -351,8 +351,8 @@ canvas.addEventListener('touchmove', function(e) {
     if (Math.hypot(dmx2, dmy2) > 10) _t1.id = null; // cancel tap
 
     // 1 finger = ORBIT always (rotate the galaxy)
-    camera.alpha -= dmx2 * 0.003;
-    camera.beta   = _cb(camera.beta - dmy2 * 0.003);
+    camera.alpha -= dmx2 * 0.0015;
+    camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
     _t1.x = t.clientX; _t1.y = t.clientY;
 
   } else if (e.touches.length >= 2 && _tf) {
@@ -1220,7 +1220,7 @@ function enterFocus(id){
 
 function resetFocus(fromPop){
   focusedId=null;
-  camera.lowerRadiusLimit = 20; // restore free-roam min
+  camera.lowerRadiusLimit = 35; // restore free-roam min
   restoreOriginalPositions();
 
   Object.values(nodes).forEach(n=>{
