@@ -1170,31 +1170,26 @@ function saveCameraState(){
 function restoreCameraState(){
   if(!savedCameraState) return;
   var st=savedCameraState;
-  var fr=0, mxF=35;
-  var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
-  var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
-  function lrp(a,b,t){return a+(b-a)*t;}
-  function esF(t){return t;} // linear — constant speed restore
-  _animToken++; var myTok=_animToken;
-  function stpR(){
-    if(_animToken!==myTok) return; // cancelled
-    fr++;
-    var p=esF(Math.min(fr/mxF,1));
-    camera.alpha    = lrp(sA, st.alpha,    p);
-    camera.beta     = lrp(sB, st.beta,     p);
-    camera.radius   = lrp(sR, st.radius,   p);
-    camera.target.x = lrp(sTx, st.target.x, p);
-    camera.target.y = lrp(sTy, st.target.y, p);
-    camera.target.z = lrp(sTz, st.target.z, p);
-    if(fr<mxF) setTimeout(stpR,16);
-  }
-  stpR();
+  // INSTANT — no animation, nothing can interfere
+  camera.alpha    = st.alpha;
+  camera.beta     = st.beta;
+  camera.radius   = st.radius;
+  camera.target.x = st.target.x;
+  camera.target.y = st.target.y;
+  camera.target.z = st.target.z;
+  // Sync inertia prev-values to avoid phantom velocity
+  _prevAlpha=st.alpha; _prevBeta=st.beta; _prevRadius=st.radius;
+  _prevTx=st.target.x; _prevTy=st.target.y; _prevTz=st.target.z;
+  _velAlpha=0; _velBeta=0; _velRadius=0; _velTx=0; _velTy=0; _velTz=0;
+  _inertiaActive=false;
+  savedCameraState=null;
 }
 
 function enterFocus(id){
-  saveCameraState();
   if(!nodes[id]) return;
   if(focusedId===id){resetFocus(false);return;}
+  // Save ONLY if not already in focus mode (preserve original pre-focus state)
+  if(!focusedId) saveCameraState();
 
   focusedId=id;
   const relatives=getRelativesSet(id);
@@ -1277,6 +1272,9 @@ function enterFocus(id){
 
 function resetFocus(fromPop){
   focusedId=null;
+  _animToken++;          // cancel any running focus animation
+  _inertiaActive=false;  // stop inertia so it doesn't fight the restore
+  _velAlpha=0; _velBeta=0; _velRadius=0; _velTx=0; _velTy=0; _velTz=0;
   camera.lowerRadiusLimit = 35;
 
   // Restore ALL nodes to full opacity immediately
