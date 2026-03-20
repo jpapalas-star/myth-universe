@@ -376,20 +376,23 @@ canvas.addEventListener('touchmove', function(e) {
       camera.alpha -= dmx2 * 0.0015;
       camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
     } else {
-      // Free mode: PAN left/right/up/down
+      // Free mode: PAN — kill any orbit inertia so it doesn't fight the pan
+      _velAlpha = 0; _velBeta = 0;
+
       _panDelta(dmx2, dmy2);
 
-      // Boundary: soft curvature when reaching system edge (~600 units)
-      var WALL = 580;
+      // Boundary: when target drifts too far, gently push back + add curvature
+      var WALL = 560;
       var tx = camera.target.x, tz = camera.target.z;
       var dist = Math.sqrt(tx*tx + tz*tz);
       if (dist > WALL) {
-        // Push target back inside + add gentle orbit so user curves around edge
-        var push = (dist - WALL) / dist;
-        camera.target.x -= tx * push * 0.25;
-        camera.target.z -= tz * push * 0.25;
-        // Slight auto-orbit so they don't get stuck at wall
-        camera.alpha -= dmx2 * 0.0006;
+        // How far past the wall
+        var over = dist - WALL;
+        // Push target back proportionally
+        camera.target.x -= (tx / dist) * over * 0.3;
+        camera.target.z -= (tz / dist) * over * 0.3;
+        // Add gentle alpha rotation so user glides around the edge instead of bouncing
+        camera.alpha -= dmx2 * 0.0008;
       }
     }
     _t1.x = t.clientX; _t1.y = t.clientY;
@@ -845,11 +848,33 @@ function createNode(d,x,y,z,familyRingColor){
 
   // Custom photo: sphere invisible, image shown on a disc that spins outward
   if(d.photo){
-    // Make the sphere invisible — used only for picking/metadata
-    sm.alpha=0;
-    sphere.material=sm;
-    sphere.isPickable=true;
-    sphere.renderingGroupId=1;
+    // Transparent glowing sphere around the disc — like a planet atmosphere
+    sm.diffuseColor  = tint.scale(0.3);
+    sm.emissiveColor = tint.scale(0.18);
+    sm.specularColor = tint.scale(0.4);
+    sm.specularPower = 12;
+    sm.alpha         = 0.22;  // semi-transparent
+    sm.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+    sm.backFaceCulling  = false;
+    sphere.material = sm;
+    sphere.isPickable   = true;
+    sphere.renderingGroupId = 1;
+    glow.addIncludedOnlyMesh(sphere);
+
+    // Inner glow sphere slightly smaller — warmer, more opaque near centre
+    var innerSphere = BABYLON.MeshBuilder.CreateSphere('inner_'+d.id,
+      {diameter: size*0.88, segments: 14}, scene);
+    innerSphere.parent = sphere;
+    innerSphere.position = BABYLON.Vector3.Zero();
+    innerSphere.renderingGroupId = 1;
+    var innerMat = new BABYLON.StandardMaterial('innermat_'+d.id, scene);
+    innerMat.diffuseColor  = tint.scale(0.15);
+    innerMat.emissiveColor = tint.scale(0.30);
+    innerMat.specularColor = BABYLON.Color3.Black();
+    innerMat.alpha         = 0.13;
+    innerMat.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+    innerMat.backFaceCulling  = false;
+    innerSphere.material = innerMat;
 
     var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
     photoTex.hasAlpha=false;
