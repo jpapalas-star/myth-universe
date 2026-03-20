@@ -799,7 +799,8 @@ function createLabel(text,parentMesh,size){
   dt.update();
 
   var longest=lines.reduce(function(m,s){return Math.max(m,s.length);},6);
-  const plane=BABYLON.BABYLON.MeshBuilder.CreatePlane('label_'+Math.random(),{width:Math.max(14,size*3.0+longest*0.4),height:Math.max(4.5,size*1.4)},scene);
+  const plane=BABYLON.MeshBuilder.CreatePlane('label_'+Math.random(),{width:Math.max(14,size*3.0+longest*0.4),height:Math.max(4.5,size*1.4)},scene);
+  const mat=new BABYLON.StandardMaterial('labelMat_'+Math.random(),scene);
   mat.diffuseTexture=dt;
   mat.opacityTexture=dt;
   mat.disableLighting=true;
