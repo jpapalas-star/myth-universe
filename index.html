@@ -837,23 +837,43 @@ function createNode(d,x,y,z,familyRingColor){
     sphere.material=sm;
     sphere.renderingGroupId=1;
 
-    // Billboard plane: always faces camera, sits exactly in front of sphere
-    // Size matches the sphere diameter so the image fills it perfectly
+    // Two billboard planes: front and back, always facing camera
+    var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
+    photoTex.hasAlpha=true;
+
+    // Front plane — normal orientation
     var bPlane=BABYLON.MeshBuilder.CreatePlane('photo_'+d.id,{width:size,height:size},scene);
     bPlane.parent=sphere;
-    bPlane.position=BABYLON.Vector3.Zero(); // centered on sphere
+    bPlane.position=BABYLON.Vector3.Zero();
     bPlane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
     bPlane.renderingGroupId=1;
 
     var bMat=new BABYLON.StandardMaterial('photomat_'+d.id,scene);
-    var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
-    photoTex.hasAlpha=true;
     bMat.diffuseTexture=photoTex;
     bMat.opacityTexture=photoTex;
     bMat.emissiveColor=BABYLON.Color3.White().scale(0.9);
     bMat.disableLighting=true;
-    bMat.backFaceCulling=false;
+    bMat.backFaceCulling=true;
     bPlane.material=bMat;
+
+    // Back plane — mirrored (flipped on U axis so it reads correctly from behind)
+    var bPlane2=BABYLON.MeshBuilder.CreatePlane('photo2_'+d.id,{width:size,height:size},scene);
+    bPlane2.parent=sphere;
+    bPlane2.position=BABYLON.Vector3.Zero();
+    bPlane2.rotation.y=Math.PI; // face the other direction
+    bPlane2.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+    bPlane2.renderingGroupId=1;
+
+    var bMat2=new BABYLON.StandardMaterial('photomat2_'+d.id,scene);
+    var photoTex2=new BABYLON.Texture(d.photo,scene,true,false);
+    photoTex2.hasAlpha=true;
+    photoTex2.uScale=-1; // mirror horizontally so it reads correctly from back
+    bMat2.diffuseTexture=photoTex2;
+    bMat2.opacityTexture=photoTex2;
+    bMat2.emissiveColor=BABYLON.Color3.White().scale(0.9);
+    bMat2.disableLighting=true;
+    bMat2.backFaceCulling=true;
+    bPlane2.material=bMat2;
 
     var photoLabel=createLabel(d.Name||d.id,sphere,size);
     var photoRings=[];
