@@ -263,7 +263,7 @@ const camera = new BABYLON.ArcRotateCamera(
 );
 
 camera.detachControl();
-camera.lowerRadiusLimit = 10;
+camera.lowerRadiusLimit = 20;
 camera.upperRadiusLimit = 12000;
 camera.lowerBetaLimit   = 0.08;
 camera.upperBetaLimit   = Math.PI / 2.02;
@@ -301,10 +301,10 @@ function _cb(b){ return Math.max(camera.lowerBetaLimit,  Math.min(camera.upperBe
 function _panDelta(dx, dy) {
   var speed = camera.radius * 0.0014;
   var sinA = Math.sin(camera.alpha), cosA = Math.cos(camera.alpha);
-  // Invert: fingers right → galaxy moves right (target moves opposite)
-  camera.target.x -= dx * speed * sinA;
-  camera.target.z += dx * speed * cosA;
-  camera.target.y += dy * speed * 0.7;
+  // Fingers right (dx>0) → target moves right → galaxy follows fingers
+  camera.target.x += dx * speed * sinA;
+  camera.target.z -= dx * speed * cosA;
+  camera.target.y -= dy * speed * 0.7;
 }
 
 // ── Touch state ───────────────────────────────────────────────────────────────
@@ -1220,7 +1220,7 @@ function enterFocus(id){
 
 function resetFocus(fromPop){
   focusedId=null;
-  camera.lowerRadiusLimit = 10; // restore free-roam min
+  camera.lowerRadiusLimit = 20; // restore free-roam min
   restoreOriginalPositions();
 
   Object.values(nodes).forEach(n=>{
