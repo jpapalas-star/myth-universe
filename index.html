@@ -827,60 +827,33 @@ function createNode(d,x,y,z,familyRingColor){
 
   var sm=new BABYLON.StandardMaterial('sm_'+d.id,scene);
 
-  // If entity has a custom photo: sphere as base + billboard plane always facing camera
+  // Custom photo: wrap directly on sphere + slow rotation in render loop
   if(d.photo){
-    // Sphere: solid colour base (no texture wrap)
-    sm.diffuseColor=tint.scale(0.6);
-    sm.emissiveColor=tint.scale(0.2);
-    sm.specularColor=new BABYLON.Color3(0.03,0.02,0.02);
+    var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
+    photoTex.hasAlpha=false;
+    // Offset U by 0.5 so the front face (not the seam) faces outward initially
+    photoTex.uOffset=0.5;
+
+    sm.diffuseTexture=photoTex;
+    sm.emissiveTexture=photoTex;
+    sm.emissiveColor=new BABYLON.Color3(0.55,0.55,0.55); // bright enough without env
+    sm.specularColor=new BABYLON.Color3(0.04,0.03,0.02);
+    sm.specularPower=8;
     sm.backFaceCulling=false;
     sphere.material=sm;
     sphere.renderingGroupId=1;
-
-    // Two planes fixed in world space:
-    // Front: faces OUTWARD from Chaos (away from origin)
-    // Back:  faces INWARD toward Chaos — same image, not mirrored
-    // Both are oriented at creation using the sphere's world position.
-
-    var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
-    photoTex.hasAlpha=true;
-
-    var pMat=new BABYLON.StandardMaterial('photomat_'+d.id,scene);
-    pMat.diffuseTexture=photoTex;
-    pMat.opacityTexture=photoTex;
-    pMat.emissiveColor=BABYLON.Color3.White().scale(0.9);
-    pMat.disableLighting=true;
-    pMat.backFaceCulling=false; // visible from both sides with same texture
-
-    // Compute outward direction (from Chaos origin to this sphere)
-    var spx=x, spz=z, dist2d=Math.sqrt(spx*spx+spz*spz);
-    // Angle pointing OUTWARD from center
-    var outAngle = dist2d>0.1 ? Math.atan2(spz, spx) : 0;
-
-    // Front plane — faces outward
-    var bPlane=BABYLON.MeshBuilder.CreatePlane('photo_'+d.id,{width:size*1.05,height:size*1.05},scene);
-    bPlane.parent=sphere;
-    bPlane.position=BABYLON.Vector3.Zero();
-    // Rotate so it faces outward: plane's +Z points away from origin
-    bPlane.rotation.y = outAngle + Math.PI/2;
-    bPlane.renderingGroupId=1;
-    bPlane.material=pMat;
-
-    // Back plane — faces inward (180° rotation), same image
-    var bPlane2=BABYLON.MeshBuilder.CreatePlane('photo2_'+d.id,{width:size*1.05,height:size*1.05},scene);
-    bPlane2.parent=sphere;
-    bPlane2.position=BABYLON.Vector3.Zero();
-    bPlane2.rotation.y = outAngle - Math.PI/2; // opposite direction
-    bPlane2.renderingGroupId=1;
-    bPlane2.material=pMat; // same material = same image
+    // Tag for rotation in render loop
+    sphere.metadata=Object.assign({},d,{
+      isChaos: String(d.id)==='PRIM_CHAOS_001',
+      hasPhoto: true,
+      rotSpeed: 0.0015 + Math.random()*0.0008 // slightly different speed per god
+    });
 
     var photoLabel=createLabel(d.Name||d.id,sphere,size);
     var photoRings=[];
     if(familyRingColor) photoRings.push(addRing(sphere,familyRingColor,size*1.12,0.09));
-    // Glow ring around the photo sphere
     photoRings.push(addRing(sphere,tint,size*1.18,0.11));
 
-    sphere.metadata=Object.assign({},d,{isChaos:String(d.id)==='PRIM_CHAOS_001'});
     nodes[d.id]={id:d.id,data:d,sphere:sphere,rings:photoRings,label:photoLabel,size:size,familyRingColor:familyRingColor||null};
     placed.add(d.id);
     return;
@@ -1763,6 +1736,10 @@ engine.runRenderLoop(()=>{
   }
 
   Object.values(nodes).forEach(n=>{
+    // Rotate photo spheres slowly around Y axis
+    if(n.sphere.metadata && n.sphere.metadata.hasPhoto){
+      n.sphere.rotation.y += n.sphere.metadata.rotSpeed;
+    }
     if(n.sphere.metadata && n.sphere.metadata.isChaos){
       var pulse=0.7 + Math.sin(t*0.9)*0.3;
       n.sphere.material.emissiveColor=BABYLON.Color3.White().scale(pulse);
