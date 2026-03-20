@@ -302,8 +302,8 @@ function _panDelta(dx, dy) {
   var speed = camera.radius * 0.0014;
   var sinA = Math.sin(camera.alpha), cosA = Math.cos(camera.alpha);
   // Fingers right (dx>0) → target moves right → galaxy follows fingers
-  camera.target.x += dx * speed * sinA;
-  camera.target.z -= dx * speed * cosA;
+  camera.target.x -= dx * speed * sinA;
+  camera.target.z += dx * speed * cosA;
   camera.target.y -= dy * speed * 0.7;
 }
 
