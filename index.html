@@ -300,13 +300,11 @@ function _cb(b){ return Math.max(camera.lowerBetaLimit,  Math.min(camera.upperBe
 // No ray casting = no ghost teleport.
 function _panDelta(dx, dy) {
   var speed = camera.radius * 0.0014;
-  // right direction: perpendicular to camera look direction in XZ plane
   var sinA = Math.sin(camera.alpha), cosA = Math.cos(camera.alpha);
-  // dx → move sideways (right vector)
-  camera.target.x += dx * speed * sinA;
-  camera.target.z -= dx * speed * cosA;
-  // dy → move up in world Y (scaled down so it feels natural)
-  camera.target.y -= dy * speed * 0.7;
+  // Invert: fingers right → galaxy moves right (target moves opposite)
+  camera.target.x -= dx * speed * sinA;
+  camera.target.z += dx * speed * cosA;
+  camera.target.y += dy * speed * 0.7;
 }
 
 // ── Touch state ───────────────────────────────────────────────────────────────
@@ -372,11 +370,10 @@ canvas.addEventListener('touchmove', function(e) {
     var dmy = my - _tf.my;
     _panDelta(dmx, dmy);
 
-    // 2. PINCH ZOOM (slow)
+    // 2. PINCH ZOOM — additive delta, feels linear and controlled
     if (_tf.dist > 1 && dist > 1) {
-      var rawScale = _tf.dist / dist;
-      var scale = 1 + (rawScale - 1) * 0.25; // 25% of raw = slow zoom
-      camera.radius = _cr(camera.radius * scale);
+      var dd = _tf.dist - dist; // positive = fingers closing = zoom in (smaller radius)
+      camera.radius = _cr(camera.radius + dd * 0.55);
     }
 
     _tf.mx = mx; _tf.my = my; _tf.dist = dist;
@@ -442,8 +439,9 @@ window.addEventListener('mouseup', function(e) {
 
 // Mouse wheel: zoom toward cursor
 canvas.addEventListener('wheel', function(e) {
-  var scale = e.deltaY > 0 ? 1.03 : 0.971; // slow wheel zoom
-  camera.radius = _cr(camera.radius * scale);
+  // Additive zoom: step size proportional to current distance for linear feel
+  var step = camera.radius * 0.08;
+  camera.radius = _cr(camera.radius + (e.deltaY > 0 ? step : -step));
 }, { passive: true });
 
 
