@@ -367,14 +367,28 @@ canvas.addEventListener('touchmove', function(e) {
     var dmx2 = t.clientX - _t1.x, dmy2 = t.clientY - _t1.y;
     if (Math.hypot(dmx2, dmy2) > 10) _t1.id = null; // cancel tap
 
-    // 1 finger = ORBIT around Chaos (target stays at 0,0,0 unless focused)
-    camera.alpha -= dmx2 * 0.0015;
-    camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
-    // In free mode snap target back to Chaos centre so we orbit it
-    if(!focusedId){
-      camera.target.x *= 0.85;
-      camera.target.y *= 0.85;
-      camera.target.z *= 0.85;
+    // 1 finger: PAN in free mode, ORBIT in focus mode
+    if(focusedId){
+      // Orbit around focused planet
+      camera.alpha -= dmx2 * 0.0015;
+      camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
+    } else {
+      // Pan the galaxy — but stop at system boundary
+      _panDelta(dmx2, dmy2);
+
+      // System boundary: ~600 units from origin
+      var BOUNDARY = 600;
+      var tx = camera.target.x, tz = camera.target.z;
+      var distFromCenter = Math.sqrt(tx*tx + tz*tz);
+
+      if(distFromCenter > BOUNDARY){
+        // Push target back inside boundary
+        var scale = BOUNDARY / distFromCenter;
+        camera.target.x = tx * scale;
+        camera.target.z = tz * scale;
+        // Also gently orbit so user isn't stuck at wall
+        camera.alpha -= dmx2 * 0.0008;
+      }
     }
     _t1.x = t.clientX; _t1.y = t.clientY;
 
@@ -627,7 +641,7 @@ let tapCandidate=null;
 let panelOpen=false;
 let searchMatches=[];
 let activeSearchIndex=-1;
-var linesVisible=true;
+let linesVisible=true;
 
 function c3(hex){return BABYLON.Color3.FromHexString(hex);}
 function hslToHex(h,s,l){
@@ -1183,25 +1197,15 @@ function renderConnections(filterSet){
 }
 
 function getRelativesSet(id){
-  const set=new Set([id]);
-  const d=dataMap[id];
+  var set=new Set([id]);
+  var d=dataMap[id];
   if(!d) return set;
-  // Parents
-  idsFromField(d.Parents).forEach(x=>{if(nodes[x])set.add(x);});
-  // Partners + their parents (so couple lines show)
-  idsFromField(d.Partners).forEach(x=>{
-    if(nodes[x]){
-      set.add(x);
-      idsFromField((dataMap[x]||{}).Parents||'').forEach(p=>{if(nodes[p])set.add(p);});
-    }
-  });
-  // ALL children
-  idsFromField(d.Children).forEach(x=>{if(nodes[x])set.add(x);});
-  // Also add co-parents (partners of each child's other parent)
-  idsFromField(d.Partners).forEach(pid=>{
-    const pd=dataMap[pid];
-    if(!pd) return;
-    idsFromField(pd.Children).forEach(x=>{if(nodes[x])set.add(x);});
+  idsFromField(d.Parents).forEach(function(x){if(nodes[x])set.add(x);});
+  idsFromField(d.Partners).forEach(function(x){if(nodes[x])set.add(x);});
+  idsFromField(d.Children).forEach(function(x){if(nodes[x])set.add(x);});
+  // Reverse lookup: find all nodes that list this id as a parent
+  Object.keys(dataMap).forEach(function(xid){
+    if(nodes[xid] && idsFromField(dataMap[xid].Parents).indexOf(id)>=0) set.add(xid);
   });
   return set;
 }
@@ -1664,17 +1668,7 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
       errDiv.innerText='LAYOUT ERROR: '+String(layoutErr);
       document.body.appendChild(errDiv);
     }
-    // Delay hiding loader until Babylon has actually rendered the planets
-    var _hideFrames=0;
-    function _waitRender(){
-      _hideFrames++;
-      if(_hideFrames>=5){
-        if(window._hideLoader) window._hideLoader();
-      } else {
-        requestAnimationFrame(_waitRender);
-      }
-    }
-    requestAnimationFrame(_waitRender);
+    if(window._hideLoader) window._hideLoader();
   })
   .catch(err=>{
     infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';
