@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Myth Universe Final Focus</title>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+<script>
+window.onerror = function(msg, url, line, col, error) {
+  const box = document.createElement("div");
+  box.style.position = "fixed";
+  box.style.bottom = "0";
+  box.style.left = "0";
+  box.style.right = "0";
+  box.style.maxHeight = "40%";
+  box.style.overflow = "auto";
+  box.style.background = "black";
+  box.style.color = "red";
+  box.style.fontSize = "12px";
+  box.style.zIndex = "99999";
+  box.style.padding = "5px";
+  box.innerText =
+    "ERROR: " + msg +
+    "\nLINE: " + line +
+    "\nCOL: " + col +
+    "\n" + error;
+  document.body.appendChild(box);
+};
+</script>
+
+<style>
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#02040a;
+  font-family:Arial,sans-serif
+}
+#renderCanvas{
+  width:100%;
+  height:100%;
+  display:block;
+  touch-action:none
+}
+#indexBtn,#homeBtn{
+  position:fixed;
+  top:10px;
+  z-index:30;
+  color:#fff;
+  background:rgba(0,0,0,.55);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:12px;
+  padding:10px 14px;
+  font-size:14px;
+  font-weight:bold;
+  cursor:pointer;
+  backdrop-filter:blur(6px)
+}
+#indexBtn{left:10px}
+#homeBtn{right:10px}
+
+#searchBox{
+  position:fixed;
+  right:10px;
+  top:58px;
+  z-index:40;
+  color:#fff;
+  background:rgba(0,0,0,.62);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:12px;
+  padding:8px 11px;
+  font-size:13px;
+  outline:none;
+  backdrop-filter:blur(6px);
+  width:min(240px,calc(100vw - 20px));
+  box-sizing:border-box;
+  height:42px
+}
+#searchBox::placeholder{color:rgba(255,255,255,.6)}
+
+#searchResults{
+  position:fixed;
+  right:10px;
+  top:104px;
+  z-index:39;
+  width:min(240px,calc(100vw - 20px));
+  max-height:220px;
+  overflow:auto;
+  color:#fff;
+  background:rgba(0,0,0,.62);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  backdrop-filter:blur(6px);
+  display:none
+}
+.searchItem{
+  padding:9px 12px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  cursor:pointer;
+  font-size:13px;
+  line-height:1.35
+}
+.searchItem:last-child{border-bottom:none}
+.searchItem:hover,.searchItem.active{background:rgba(255,255,255,.1)}
+.searchName{font-weight:bold}
+.searchMeta{opacity:.72;font-size:12px;margin-top:2px}
+
+#panel{
+  position:fixed;
+  left:10px;
+  top:58px;
+  z-index:20;
+  color:#fff;
+  background:rgba(0,0,0,.42);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:13px;
+  line-height:1.45;
+  backdrop-filter:blur(6px);
+  display:none;
+  width:min(280px,calc(100vw - 20px))
+}
+.panelTitle{
+  font-weight:bold;
+  margin-bottom:6px
+}
+.panelRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:7px 0
+}
+.panelRow label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+  width:100%
+}
+.panelSep{
+  height:1px;
+  background:rgba(255,255,255,.08);
+  margin:8px 0
+}
+
+#info{
+  position:fixed;
+  right:10px;
+  top:344px;
+  z-index:10;
+  color:#fff;
+  width:min(360px,calc(100vw - 20px));
+  max-height:calc(100vh - 354px);
+  overflow:auto;
+  background:rgba(0,0,0,.46);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  padding:12px 14px;
+  backdrop-filter:blur(6px)
+}
+#info h2{margin:0 0 6px 0;font-size:20px}
+#info .sub{opacity:.78;font-size:13px;margin-bottom:10px}
+#info .sec{color:#8fd3ff;margin:10px 0 4px 0;font-weight:bold;font-size:13px}
+#info .txt{font-size:13px;line-height:1.5;white-space:pre-wrap}
+.infoLink{
+  color:#8fd3ff;
+  cursor:pointer;
+  text-decoration:underline;
+  text-underline-offset:2px
+}
+.infoLink:hover{color:#c7ecff}
+
+@media (max-width:900px){
+  #searchBox{
+    left:10px;
+    right:10px;
+    width:auto;
+    top:58px
+  }
+  #searchResults{
+    left:10px;
+    right:10px;
+    top:104px;
+    width:auto;
+    max-height:180px
+  }
+  #panel{
+    left:10px;
+    right:10px;
+    width:auto;
+    top:106px
+  }
+  #info{
+    left:10px;
+    right:10px;
+    top:auto;
+    bottom:10px;
+    width:auto;
+    max-height:34vh
+  }
+}
+</style>
+</head>
+<body>
+<button id="indexBtn" type="button">Index</button>
+<button id="homeBtn" type="button">Μυθολογία</button>
+
+<input id="searchBox" type="text" placeholder="Search name, id, category..." autocomplete="off">
+<div id="searchResults"></div>
+
+<div id="panel">
+  <div class="panelTitle">Myth Universe</div>
+  <div class="panelRow"><label><input id="toggleLines" type="checkbox" checked> Show lines</label></div>
+  <div class="panelRow"><label><input id="toggleParticles" type="checkbox" checked> Show particles</label></div>
+  <div class="panelRow"><label><input id="toggleNebula" type="checkbox" checked> Show nebula</label></div>
+  <div class="panelRow"><label><input id="toggleStars" type="checkbox" checked> Show stars</label></div>
+  <div class="panelSep"></div>
+  <div>Drag = rotate</div>
+  <div>Pinch / wheel = zoom</div>
+  <div>1 finger drag = pan</div>
+  <div>Blue arrows = parent → child</div>
+  <div>Red = partners</div>
+  <div>Tap entity = family focus</div>
+</div>
+
+<div id="info">
+  <h2>Myth Universe</h2>
+  <div class="sub">Chaos center · generation rings · family clusters</div>
+  <div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>
+</div>
+
+<canvas id="renderCanvas"></canvas>
+
+<script>
+const canvas=document.getElementById('renderCanvas');
+const infoEl=document.getElementById('info');
+const homeBtn=document.getElementById('homeBtn');
+const indexBtn=document.getElementById('indexBtn');
+const panelEl=document.getElementById('panel');
+const searchBox=document.getElementById('searchBox');
+const searchResults=document.getElementById('searchResults');
+
+const toggleLines=document.getElementById('toggleLines');
+const toggleParticles=document.getElementById('toggleParticles');
+const toggleNebula=document.getElementById('toggleNebula');
+const toggleStars=document.getElementById('toggleStars');
+
+const engine=new BABYLON.Engine(canvas,true);
+const scene=new BABYLON.Scene(engine);
+scene.clearColor=new BABYLON.Color4(0.01,0.02,0.05,1);
+
+const camera = new BABYLON.ArcRotateCamera(
+  'cam',
+  -Math.PI / 2,
+  Math.PI / 3.1,
+  760,
+  new BABYLON.Vector3(0, 0, 0),
+  scene
+);
+
+camera.detachControl();
+camera.lowerRadiusLimit = 20;
+camera.upperRadiusLimit = 12000;
+camera.lowerBetaLimit   = 0.08;
+camera.upperBetaLimit   = Math.PI / 2.02;
+
+// ── FULLY CUSTOM TOUCH + MOUSE CAMERA CONTROL ────────────────────────────────
+// camera.detachControl() stops ALL Babylon pointer processing including:
+//   - The ghost highlight (Babylon pick ray on every touch point)
+//   - Pinch conflict (Babylon's own pinch handler fighting our observers)
+// We implement rotate/pinch/tap from scratch with canvas touch/mouse events.
+
+var _t1    = null;  // tap/pan: {x,y,t,id}
+var _multi = false; // 2+ fingers in this gesture -> no tap
+var _p0    = null;  // finger 0: {x,y}  for 2-finger orbit+zoom
+var _p1    = null;  // finger 1: {x,y}
+var _pdist = 0;     // prev finger distance
+var _mdn   = null;  // mouse drag: {x,y,t,id,alpha,beta}
+
+
+function _pick(sx,sy){var p=scene.pick(sx,sy);return(p&&p.hit&&p.pickedMesh&&p.pickedMesh.metadata)?p.pickedMesh.metadata.id:null;}
+
+// ── ALL TOUCH & MOUSE INPUT ─────────────────────────────────────────────────
+// Google-Maps-style controls:
+//   1 finger drag  → pan  (world point under finger stays fixed)
+//   2 fingers      → pan + pinch-zoom (toward finger midpoint) + twist-rotate
+//   tap            → select entity
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function _cr(r){ return Math.max(camera.lowerRadiusLimit,Math.min(camera.upperRadiusLimit,r)); }
+function _cb(b){ return Math.max(camera.lowerBetaLimit,  Math.min(camera.upperBetaLimit,  b)); }
+
+// Project screen point onto the horizontal plane at camera.target.y
+// Returns world {x,y,z} or null
+// Stable delta pan: moves camera target in camera-local right/up axes.
+// No ray casting = no ghost teleport.
+function _panDelta(dx, dy) {
+  var speed = camera.radius * 0.0014;
+  var sinA = Math.sin(camera.alpha), cosA = Math.cos(camera.alpha);
+  // Fingers right (dx>0) → target moves right → galaxy follows fingers
+  camera.target.x += dx * speed * sinA;
+  camera.target.z -= dx * speed * cosA;
+  camera.target.y -= dy * speed * 0.7;
+}
+
+// ── Touch state ───────────────────────────────────────────────────────────────
+var _t1     = null;   // single finger: {x,y,t,id, wx,wy,wz}
+var _multi  = false;  // 2+ fingers → no tap
+var _tf     = null;   // two-finger state {mx,my,dist}
+// Inertia / floating feel
+var _velAlpha=0, _velBeta=0, _velRadius=0, _velTx=0, _velTy=0, _velTz=0;
+var _prevAlpha=0, _prevBeta=0, _prevRadius=0, _prevTx=0, _prevTy=0, _prevTz=0;
+var _inertiaActive=false;
+
+// ── TOUCH START ───────────────────────────────────────────────────────────────
+canvas.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+
+  if (e.touches.length === 1) {
+    _multi = false;
+    var t = e.touches[0];
+    var rect = canvas.getBoundingClientRect();
+    var sx = t.clientX - rect.left, sy = t.clientY - rect.top;
+    _t1 = { x: t.clientX, y: t.clientY, t: Date.now(), id: _pick(sx, sy) };
+
+  } else if (e.touches.length >= 2) {
+    _multi = true; _t1 = null;
+    var t0 = e.touches[0], t1 = e.touches[1];
+    var rect = canvas.getBoundingClientRect();
+    var mx = (t0.clientX + t1.clientX) * 0.5 - rect.left;
+    var my = (t0.clientY + t1.clientY) * 0.5 - rect.top;
+    var dx = t0.clientX - t1.clientX, dy = t0.clientY - t1.clientY;
+    var dist  = Math.hypot(dx, dy);
+    var angle = Math.atan2(dy, dx);
+    _tf = { mx: mx, my: my, dist: dist };
+  }
+}, { passive: false });
+
+// ── TOUCH MOVE ────────────────────────────────────────────────────────────────
+canvas.addEventListener('touchmove', function(e) {
+  e.preventDefault();
+  var rect = canvas.getBoundingClientRect();
+
+  if (e.touches.length === 1 && !_multi && _t1) {
+    var t = e.touches[0];
+    var dmx2 = t.clientX - _t1.x, dmy2 = t.clientY - _t1.y;
+    if (Math.hypot(dmx2, dmy2) > 10) _t1.id = null; // cancel tap
+
+    // 1 finger = ORBIT always (rotate the galaxy)
+    camera.alpha -= dmx2 * 0.003;
+    camera.beta   = _cb(camera.beta - dmy2 * 0.003);
+    _t1.x = t.clientX; _t1.y = t.clientY;
+
+  } else if (e.touches.length >= 2 && _tf) {
+    // ── Two fingers: PAN (drag) + PINCH ZOOM ─────────────────────────────────
+    _multi = true; _t1 = null;
+    var t0 = e.touches[0], t1 = e.touches[1];
+
+    var mx = (t0.clientX + t1.clientX) * 0.5 - rect.left;
+    var my = (t0.clientY + t1.clientY) * 0.5 - rect.top;
+    var dx = t0.clientX - t1.clientX, dy = t0.clientY - t1.clientY;
+    var dist = Math.hypot(dx, dy);
+
+    // 1. PAN: midpoint movement pans the galaxy
+    var dmx = mx - _tf.mx;
+    var dmy = my - _tf.my;
+    _panDelta(dmx, dmy);
+
+    // 2. PINCH ZOOM — additive delta, feels linear and controlled
+    if (_tf.dist > 1 && dist > 1) {
+      var dd = _tf.dist - dist; // positive = fingers closing = zoom in (smaller radius)
+      camera.radius = _cr(camera.radius + dd * 0.55);
+    }
+
+    _tf.mx = mx; _tf.my = my; _tf.dist = dist;
+  }
+}, { passive: false });
+
+// ── TOUCH END ─────────────────────────────────────────────────────────────────
+canvas.addEventListener('touchend', function(e) {
+  e.preventDefault();
+  if (e.touches.length > 0) {
+    _multi = true; _t1 = null;
+    // If one finger lifted and one remains, reset 2-finger state
+    if (e.touches.length === 1) _tf = null;
+    return;
+  }
+  // All fingers up
+  _tf = null;
+  if (!_multi && _t1) {
+    var el = Date.now() - _t1.t;
+    var id = _t1.id; // null = blank space, valid in focus mode
+    if (el < 500) {
+      _t1 = null; _multi = false;
+      _doTap(id);
+      return;
+    }
+  }
+  _t1 = null; _multi = false;
+  _inertiaActive = true;
+}, { passive: false });
+
+canvas.addEventListener('touchcancel', function() {
+  _t1 = null; _multi = false; _tf = null;
+  _inertiaActive = true; // let it coast
+}, { passive: true });
+
+// ── MOUSE (desktop) ───────────────────────────────────────────────────────────
+var _mdn = null;
+
+canvas.addEventListener('mousedown', function(e) {
+  if (e.button !== 0) return;
+  var sx = e.offsetX, sy = e.offsetY;
+  _mdn = { x: e.clientX, y: e.clientY, t: Date.now(), id: _pick(e.offsetX, e.offsetY) };
+});
+
+window.addEventListener('mousemove', function(e) {
+  if (!_mdn || !(e.buttons & 1)) return;
+  var dx3 = e.clientX - _mdn.x, dy3 = e.clientY - _mdn.y;
+  // Left drag = orbit
+  camera.alpha -= dx3 * 0.003;
+  camera.beta   = _cb(camera.beta - dy3 * 0.003);
+  _mdn.x = e.clientX; _mdn.y = e.clientY;
+  if (Math.hypot(dx3, dy3) > 8) _mdn.id = null;
+});
+
+window.addEventListener('mouseup', function(e) {
+  if (e.button !== 0 || !_mdn) return;
+  var el = Date.now() - _mdn.t;
+  var id = _mdn.id;
+  _mdn = null;
+  _inertiaActive = true;
+  if (el < 400) _doTap(id);
+});
+
+// Mouse wheel: zoom toward cursor
+canvas.addEventListener('wheel', function(e) {
+  // Additive zoom: step size proportional to current distance for linear feel
+  var step = camera.radius * 0.08;
+  camera.radius = _cr(camera.radius + (e.deltaY > 0 ? step : -step));
+}, { passive: true });
+
+
+function _doTap(pickedId) {
+  if (pickedId && nodes[pickedId]) {
+    if (focusedId === pickedId) resetFocus(false);
+    else enterFocus(pickedId);
+  } else {
+    // Tapped blank space
+    if (focusedId) {
+      resetFocus(false); // restores pre-focus camera position
+    } else {
+      resetInfo();
+    }
+  }
+}
+
+
+const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
+hemi.intensity=0.96;
+
+const pointLight=new BABYLON.PointLight('p',new BABYLON.Vector3(0,60,0),scene);
+pointLight.intensity=1.15;
+
+const sunLight=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-1,-2,-1),scene);
+sunLight.intensity=1.1;
+
+// env texture removed
+
+const glow=new BABYLON.GlowLayer("glow",scene,{blurKernelSize:64});
+glow.intensity=0.55;
+glow.referenceMeshToUseItsOwnMaterial=true;
+
+// ---------- Procedural sky ----------
+const sky=BABYLON.MeshBuilder.CreateSphere("sky",{diameter:6200,segments:32},scene);
+const skyMat=new BABYLON.StandardMaterial("skyMat",scene);
+skyMat.backFaceCulling=false;
+skyMat.disableLighting=true;
+
+const skyTexture=new BABYLON.DynamicTexture("skyTex",{width:1024,height:1024},scene,false);
+const skyCtx=skyTexture.getContext();
+skyCtx.fillStyle="#01030a";
+skyCtx.fillRect(0,0,1024,1024);
+
+for(let i=0;i<700;i++){
+  const x=Math.random()*1024;
+  const y=Math.random()*1024;
+  const s=Math.random()*2.2;
+  const a=0.3+Math.random()*0.7;
+  skyCtx.fillStyle=`rgba(255,255,255,${a})`;
+  skyCtx.fillRect(x,y,s,s);
+}
+for(let i=0;i<55;i++){
+  const x=Math.random()*1024;
+  const y=Math.random()*1024;
+  const r=80+Math.random()*220;
+  const hue=[210,240,270,310][Math.floor(Math.random()*4)];
+  const g=skyCtx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,`hsla(${hue},90%,65%,0.14)`);
+  g.addColorStop(0.45,`hsla(${hue},90%,45%,0.07)`);
+  g.addColorStop(1,"rgba(0,0,0,0)");
+  skyCtx.fillStyle=g;
+  skyCtx.beginPath();
+  skyCtx.arc(x,y,r,0,Math.PI*2);
+  skyCtx.fill();
+}
+skyTexture.update();
+
+skyMat.diffuseTexture=skyTexture;
+skyMat.emissiveColor=new BABYLON.Color3(0.85,0.85,0.92);
+sky.material=skyMat;
+
+// ---------- Stars ----------
+const starMeshes=[];
+for(let i=0;i<320;i++){
+  const s=BABYLON.MeshBuilder.CreateSphere("star_"+i,{diameter:1.3+Math.random()*1.2},scene);
+  s.position.x=(Math.random()-0.5)*4200;
+  s.position.y=(Math.random()-0.5)*4200;
+  s.position.z=(Math.random()-0.5)*4200;
+
+  const sm=new BABYLON.StandardMaterial("starMat_"+i,scene);
+  sm.emissiveColor=new BABYLON.Color3(1,1,1);
+  sm.disableLighting=true;
+  s.material=sm;
+  starMeshes.push(s);
+}
+
+// ---------- Particles ----------
+const pTex=new BABYLON.DynamicTexture("pTex",{width:64,height:64},scene,false);
+const pctx=pTex.getContext();
+const pg=pctx.createRadialGradient(32,32,0,32,32,32);
+pg.addColorStop(0,"rgba(255,255,255,1)");
+pg.addColorStop(0.35,"rgba(255,255,255,0.75)");
+pg.addColorStop(1,"rgba(255,255,255,0)");
+pctx.fillStyle=pg;
+pctx.fillRect(0,0,64,64);
+pTex.update();
+
+const particleSystem=new BABYLON.ParticleSystem("spaceDust",1800,scene);
+particleSystem.particleTexture=pTex;
+particleSystem.emitter=new BABYLON.Vector3(0,0,0);
+particleSystem.minEmitBox=new BABYLON.Vector3(-2000,-2000,-2000);
+particleSystem.maxEmitBox=new BABYLON.Vector3(2000,2000,2000);
+particleSystem.color1=new BABYLON.Color4(1,1,1,0.36);
+particleSystem.color2=new BABYLON.Color4(0.7,0.82,1,0.32);
+particleSystem.colorDead=new BABYLON.Color4(0,0,0,0);
+particleSystem.minSize=0.8;
+particleSystem.maxSize=2.6;
+particleSystem.minLifeTime=9999;
+particleSystem.maxLifeTime=9999;
+particleSystem.emitRate=180;
+particleSystem.blendMode=BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+particleSystem.gravity=new BABYLON.Vector3(0,0,0);
+particleSystem.direction1=new BABYLON.Vector3(0,0,0);
+particleSystem.direction2=new BABYLON.Vector3(0,0,0);
+particleSystem.minEmitPower=0;
+particleSystem.maxEmitPower=0;
+particleSystem.minAngularSpeed=0;
+particleSystem.maxAngularSpeed=0;
+particleSystem.updateSpeed=0.01;
+particleSystem.start();
+
+glow.customEmissiveColorSelector=function(mesh,subMesh,material,result){
+  if(!mesh||!material){result.set(0,0,0,0);return;}
+  const n=mesh.name||"";
+  if(
+    n.startsWith("flow_") ||
+    n.startsWith("arrow_") ||
+    n.startsWith("ring_") ||
+    (mesh.metadata && mesh.metadata.isChaos)
+  ){
+    const c=material.emissiveColor||BABYLON.Color3.Black();
+    result.set(c.r,c.g,c.b,1);
+    return;
+  }
+  result.set(0,0,0,0);
+};
+
+const nodes={};
+const dataMap={};
+const familyColorByKey=new Map();
+const familyByMemberId=new Map();
+const placed=new Set();
+const originalPositions=new Map();
+const connectionRecords=[];
+const lineMaterials=[];
+const connectionMeshes=[];
+let allData=[];
+let focusedId=null;
+let savedCameraState = null;
+let suppressPop=false;
+let tapCandidate=null;
+let panelOpen=false;
+let searchMatches=[];
+let activeSearchIndex=-1;
+let linesVisible=true;
+
+function c3(hex){return BABYLON.Color3.FromHexString(hex);}
+function hslToHex(h,s,l){
+  s/=100;l/=100;
+  const k=n=>(n+h/30)%12;
+  const a=s*Math.min(l,1-l);
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  const toHex=x=>Math.round(255*x).toString(16).padStart(2,'0');
+  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+}
+function hashNumber(str){
+  let h=0;
+  for(let i=0;i<str.length;i++)h=(h*31+str.charCodeAt(i))>>>0;
+  return h>>>0;
+}
+function hashColor(str){
+  return BABYLON.Color3.FromHexString(hslToHex(hashNumber(str)%360,80,64));
+}
+function idsFromField(s){
+  if(!s||s==='-')return[];
+  return String(s).split(';').map(v=>v.trim()).filter(Boolean).filter(v=>v!=='-');
+}
+function normalizeText(v){
+  return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+
+function genderPlanetTint(d){
+  var h=hashNumber(String(d.id||d.Name||'x'));
+  var model=String(d.ModelType||'').toLowerCase();
+  var id=String(d.id||'');
+
+  // Natural planetary colour palettes by mythology tier
+  if(id==='PRIM_CHAOS_001') return c3('#e8eeff'); // pearlescent white
+
+  // Primordials / energy — deep cosmic purples and nebula blues
+  if(model==='energy'){
+    var ep=['#7b5ea7','#4a6fa5','#6b4c8c','#3d6b8c','#8c5c3e'];
+    return c3(ep[h%ep.length]);
+  }
+
+  // Olympians — warm golds, rich blues, marble whites
+  if(model==='god'||model==='goddess'){
+    var op=['#c8962a','#4472b8','#b5a06e','#7aaa7a','#c47a3a',
+            '#8c6e9e','#4a8fb5','#c4884a','#6e9e6e','#a06060'];
+    return c3(op[h%op.length]);
+  }
+
+  // Titans / giants — earthy browns, ochres, deep reds
+  if(model==='giant'){
+    var tp=['#8b6340','#a0522d','#6b4c2a','#8b7355','#704214',
+            '#9e6b3a','#7a4a2a','#8c7040'];
+    return c3(tp[h%tp.length]);
+  }
+
+  // Monsters — dark greens, murky greys, sickly yellows
+  if(model==='monster'){
+    var mp=['#4a6b3a','#5c7a3e','#6b6b3a','#3e5c3e','#7a6b2a'];
+    return c3(mp[h%mp.length]);
+  }
+
+  // Nymphs — ocean teals, leafy greens, soft corals
+  if(model==='nymph'){
+    var np=['#3a8c8c','#4aaa6e','#2e7a7a','#5a9e7a','#3e8c6e'];
+    return c3(np[h%np.length]);
+  }
+
+  // Spirits / winds — silver-blues, pale greys
+  if(model==='spirit'||model==='wind'){
+    var sp=['#7090b0','#8090a8','#607898','#6888a0','#789098'];
+    return c3(sp[h%sp.length]);
+  }
+
+  // Humans / heroes — warm terracottas, dusty blues, sandy tones
+  var hp=['#9e6040','#6070a0','#a07840','#6e8870','#8c6858',
+          '#7888a0','#a08060','#5a7888','#9e7850','#7a6870'];
+  return c3(hp[h%hp.length]);
+}
+
+function spriteFile(d){
+  const sprite=String(d.sprite||''),
+        model=String(d.ModelType||''),
+        gender=String(d.Gender||'').toLowerCase();
+
+  if(sprite==='orb-group')return 'group.png';
+  if(sprite==='energy-neutral'||sprite==='energy-female')return 'energy.png';
+  if(sprite==='titan-male')return 'titan_male.png';
+  if(sprite==='titan-female')return 'titan_female.png';
+  if(sprite==='god')return gender==='female'?'god_female.png':'god_male.png';
+  if(sprite==='goddess')return 'god_female.png';
+  if(sprite==='hero')return 'hero_male.png';
+  if(sprite==='heroine')return 'hero_female.png';
+  if(sprite==='monster')return gender==='female'?'monster_female.png':'monster_male.png';
+  if(sprite==='spirit')return 'spirit.png';
+  if(sprite==='cosmic')return 'cosmic.png';
+
+  if(model==='group')return 'group.png';
+  if(model==='energy')return 'energy.png';
+  if(model==='giant')return gender==='female'?'titan_female.png':'titan_male.png';
+  if(model==='spirit')return 'spirit.png';
+  if(model==='human')return gender==='female'?'hero_female.png':'hero_male.png';
+  if(model==='goddess')return 'god_female.png';
+  if(model==='god')return gender==='female'?'god_female.png':'god_male.png';
+
+  return 'default.png';
+}
+
+function sizeFor(d){
+  var model=String(d.ModelType||'').toLowerCase();
+  var id=String(d.id||'');
+  // 5 tiers by mythology priority
+  if(id==='PRIM_CHAOS_001') return 22;          // Tier 1: Chaos (biggest)
+  if(model==='god'||model==='goddess') return 13; // Tier 2: Olympians
+  if(model==='giant'||model==='energy') return 10;// Tier 3: Titans + Primordials
+  if(model==='human'||model==='nymph'||
+     model==='hero') return 7.5;                  // Tier 4: Heroes / mortals
+  return 5.5;                                      // Tier 5: spirits/winds/monsters/groups
+}
+
+function addRing(parentMesh,color,diameter,thickness){
+  const ring=BABYLON.MeshBuilder.CreateTorus('ring_'+Math.random(),{diameter,thickness:thickness||0.11,tessellation:70},scene);
+  ring.rotation.x=Math.PI/2;
+  ring.parent=parentMesh;
+  ring.position=BABYLON.Vector3.Zero();
+
+  const rm=new BABYLON.StandardMaterial('rm_'+Math.random(),scene);
+  rm.emissiveColor=color.scale(1.4);
+  rm.alpha=0.92;
+  ring.material=rm;
+  glow.addIncludedOnlyMesh(ring);
+  return ring;
+}
+
+function wrapName(text,maxChars){
+  const words=String(text||'').split(' ');
+  const lines=[];
+  let current='';
+  words.forEach(w=>{
+    const next=(current?current+' ':'')+w;
+    if(next.length>maxChars && current){
+      lines.push(current);
+      current=w;
+    }else{
+      current=next;
+    }
+  });
+  if(current) lines.push(current);
+  return lines.slice(0,2);
+}
+
+function createLabel(text,parentMesh,size){
+  const lines=wrapName(text,14);
+  const dt=new BABYLON.DynamicTexture('dt_'+Math.random(),{width:1024,height:256},scene,true);
+  dt.hasAlpha=true;
+  const ctx=dt.getContext();
+  ctx.clearRect(0,0,1024,256);
+  ctx.textAlign='center';
+  ctx.fillStyle='#ead271';
+  ctx.font='bold 56px Arial';
+  if(lines.length===1){
+    ctx.fillText(lines[0],512,120);
+  }else{
+    ctx.fillText(lines[0],512,92);
+    ctx.fillText(lines[1],512,150);
+  }
+  dt.update();
+
+  var longest=lines.reduce(function(m,s){return Math.max(m,s.length);},6);
+  const plane=BABYLON.MeshBuilder.CreatePlane('label_'+Math.random(),{
+    width:Math.max(10,size*2.4+longest*0.3),
+    height:Math.max(3.2,size*1.1)
+  },scene);
+
+  plane.parent=parentMesh;
+  // Position exactly above the sphere (size/2 = radius, plus small gap)
+  plane.position=new BABYLON.Vector3(0, size * 0.5 + 1.8, 0);
+  // Billboard ALL so text always faces camera but stays above sphere
+  plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+
+  const mat=new BABYLON.StandardMaterial('lmat_'+Math.random(),scene);
+  mat.diffuseTexture=dt;
+  mat.opacityTexture=dt;
+  mat.disableLighting=true;
+  mat.emissiveColor=BABYLON.Color3.White().scale(0.88);
+  mat.backFaceCulling=false;
+  plane.material=mat;
+  return plane;
+}
+
+function createNode(d,x,y,z,familyRingColor){
+  if(!d||placed.has(d.id))return;
+  const size=sizeFor(d);
+  const tint=genderPlanetTint(d);
+
+  const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:56},scene);
+  sphere.position=new BABYLON.Vector3(x,y,z);
+
+  var sm=new BABYLON.PBRMaterial('sm_'+d.id,scene);
+
+  // Procedural planet surface texture
+  var ptex=new BABYLON.DynamicTexture('ptex_'+d.id,{width:256,height:128},scene,false);
+  var pctx=ptex.getContext();
+  var r0=Math.round(tint.r*255), g0=Math.round(tint.g*255), b0=Math.round(tint.b*255);
+  var r1=Math.max(0,r0-55), g1=Math.max(0,g0-55), b1=Math.max(0,b0-55);
+  var grad=pctx.createLinearGradient(0,0,256,128);
+  grad.addColorStop(0,'rgb('+r0+','+g0+','+b0+')');
+  grad.addColorStop(0.5,'rgb('+r1+','+g1+','+b1+')');
+  grad.addColorStop(1,'rgb('+r0+','+g0+','+b0+')');
+  pctx.fillStyle=grad; pctx.fillRect(0,0,256,128);
+  // Band streaks
+  var seed=(d.id||'').split('').reduce(function(a,c){return a*31+c.charCodeAt(0)|0;},1)&0xFFFFFF;
+  for(var bi=0;bi<7;bi++){
+    var yb=((Math.abs(seed*(bi+1)*37))%100)/100*128;
+    var hb=1+((Math.abs(seed*(bi+3)*13))%7);
+    var ab=(5+((Math.abs(seed*(bi+7)*7))%12))/100;
+    pctx.fillStyle='rgba(0,0,0,'+ab+')'; pctx.fillRect(0,yb,256,hb);
+  }
+  // Highlight shimmer
+  var hx=40+(Math.abs(seed*17)%180), hy=20+(Math.abs(seed*31)%80);
+  var hg=pctx.createRadialGradient(hx,hy,0,hx,hy,32);
+  hg.addColorStop(0,'rgba(255,255,255,0.25)'); hg.addColorStop(1,'rgba(255,255,255,0)');
+  pctx.fillStyle=hg; pctx.fillRect(0,0,256,128);
+  ptex.update();
+
+  sm.albedoTexture=ptex;
+  sm.albedoColor=tint;
+  sm.roughness=0.65;
+  sm.metallic=0.05;
+  sm.environmentIntensity=0;
+  sm.emissiveColor=tint.scale(0.10);
+  sm.backFaceCulling=false;
+  sphere.material=sm;
+
+  const label=createLabel(d.Name||d.id,sphere,size);
+
+  const rings=[];
+  if(String(d.id)==='PRIM_CHAOS_001') rings.push(addRing(sphere,c3('#ffffff'),size*1.36,0.13));
+  if(d.ModelType==='energy') rings.push(addRing(sphere,c3('#deb3ff'),size*1.18,0.10));
+  if(d.ModelType==='group'||d.Shape==='group'||d.ring===true) rings.push(addRing(sphere,tint,size*1.24,0.10));
+  if(familyRingColor) rings.push(addRing(sphere,familyRingColor,size*1.12,0.09));
+
+  sphere.metadata=Object.assign({},d,{isChaos:String(d.id)==='PRIM_CHAOS_001'});
+  nodes[d.id]={id:d.id,data:d,sphere,rings,label,size,familyRingColor:familyRingColor||null};
+  placed.add(d.id);
+}
+
+function makeInfoLink(id){
+  if(!id||id==='-') return '-';
+  const d=dataMap[id];
+  if(!d) return id;
+  return `<span class="infoLink" data-id="${id}">${d.Name||id}</span>`;
+}
+function listInfoLinks(str){
+  if(!str||str==='-') return '-';
+  return String(str).split(';').map(s=>s.trim()).filter(Boolean).filter(v=>v!=='-').map(id=>makeInfoLink(id)).join(', ');
+}
+function highlightNode(id,on){
+  const n=nodes[id];
+  if(!n) return;
+  n.sphere.scaling.setAll(on?1.18:1);
+}
+function bindInfoLinks(){
+  infoEl.querySelectorAll('.infoLink').forEach(el=>{
+    const id=el.dataset.id;
+    el.addEventListener('click',()=>{
+      searchBox.blur();
+      hideSearchResults();
+      enterFocus(id);
+    });
+    el.addEventListener('mouseenter',()=>highlightNode(id,true));
+    el.addEventListener('mouseleave',()=>highlightNode(id,false));
+  });
+}
+function showInfo(d){
+  infoEl.innerHTML=
+    `<h2>${d.Name||d.id}</h2>`+
+    `<div class="sub">${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation!=null?d.Generation:'-'}</div>`+
+    `<div class="sec">Summary</div><div class="txt">${d.Summary||'-'}</div>`+
+    `<div class="sec">Parents</div><div class="txt">${listInfoLinks(d.Parents)}</div>`+
+    `<div class="sec">Partners</div><div class="txt">${listInfoLinks(d.Partners)}</div>`+
+    `<div class="sec">Children</div><div class="txt">${listInfoLinks(d.Children)}</div>`+
+    `<div class="sec">FullText</div><div class="txt">${d.FullText||'-'}</div>`;
+  bindInfoLinks();
+}
+function resetInfo(){
+  infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">Chaos center · generation rings · family clusters</div><div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>`;
+}
+
+function getNodePos(id){return nodes[id]&&nodes[id].sphere?nodes[id].sphere.position:null;}
+function saveOriginalPositions(){Object.values(nodes).forEach(n=>originalPositions.set(n.id,n.sphere.position.clone()));}
+function restoreOriginalPositions(){Object.values(nodes).forEach(n=>{const p=originalPositions.get(n.id);if(p)n.sphere.position.copyFrom(p);});}
+function coupleKey(a,b){return [a,b].sort().join('|');}
+
+function buildFamilies(all){
+  const families=[];
+  const inFamilyChild=new Set();
+
+  all.forEach(d=>{
+    const partners=idsFromField(d.Partners);
+    const kidsA=new Set(idsFromField(d.Children));
+    partners.forEach(pid=>{
+      const p=dataMap[pid];
+      if(!p)return;
+      const kidsB=new Set(idsFromField(p.Children));
+      const shared=[...kidsA].filter(k=>kidsB.has(k));
+      if(shared.length){
+        const key=coupleKey(d.id,pid);
+        if(!families.find(f=>f.key===key)){
+          families.push({key,parents:[d.id,pid],children:shared});
+          shared.forEach(c=>inFamilyChild.add(c));
+        }
+      }
+    });
+  });
+
+  all.forEach(d=>{
+    const kids=idsFromField(d.Children).filter(k=>!inFamilyChild.has(k));
+    if(kids.length){
+      families.push({key:'single|'+d.id,parents:[d.id],children:kids});
+      kids.forEach(k=>inFamilyChild.add(k));
+    }
+  });
+
+  families.forEach(f=>{
+    f.parents.forEach(id=>familyByMemberId.set(id,f.key));
+    f.children.forEach(id=>{
+      if(!familyByMemberId.has(id))familyByMemberId.set(id,f.key);
+    });
+  });
+
+  return families;
+}
+
+function placeFamily(center,family,famColor){
+  const parents=family.parents.map(id=>dataMap[id]).filter(Boolean);
+  const children=family.children.map(id=>dataMap[id]).filter(Boolean);
+
+  if (parents.length === 1) {
+    if (parents[0].id === "PRIM_CHAOS_001") return;
+    createNode(parents[0], center.x, center.y, center.z, famColor);
+  } else if (parents.length >= 2) {
+    if (parents[0].id === "PRIM_CHAOS_001") return;
+    if (parents[1] && parents[1].id === "PRIM_CHAOS_001") return;
+    const gap = 9;
+    createNode(parents[0], center.x - gap / 2, center.y, center.z, famColor);
+    createNode(parents[1], center.x + gap / 2, center.y, center.z, famColor);
+  }
+
+  const n=children.length;
+  if(!n) return;
+
+  const childRadius=Math.max(16,10+n*2.0);
+  for(let i=0;i<n;i++){
+    const angle=(Math.PI*2*i/n)-Math.PI/2;
+    const x=center.x+Math.cos(angle)*childRadius;
+    const z=center.z+Math.sin(angle)*childRadius;
+    const y=center.y+Math.sin(angle*2)*2.5;
+    createNode(children[i],x,y,z,famColor);
+  }
+}
+
+function registerConnection(type,aId,bId,color){
+  if(!nodes[aId]||!nodes[bId]) return;
+  connectionRecords.push({type,aId,bId,color});
+}
+
+function buildConnections(){
+  connectionRecords.length=0;
+  const partnerDone=new Set();
+  const parentDone=new Set();
+
+  allData.forEach(d=>{
+    idsFromField(d.Partners).forEach(pid=>{
+      if(!nodes[d.id]||!nodes[pid]) return;
+      const k=[d.id,pid].sort().join('|');
+      if(partnerDone.has(k)) return;
+      partnerDone.add(k);
+      registerConnection('partner',d.id,pid,c3('#ff4b4b'));
+    });
+
+    idsFromField(d.Parents).forEach(pid=>{
+      if(!nodes[pid]||!nodes[d.id]) return;
+      const k=`${pid}->${d.id}`;
+      if(parentDone.has(k)) return;
+      parentDone.add(k);
+      registerConnection('parent',pid,d.id,c3('#56a6ff'));
+    });
+  });
+}
+
+function makeControlPoint(a,b,type){
+  const dir=b.subtract(a);
+  const mid=BABYLON.Vector3.Lerp(a,b,0.5);
+  let normal=new BABYLON.Vector3(-dir.z,0,dir.x);
+  if(normal.lengthSquared()<0.0001) normal=new BABYLON.Vector3(1,0,0);
+  normal.normalize();
+  const len=Math.max(8,dir.length());
+  const sideStrength=type==='partner' ? Math.min(18,len*0.22) : Math.min(14,len*0.18);
+  const upStrength=type==='partner' ? Math.min(6,len*0.03) : Math.min(10,len*0.06);
+  return mid.add(normal.scale(sideStrength)).add(new BABYLON.Vector3(0,upStrength,0));
+}
+
+function clearConnectionVisuals(){
+  while(connectionMeshes.length){
+    const m=connectionMeshes.pop();
+    if(m && !m.isDisposed()) m.dispose();
+  }
+  lineMaterials.length=0;
+}
+
+function renderConnections(filterSet){
+  clearConnectionVisuals();
+  if(!linesVisible) return;
+
+  connectionRecords.forEach((rec,idx)=>{
+    if(filterSet && (!filterSet.has(rec.aId) || !filterSet.has(rec.bId))) return;
+
+    const a=getNodePos(rec.aId);
+    const b=getNodePos(rec.bId);
+    if(!a||!b) return;
+
+    const ctrl=makeControlPoint(a.clone(),b.clone(),rec.type);
+    const curve=BABYLON.Curve3.CreateQuadraticBezier(a.clone(),ctrl,b.clone(),28);
+    const path=curve.getPoints();
+
+    const tube=BABYLON.MeshBuilder.CreateTube('conn_'+idx,{path,radius:rec.type==='partner'?0.10:0.055},scene);
+    connectionMeshes.push(tube);
+
+    const mat=new BABYLON.StandardMaterial('conn_mat_'+idx,scene);
+    mat.disableLighting=true;
+    mat.backFaceCulling=false;
+    mat.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;
+
+    if(rec.type==='partner'){
+      mat.emissiveColor=rec.color.scale(0.95);
+      mat.diffuseColor=rec.color.scale(1.2);
+      mat.alpha=0.62;
+    }else{
+      mat.emissiveColor=rec.color.scale(1.05);
+      mat.diffuseColor=rec.color.scale(1.15);
+      mat.alpha=0.90;
+    }
+
+    tube.material=mat;
+    lineMaterials.push({mat,base:rec.color,type:rec.type,phase:Math.random()*Math.PI*2});
+
+    if(rec.type==='parent' && path.length>2){
+      const orb=BABYLON.MeshBuilder.CreateCylinder('flow_'+idx,{height:0.06,diameter:0.025,tessellation:10},scene);
+      connectionMeshes.push(orb);
+
+      const fm=new BABYLON.StandardMaterial('flowMat_'+idx,scene);
+      fm.disableLighting=true;
+      fm.emissiveColor=BABYLON.Color3.White().scale(28);
+      orb.material=fm;
+      glow.addIncludedOnlyMesh(orb);
+
+      lineMaterials.push({type:'flow',mesh:orb,path:path,offset:Math.random()});
+    }
+
+    if(rec.type==='parent' && path.length>4){
+      const points=[Math.floor(path.length*0.38),Math.floor(path.length*0.68)];
+      points.forEach((pIdx,arrowIdx)=>{
+        const i=Math.max(1,Math.min(path.length-2,pIdx));
+        const prev=path[i-1];
+        const next=path[i+1];
+        const pos=path[i];
+        const dir=prev.subtract(next).normalize();
+
+        const cone=BABYLON.MeshBuilder.CreateCylinder(
+          'arrow_'+idx+'_'+arrowIdx,
+          {height:2.25,diameterTop:0,diameterBottom:1.0,tessellation:8},
+          scene
+        );
+        connectionMeshes.push(cone);
+
+        cone.position=pos.clone();
+        cone.rotationQuaternion=BABYLON.Quaternion.FromLookDirectionLH(dir,BABYLON.Vector3.Up());
+        cone.rotate(BABYLON.Axis.X,Math.PI/2,BABYLON.Space.LOCAL);
+
+        const am=new BABYLON.StandardMaterial('am_'+idx+'_'+arrowIdx,scene);
+        am.disableLighting=true;
+        am.diffuseColor=BABYLON.Color3.FromHexString("#4f7dff");
+        am.emissiveColor=BABYLON.Color3.FromHexString("#4f7dff").scale(0.7);
+        cone.material=am;
+        glow.addIncludedOnlyMesh(cone);
+
+        lineMaterials.push({
+          mat:am,
+          base:BABYLON.Color3.FromHexString("#4f7dff"),
+          type:'arrow',
+          duration:1.5+Math.random()*2,
+          phase:Math.random()*Math.PI*2
+        });
+      });
+    }
+  });
+}
+
+function getRelativesSet(id){
+  const set=new Set([id]);
+  const d=dataMap[id];
+  if(!d) return set;
+  idsFromField(d.Parents).forEach(x=>{if(nodes[x])set.add(x);});
+  idsFromField(d.Partners).forEach(x=>{if(nodes[x])set.add(x);});
+  idsFromField(d.Children).forEach(x=>{if(nodes[x])set.add(x);});
+  return set;
+}
+
+function applyFocusLayout(centerId,relativeSet){
+  restoreOriginalPositions();
+  const center=nodes[centerId];
+  if(!center) return;
+
+  const anchor=(originalPositions.get(centerId)||center.sphere.position).clone();
+  const d=dataMap[centerId]||{};
+  const parents=idsFromField(d.Parents).filter(id=>relativeSet.has(id)&&id!==centerId);
+  const partners=idsFromField(d.Partners).filter(id=>relativeSet.has(id));
+  const children=idsFromField(d.Children).filter(id=>relativeSet.has(id));
+
+  const SPREAD=22;
+  const CHILD_R=Math.max(20,14+children.length*2.4);
+
+  partners.forEach((pid,i)=>{
+    const p=nodes[pid]; if(!p)return;
+    const side=i%2===0?-1:1;
+    p.sphere.position.copyFrom(anchor.add(new BABYLON.Vector3(side*(SPREAD/2+i*4),0,0)));
+  });
+
+  parents.forEach((pid,i)=>{
+    const p=nodes[pid]; if(!p)return;
+    const angle=parents.length===1?-Math.PI/2:(-Math.PI/2 - Math.PI/4 + (Math.PI/2*i/Math.max(1,parents.length-1)));
+    p.sphere.position.copyFrom(anchor.add(new BABYLON.Vector3(Math.cos(angle)*SPREAD,14,Math.sin(angle)*SPREAD)));
+  });
+
+  children.forEach((cid,i)=>{
+    const c=nodes[cid]; if(!c)return;
+    const angle=(Math.PI*2*i/Math.max(1,children.length))-Math.PI/2;
+    c.sphere.position.copyFrom(anchor.add(new BABYLON.Vector3(
+      Math.cos(angle)*CHILD_R,
+      Math.sin(angle*2)*3,
+      Math.sin(angle)*CHILD_R
+    )));
+  });
+}
+
+function saveCameraState(){
+  savedCameraState = {
+    alpha: camera.alpha,
+    beta: camera.beta,
+    radius: camera.radius,
+    target: camera.target.clone()
+  };
+}
+function restoreCameraState(){
+  if(!savedCameraState) return;
+  var st=savedCameraState;
+  var fr=0, mxF=35;
+  var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
+  var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
+  function lrp(a,b,t){return a+(b-a)*t;}
+  function esF(t){return t<0.5?2*t*t:1-2*(1-t)*(1-t);}
+  function stpR(){
+    fr++;
+    var p=esF(Math.min(fr/mxF,1));
+    camera.alpha    = lrp(sA, st.alpha,    p);
+    camera.beta     = lrp(sB, st.beta,     p);
+    camera.radius   = lrp(sR, st.radius,   p);
+    camera.target.x = lrp(sTx, st.target.x, p);
+    camera.target.y = lrp(sTy, st.target.y, p);
+    camera.target.z = lrp(sTz, st.target.z, p);
+    if(fr<mxF) setTimeout(stpR,16);
+  }
+  stpR();
+}
+
+function enterFocus(id){
+  saveCameraState();
+  if(!nodes[id]) return;
+  if(focusedId===id){resetFocus(false);return;}
+
+  focusedId=id;
+  const relatives=getRelativesSet(id);
+
+  Object.values(nodes).forEach(n=>{
+    n.sphere.setEnabled(true);
+    var rel=relatives.has(n.id);
+    n.sphere.material.transparencyMode=rel?BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE:BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+    n.sphere.material.alpha=rel?1:0.04;  // non-relatives nearly invisible
+    if(n.label) n.label.setEnabled(rel); // hide labels of non-relatives
+  });
+
+  applyFocusLayout(id,relatives);
+  renderConnections(relatives);
+
+  var pos=getNodePos(id);
+  if(pos){
+    var newTarget = pos.clone();
+    var minDist = nodes[id].size * 1.2 + 18; // don't enter sphere
+    camera.lowerRadiusLimit = minDist;
+    var newRadius = nodes[id].size * 10 + 60;
+    var frames2=0, maxF2=35;
+    var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
+    var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
+    function lerp2(a,b,t){return a+(b-a)*t;}
+    function ease2(t){return t<0.5?2*t*t:1-2*(1-t)*(1-t);}
+    function stepFocus(){
+      frames2++;
+      var p=ease2(Math.min(frames2/maxF2,1));
+      camera.radius   = lerp2(sR,  newRadius,   p);
+      camera.target.x = lerp2(sTx, newTarget.x, p);
+      camera.target.y = lerp2(sTy, newTarget.y, p);
+      camera.target.z = lerp2(sTz, newTarget.z, p);
+      if(frames2<maxF2) setTimeout(stepFocus,16);
+    }
+    stepFocus();
+  }
+
+  showInfo(dataMap[id]);
+  if(!suppressPop) history.pushState({focus:id},'');
+}
+
+function resetFocus(fromPop){
+  focusedId=null;
+  camera.lowerRadiusLimit = 20; // restore free-roam min
+  restoreOriginalPositions();
+
+  Object.values(nodes).forEach(n=>{
+    n.sphere.material.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
+    n.sphere.material.alpha=1;
+    n.sphere.setEnabled(true);
+    if(n.label) { n.label.setEnabled(true); n.label.scaling.setAll(1); }
+  });
+
+  clearConnectionVisuals();
+  restoreCameraState();
+  resetInfo();
+  hideSearchResults();
+
+  if(!fromPop && history.state && history.state.focus){
+    suppressPop=true;
+    history.back();
+    setTimeout(()=>{suppressPop=false;},50);
+  }
+}
+
+function searchableText(d){
+  return normalizeText([d.Name||'',d.id||'',d.Category||'',d.ModelType||'',d.Generation||''].join(' '));
+}
+function hideSearchResults(){
+  searchResults.style.display='none';
+  searchResults.innerHTML='';
+  searchMatches=[];
+  activeSearchIndex=-1;
+}
+function renderSearchResults(){
+  searchResults.innerHTML='';
+  if(!searchMatches.length){
+    searchResults.style.display='none';
+    activeSearchIndex=-1;
+    return;
+  }
+  searchResults.style.display='block';
+  searchMatches.forEach((d,idx)=>{
+    const item=document.createElement('div');
+    item.className='searchItem'+(idx===activeSearchIndex?' active':'');
+    item.innerHTML=`<div class="searchName">${d.Name||d.id}</div><div class="searchMeta">${d.id||''} · ${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation!=null?d.Generation:'-'}</div>`;
+    item.addEventListener('click',()=>{
+      searchBox.value=d.Name||d.id;
+      hideSearchResults();
+      enterFocus(d.id);
+    });
+    searchResults.appendChild(item);
+  });
+}
+function runSearch(raw){
+  const q=normalizeText(raw).trim();
+  if(!q){hideSearchResults();return;}
+  searchMatches=allData.filter(d=>searchableText(d).includes(q)).sort((a,b)=>{
+    const an=normalizeText(a.Name||a.id),bn=normalizeText(b.Name||b.id);
+    const aStarts=an.startsWith(q)?0:1,bStarts=bn.startsWith(q)?0:1;
+    if(aStarts!==bStarts)return aStarts-bStarts;
+    return an.localeCompare(bn);
+  }).slice(0,20);
+  activeSearchIndex=searchMatches.length?0:-1;
+  renderSearchResults();
+}
+
+indexBtn.addEventListener('click',()=>{
+  panelOpen=!panelOpen;
+  panelEl.style.display=panelOpen?'block':'none';
+});
+toggleLines.addEventListener('change',()=>{
+  linesVisible=toggleLines.checked;
+  renderConnections(focusedId ? getRelativesSet(focusedId) : null);
+});
+toggleParticles.addEventListener('change',()=>{
+  if(toggleParticles.checked) particleSystem.start();
+  else particleSystem.stop();
+});
+toggleNebula.addEventListener('change',()=>{ sky.setEnabled(toggleNebula.checked); });
+toggleStars.addEventListener('change',()=>{ starMeshes.forEach(s=>s.setEnabled(toggleStars.checked)); });
+
+searchBox.addEventListener('input',e=>runSearch(e.target.value));
+searchBox.addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){
+    if(!searchMatches.length)return;
+    e.preventDefault();
+    activeSearchIndex=Math.min(searchMatches.length-1,activeSearchIndex+1);
+    renderSearchResults();
+  }else if(e.key==='ArrowUp'){
+    if(!searchMatches.length)return;
+    e.preventDefault();
+    activeSearchIndex=Math.max(0,activeSearchIndex-1);
+    renderSearchResults();
+  }else if(e.key==='Enter'){
+    if(!searchMatches.length)return;
+    e.preventDefault();
+    const chosen=searchMatches[Math.max(0,activeSearchIndex)];
+    if(chosen){
+      searchBox.value=chosen.Name||chosen.id;
+      hideSearchResults();
+      enterFocus(chosen.id);
+    }
+  }else if(e.key==='Escape'){
+    hideSearchResults();
+  }
+});
+document.addEventListener('click',e=>{
+  if(e.target!==searchBox && !searchResults.contains(e.target)) hideSearchResults();
+});
+
+homeBtn.addEventListener('click',function(){
+  // Full reset: return to Chaos center, restore all nodes, clear focus
+  focusedId=null;
+  _t1=null; _multi=false; _tf=null; _mdn=null;
+  savedCameraState=null; // clear saved state so restore doesn't fight us
+  restoreOriginalPositions();
+  renderConnections();
+  Object.values(nodes).forEach(function(n){
+    n.sphere.material.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
+    n.sphere.material.alpha=1;
+    n.sphere.setEnabled(true);
+    if(n.label) { n.label.setEnabled(true); n.label.scaling.setAll(1); }
+  });
+  resetInfo();
+  hideSearchResults();
+  // Smooth animate back to default view centered on Chaos
+  var frames3=0, maxF3=40;
+  var sA3=camera.alpha, sB3=camera.beta, sR3=camera.radius;
+  var sTx3=camera.target.x, sTy3=camera.target.y, sTz3=camera.target.z;
+  var tA3=-Math.PI/2, tB3=Math.PI/3.1, tR3=760;
+  function lerp3(a,b,t){return a+(b-a)*t;}
+  function ease3(t){return t<0.5?2*t*t:1-2*(1-t)*(1-t);}
+  function stepHome(){
+    frames3++;
+    var p=ease3(Math.min(frames3/maxF3,1));
+    camera.alpha    = lerp3(sA3, tA3, p);
+    camera.beta     = lerp3(sB3, tB3, p);
+    camera.radius   = lerp3(sR3, tR3, p);
+    camera.target.x = lerp3(sTx3, 0, p);
+    camera.target.y = lerp3(sTy3, 0, p);
+    camera.target.z = lerp3(sTz3, 0, p);
+    if(frames3<maxF3) setTimeout(stepHome,16);
+  }
+  stepHome();
+});
+
+
+window.addEventListener('popstate',()=>{ if(focusedId) resetFocus(true); });
+
+
+fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
+  .then(r=>{
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  })
+  .then(all=>{
+    allData=all;
+    all.forEach(d=>dataMap[d.id]=d);
+
+    const chaos=all.find(d=>d.id==='PRIM_CHAOS_001');
+    if(chaos) createNode(chaos,0,0,0,null);
+
+    const families = buildFamilies(all);
+    families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
+
+    // ── CONCENTRIC RING LAYOUT ─────────────────────────────────────────────
+    // Each mythology tier occupies its own ring radius.
+    // Families are placed as sub-clusters along each ring.
+    // All tiers share the same centre (Chaos at 0,0,0).
+
+    // Ring radii by mythology importance
+    var RINGS = {
+      primordial: 90,
+      titan:      175,
+      olympian:   265,
+      hero:       350,   // heroes & mortals close to Olympians
+      mortal:     350,   // same ring as heroes, different angle sector
+      monster:    435,
+      outer:      510
+    };
+
+    function mythGroup(d){
+      if(!d) return "hero";
+      var model=String(d.ModelType||"").toLowerCase();
+      if(d.id==="PRIM_CHAOS_001") return "center";
+      if(model==="energy")                     return "primordial";
+      if(model==="giant")                      return "titan";
+      if(model==="god"||model==="goddess")     return "olympian";
+      if(model==="wind")                       return "olympian";
+      if(model==="nymph")                      return "hero";
+      if(model==="human")                      return "mortal";
+      if(model==="monster"||model==="spirit"||model==="underworld") return "monster";
+      if(model==="group")                      return "outer";
+      return "hero";
+    }
+
+    // Group families by ring
+    var famsByRing = {};
+    families
+      .filter(function(f){ return f.parents && !f.parents.includes("PRIM_CHAOS_001"); })
+      .forEach(function(f){
+        var firstId = f.parents.length ? f.parents[0] : null;
+        var p = firstId ? dataMap[firstId] : null;
+        if(!p) return;
+        var ring = mythGroup(p);
+        if(!famsByRing[ring]) famsByRing[ring] = [];
+        famsByRing[ring].push(f);
+      });
+
+    // Place each ring: families spaced evenly around the ring circumference
+    // Heroes occupy top half (angle 0 to PI), mortals bottom half (PI to 2PI)
+    Object.keys(famsByRing).forEach(function(ring){
+      var fams = famsByRing[ring];
+      var R = RINGS[ring] || 510;
+      var n = fams.length || 1;
+
+      // Give heroes top semicircle, mortals bottom semicircle of same ring
+      var startAngle = 0, arcLength = Math.PI * 2;
+      if(ring === "hero")   { startAngle = -Math.PI/2; arcLength = Math.PI; }
+      if(ring === "mortal") { startAngle =  Math.PI/2; arcLength = Math.PI; }
+
+      fams.forEach(function(f, i){
+        var baseAngle = startAngle + (arcLength * i / n);
+
+        // Family cluster: parents at ring, children in tight inner arc
+        var famParents   = f.parents.map(function(id){return dataMap[id];}).filter(Boolean);
+        var famChildren  = f.children.map(function(id){return dataMap[id];}).filter(Boolean);
+
+        // Parent position on the ring
+        var px = Math.cos(baseAngle) * R;
+        var pz = Math.sin(baseAngle) * R;
+        var py = Math.sin(baseAngle * 2) * 8;
+
+        if(famParents.length === 1){
+          createNode(famParents[0], px, py, pz, familyColorByKey.get(f.key));
+        } else if(famParents.length >= 2){
+          var gap = 10;
+          var perpX = -Math.sin(baseAngle), perpZ = Math.cos(baseAngle);
+          createNode(famParents[0], px - perpX*gap/2, py, pz - perpZ*gap/2, familyColorByKey.get(f.key));
+          createNode(famParents[1], px + perpX*gap/2, py, pz + perpZ*gap/2, familyColorByKey.get(f.key));
+        }
+
+        // Children arc INWARD (toward Chaos) from the parents
+        var nc = famChildren.length;
+        if(nc > 0){
+          var childR = Math.max(R - 30, R * 0.82);
+          var arcSpread = Math.min(Math.PI * 0.5, nc * 0.18);
+          for(var ci = 0; ci < nc; ci++){
+            var ca = baseAngle + arcSpread * (ci/(Math.max(nc-1,1)) - 0.5);
+            createNode(famChildren[ci],
+              Math.cos(ca)*childR,
+              py + Math.sin(ca*3)*4,
+              Math.sin(ca)*childR,
+              familyColorByKey.get(f.key));
+          }
+        }
+      });
+    });
+
+    // Place any leftovers not caught by family system
+    var leftovers = all.filter(function(d){ return d && d.id && !placed.has(d.id); });
+    leftovers.forEach(function(d, i){
+      var ring = mythGroup(d);
+      var R2 = (RINGS[ring] || 510) + 25;
+      var angle2 = Math.PI * 2 * i / Math.max(1, leftovers.length);
+      createNode(d, Math.cos(angle2)*R2, Math.sin(angle2*3)*8, Math.sin(angle2)*R2, null);
+    });
+
+    saveOriginalPositions();
+    buildConnections();
+    renderConnections();
+    resetInfo();
+  })
+  .catch(err=>{
+    infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';
+    console.error('JSON ERROR',err);
+  });
+
+engine.runRenderLoop(()=>{
+  const t=performance.now()*0.001;
+
+  for(let i=0;i<lineMaterials.length;i++){
+    const m=lineMaterials[i];
+
+    if(m.type==='flow' && m.path && m.mesh){
+      m.offset += 0.000008;
+      if(m.offset>1) m.offset-=1;
+
+      const index=Math.floor(m.offset*(m.path.length-1));
+      const p=m.path[index];
+
+      if(p){
+        m.mesh.position.copyFrom(p);
+
+        if(index < m.path.length-1){
+          const next=m.path[Math.min(m.path.length-1,index+1)];
+          const dir=next.subtract(p).normalize();
+          var _up=Math.abs(dir.y)<0.99?BABYLON.Vector3.Up():BABYLON.Vector3.Right();
+          m.mesh.rotationQuaternion=BABYLON.Quaternion.FromLookDirectionLH(dir,_up);
+        }
+      }
+      continue;
+    }
+
+    if(m.type==='arrow'){
+      const darkBlue=BABYLON.Color3.FromHexString("#3e66ff");
+      const glowBlue=BABYLON.Color3.FromHexString("#7aa6ff");
+      const mix=(Math.sin((t/m.duration)*(Math.PI*2)+m.phase)+1)/2;
+      m.mat.emissiveColor=BABYLON.Color3.Lerp(darkBlue,glowBlue,mix).scale(1.0);
+      continue;
+    }
+
+    if(m.type==='parent'){
+      const dark=BABYLON.Color3.FromHexString("#2f5dff");
+      const glowC=BABYLON.Color3.FromHexString("#8ab4ff");
+      const mix=(Math.sin(t*0.35 + m.phase)+1)/2;
+      m.mat.emissiveColor=BABYLON.Color3.Lerp(dark,glowC,mix).scale(0.95);
+    }else if(m.type==='partner'){
+      m.mat.emissiveColor=m.base.scale(1.15);
+    }else{
+      m.mat.emissiveColor=m.base.scale(0.5);
+    }
+  }
+
+  Object.values(nodes).forEach(n=>{
+    if(n.sphere.metadata && n.sphere.metadata.isChaos){
+      var pulse=0.7 + Math.sin(t*0.9)*0.3;
+      n.sphere.material.emissiveColor=BABYLON.Color3.White().scale(pulse);
+      n.sphere.material.albedoColor=new BABYLON.Color3(0.9+Math.sin(t*1.2)*0.1, 0.92, 1);
+    }
+  });
+
+  sky.rotation.y += 0.00004;
+  particleSystem.emitter.x=Math.sin(performance.now()*0.00005)*200;
+  particleSystem.emitter.z=Math.cos(performance.now()*0.00005)*200;
+  // ── INERTIA: smooth deceleration after gesture ends ────────────────
+  if (_inertiaActive) {
+    var DAMP = 0.88; // 0=instant stop, 1=never stops — 0.88 feels floaty
+    _velAlpha  *= DAMP; _velBeta   *= DAMP; _velRadius *= DAMP;
+    _velTx     *= DAMP; _velTy     *= DAMP; _velTz     *= DAMP;
+    var MIN = 0.0001;
+    if (Math.abs(_velAlpha) > MIN)  camera.alpha    += _velAlpha;
+    if (Math.abs(_velBeta)  > MIN)  camera.beta     = _cb(camera.beta + _velBeta);
+    if (Math.abs(_velRadius)> MIN)  camera.radius   = _cr(camera.radius + _velRadius);
+    if (Math.abs(_velTx)    > MIN)  camera.target.x += _velTx;
+    if (Math.abs(_velTy)    > MIN)  camera.target.y += _velTy;
+    if (Math.abs(_velTz)    > MIN)  camera.target.z += _velTz;
+    // Stop inertia when all velocities negligible
+    if (Math.abs(_velAlpha)<MIN && Math.abs(_velBeta)<MIN && Math.abs(_velRadius)<MIN &&
+        Math.abs(_velTx)<MIN && Math.abs(_velTz)<MIN) {
+      _inertiaActive = false;
+    }
+  }
+  // Track velocity each frame from actual camera changes
+  _velAlpha  = camera.alpha    - _prevAlpha;
+  _velBeta   = camera.beta     - _prevBeta;
+  _velRadius = camera.radius   - _prevRadius;
+  _velTx     = camera.target.x - _prevTx;
+  _velTy     = camera.target.y - _prevTy;
+  _velTz     = camera.target.z - _prevTz;
+  _prevAlpha = camera.alpha;    _prevBeta  = camera.beta;
+  _prevRadius= camera.radius;   _prevTx    = camera.target.x;
+  _prevTy    = camera.target.y; _prevTz    = camera.target.z;
+
+  scene.render();
+});
+
+window.addEventListener('resize',()=>engine.resize());
+</script>
+</body>
+</html>
