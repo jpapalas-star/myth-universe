@@ -1510,38 +1510,15 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
 
     // ══════════════════════════════════════════════════════════════════════
-    // FAMILY CIRCLE LAYOUT
+    // FAMILY SOLAR SYSTEMS LAYOUT
     //
-    // Concept:
-    //   • Each family (parents + children) = one small circle.
-    //   • Inside the circle: parents at center, children on outer ring.
-    //   • These family circles are then placed around Chaos in large
-    //     concentric band-rings, grouped by mythology tier.
-    //
-    //   Chaos (center)
-    //     → Band 1 (r≈120):  Primordial families
-    //     → Band 2 (r≈230):  Titan families
-    //     → Band 3 (r≈350):  Olympian families
-    //     → Band 4 (r≈480):  Hero / Mortal / Nymph families
-    //     → Band 5 (r≈610):  Monster / Spirit families
-    //
-    // Within each band, family circles are spaced evenly around the ring.
-    // Min gap between any two planets = 8 units.
+    // Each family = a tight circle: parents at center, children on a ring.
+    // Families grouped by tier into concentric galaxy bands.
     // ══════════════════════════════════════════════════════════════════════
 
-    var TIER_BAND = {
-      primordial: 120,
-      titan:      230,
-      olympian:   350,
-      hero:       480,
-      nymph:      480,
-      mortal:     480,
-      monster:    610,
-      outer:      610
-    };
-
-    function mythTier2(d){
-      if(!d||d.id==='PRIM_CHAOS_001') return null;
+    // Mythology tier assignment
+    function getTier(d){
+      if(!d) return 'hero';
       var m=String(d.ModelType||'').toLowerCase();
       if(m==='energy')   return 'primordial';
       if(m==='giant')    return 'titan';
@@ -1554,121 +1531,116 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
       return 'hero';
     }
 
-    // Helper: compute the radius of a family circle given member sizes
-    // All members fit on a ring with minimum gap between surfaces.
-    function familyCircleRadius(memberSizes, minGap){
-      if(!memberSizes.length) return 0;
-      if(memberSizes.length===1) return 0; // only parent — no orbit needed
-      // Largest member diameter + gap is the arc slot needed
-      var maxD = Math.max.apply(null, memberSizes);
-      var slotArc = maxD + minGap;
-      // Circumference must fit all slots
-      var minCirc = memberSizes.length * slotArc;
-      return minCirc / (Math.PI * 2);
-    }
+    // Band radius for each tier (distance of family clusters from Chaos center)
+    var BANDS = {
+      primordial: 110, titan: 210, olympian: 330,
+      nymph: 440,      hero:  440, mortal:   440,
+      monster: 560,    outer: 560
+    };
 
-    // Group families by tier
-    var famsByTier2 = {};
+    // Collect families per tier (based on first parent's tier)
+    var tierFams = {};
     families.forEach(function(f){
       if(f.parents.indexOf('PRIM_CHAOS_001')>=0) return;
-      var d0 = dataMap[f.parents[0]];
-      var tier = mythTier2(d0) || 'hero';
-      if(!famsByTier2[tier]) famsByTier2[tier]=[];
-      famsByTier2[tier].push(f);
+      var p0 = dataMap[f.parents[0]];
+      var tier = getTier(p0);
+      if(!tierFams[tier]) tierFams[tier]=[];
+      tierFams[tier].push(f);
     });
 
-    // For each tier, pack family circles evenly around the band ring
-    Object.keys(famsByTier2).forEach(function(tier){
-      var fams = famsByTier2[tier];
-      var bandR = TIER_BAND[tier] || 480;
-      var MIN_GAP = 8;
+    // For each tier, compute cluster layout and place around the band ring
+    Object.keys(tierFams).forEach(function(tier){
+      var fams = tierFams[tier];
+      var bandR = BANDS[tier]||440;
 
-      // Compute the footprint (outer radius) of each family circle
-      var famData = fams.map(function(f){
+      // Pre-compute cluster radius for each family
+      // Cluster radius = distance from family center to outermost child planet
+      var clusters = fams.map(function(f){
         var parents  = f.parents.map(function(id){return dataMap[id];}).filter(Boolean);
         var children = f.children.map(function(id){return dataMap[id];}).filter(Boolean);
-        var allMembers = parents.concat(children);
 
-        // Parent(s) sit at center of family circle.
-        // Children orbit around them.
-        // Family circle radius = enough for children to orbit outside parents.
-        var parentMaxSize = parents.length
-          ? Math.max.apply(null, parents.map(function(d){return sizeFor(d);}))
-          : 6;
-        var childSizes = children.map(function(d){return sizeFor(d);});
+        // Size of largest parent (for center gap)
+        var maxPSize = parents.length
+          ? Math.max.apply(null, parents.map(function(d){return sizeFor(d);})) : 7;
 
-        var famR;
-        if(children.length===0){
-          famR = parentMaxSize/2 + 2; // solo parent
+        // Cluster radius for children
+        // Formula: r = max(parentSize/2 + gap + childSize/2, circumference/2pi)
+        var nc = children.length;
+        var maxCSize = nc
+          ? Math.max.apply(null, children.map(function(d){return sizeFor(d);})) : 0;
+
+        var clR;
+        if(nc===0){
+          clR = maxPSize/2 + 4; // solo parent — tiny footprint
         } else {
-          // Radius so children fit around parents without touching
-          var maxChild = childSizes.length ? Math.max.apply(null,childSizes) : 6;
-          var minFamR = parentMaxSize/2 + maxChild/2 + MIN_GAP;
-          // Also need circumference for all children
-          var circumNeeded = children.length * (maxChild + MIN_GAP);
-          var rFromCircum = circumNeeded / (Math.PI*2);
-          famR = Math.max(minFamR, rFromCircum);
+          var gapNeeded = maxPSize/2 + maxCSize/2 + 10; // radial gap parent→child
+          var circNeeded = nc * (maxCSize + 10); // arc for all children
+          clR = Math.max(gapNeeded, circNeeded / (2*Math.PI));
         }
-        // Footprint = famR + max child radius + gap
-        var childMaxR = childSizes.length ? Math.max.apply(null,childSizes)/2 : 0;
-        var footprint = famR + childMaxR + MIN_GAP/2;
 
-        return {f:f, parents:parents, children:children, famR:famR, footprint:footprint};
+        // Total footprint radius (including outermost child's own radius)
+        var footprint = clR + (nc>0 ? maxCSize/2 + 5 : maxPSize/2+4);
+
+        return {f:f, parents:parents, children:children,
+                clR:clR, footprint:footprint, maxPSize:maxPSize, nc:nc};
       });
 
-      // Total arc needed = sum of footprints * 2 (diameter of each circle)
-      var totalArc = famData.reduce(function(s,fd){return s+fd.footprint*2+MIN_GAP;},0);
-      // If total arc > circumference of band, expand band
-      var effBandR = Math.max(bandR, totalArc/(Math.PI*2));
+      // Total arc = sum of all footprint diameters + spacing
+      var spacing = 14; // gap between cluster edges
+      var totalArc = clusters.reduce(function(s,c){return s+c.footprint*2+spacing;}, 0);
+      var effectiveBandR = Math.max(bandR, totalArc / (2*Math.PI));
 
-      // Place family circles around the band
+      // Place clusters evenly around the band
       var angle = -Math.PI/2; // start from top
-      famData.forEach(function(fd){
-        var angSlot = (fd.footprint*2 + MIN_GAP) / effBandR; // radians for this circle
-        angle += angSlot/2;
+      clusters.forEach(function(cl){
+        var angStep = (cl.footprint*2 + spacing) / effectiveBandR;
+        angle += angStep/2;
 
-        var cx = Math.cos(angle)*effBandR;
-        var cz = Math.sin(angle)*effBandR;
-        var cy = Math.sin(angle*1.5)*14; // gentle Y wave
+        // Family circle center
+        var cx = Math.cos(angle)*effectiveBandR;
+        var cz = Math.sin(angle)*effectiveBandR;
+        var cy = Math.sin(angle*1.3)*16; // gentle 3D wave
 
-        // Place parents at cluster center
-        if(fd.parents.length===1){
-          createNode(fd.parents[0], cx, cy, cz, familyColorByKey.get(fd.f.key));
-        } else if(fd.parents.length>=2){
-          var perpX=-Math.sin(angle), perpZ=Math.cos(angle);
-          var pSize=fd.parents.length>0?sizeFor(fd.parents[0]):8;
-          var gap2=pSize+MIN_GAP;
-          createNode(fd.parents[0], cx-perpX*gap2/2, cy, cz-perpZ*gap2/2, familyColorByKey.get(fd.f.key));
-          createNode(fd.parents[1], cx+perpX*gap2/2, cy, cz+perpZ*gap2/2, familyColorByKey.get(fd.f.key));
+        var fColor = familyColorByKey.get(cl.f.key);
+
+        // ── Place parent(s) at cluster center ──────────────────────────
+        if(cl.parents.length===1){
+          createNode(cl.parents[0], cx, cy, cz, fColor);
+        } else if(cl.parents.length>=2){
+          // Two parents: side by side perpendicular to radial direction
+          var px=-Math.sin(angle), pz=Math.cos(angle);
+          var pg = cl.maxPSize + 8;
+          createNode(cl.parents[0], cx-px*pg/2, cy, cz-pz*pg/2, fColor);
+          createNode(cl.parents[1], cx+px*pg/2, cy, cz+pz*pg/2, fColor);
         }
 
-        // Place children evenly on a ring around the cluster center
-        var nc=fd.children.length;
+        // ── Place children in a circle around the parents ───────────────
+        var nc = cl.nc;
         if(nc>0){
-          fd.children.forEach(function(child,ci){
-            var childAngle=(Math.PI*2*ci/nc)-Math.PI/2;
+          cl.children.forEach(function(child, ci){
+            var childAngle = (2*Math.PI*ci/nc) - Math.PI/2;
             createNode(child,
-              cx+Math.cos(childAngle)*fd.famR,
-              cy+Math.sin(childAngle*2)*3,
-              cz+Math.sin(childAngle)*fd.famR,
-              familyColorByKey.get(fd.f.key)
+              cx + Math.cos(childAngle)*cl.clR,
+              cy + Math.sin(childAngle*2)*4,
+              cz + Math.sin(childAngle)*cl.clR,
+              fColor
             );
           });
         }
 
-        angle += angSlot/2 + MIN_GAP/effBandR;
+        angle += angStep/2;
       });
     });
 
-    // Leftovers: not in any family
-    var leftovers3=all.filter(function(d){
-      return d&&d.id&&d.id!=='PRIM_CHAOS_001'&&!placed.has(d.id);
+    // Place solo entities not caught by any family
+    var solos = all.filter(function(d){
+      return d && d.id && d.id!=='PRIM_CHAOS_001' && !placed.has(d.id);
     });
-    leftovers3.forEach(function(d,i){
-      var tier=mythTier2(d)||'hero';
-      var R3=(TIER_BAND[tier]||480)+40;
-      var ang3=Math.PI*2*i/Math.max(leftovers3.length,1);
-      createNode(d,Math.cos(ang3)*R3,Math.sin(ang3*2)*8,Math.sin(ang3)*R3,null);
+    solos.forEach(function(d,i){
+      var tier = getTier(d);
+      var R2 = (BANDS[tier]||440)+50;
+      var a2 = (2*Math.PI*i/Math.max(solos.length,1)) - Math.PI/2;
+      createNode(d, Math.cos(a2)*R2, Math.sin(a2*2)*10, Math.sin(a2)*R2, null);
     });
 
         saveOriginalPositions();
