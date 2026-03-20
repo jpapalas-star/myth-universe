@@ -1184,7 +1184,6 @@ function restoreCameraState(){
     camera.target.y = lrp(sTy, st.target.y, p);
     camera.target.z = lrp(sTz, st.target.z, p);
     if(fr<mxF) setTimeout(stpR,16);
-    else renderConnections(); // redraw lines after restore
   }
   stpR();
 }
@@ -1232,42 +1231,37 @@ function enterFocus(id){
     var minDist = nodes[id].size * 1.2 + 18; // don't enter sphere
     camera.lowerRadiusLimit = minDist;
     var newRadius = nodes[id].size * 10 + 60;
-    // Keep current camera angle — just move target and zoom
-    // This avoids any rotation jitter
-    var destAlpha  = camera.alpha;
-    var targetBeta = camera.beta;
+    // Compute target alpha: face planet from outside its ring
+    var px = newTarget.x, pz = newTarget.z;
+    var pd = Math.sqrt(px*px + pz*pz);
+    var tgtAlpha = camera.alpha; // default: keep current
+    if(pd > 8){
+      // Angle pointing FROM planet TOWARD camera = planet outward direction
+      var outAngle = Math.atan2(pz, px); // direction planet sits from Chaos
+      tgtAlpha = outAngle + Math.PI;     // camera sits on the outside
+    }
+    // Shortest rotation
+    var dA = tgtAlpha - camera.alpha;
+    while(dA >  Math.PI) dA -= Math.PI*2;
+    while(dA < -Math.PI) dA += Math.PI*2;
+    var destAlpha = camera.alpha + dA;
+    var destBeta  = Math.PI/5; // gentle top-down angle
 
     var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
     var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
-    var pullR = Math.max(sR, newRadius*2.2, 300); // pull-back radius
-    var frames2=0, maxF2=60;
+    var frames2=0, maxF2=50;
     function lerp2(a,b,t){return a+(b-a)*t;}
     function stepFocus(){
       frames2++;
-      var raw = Math.min(frames2/maxF2, 1);
-      // Phase 1 (0→0.4): pull back + rotate to face planet
-      // Phase 2 (0.4→0.7): glide target to planet at pull-back distance
-      // Phase 3 (0.7→1.0): zoom in to final radius
-      if(raw <= 0.4){
-        var p = raw/0.4;
-        camera.alpha  = lerp2(sA, destAlpha, p);
-        camera.beta   = lerp2(sB, targetBeta, p);
-        camera.radius = lerp2(sR, pullR, p);
-        camera.target.x = lerp2(sTx, newTarget.x, p*0.25);
-        camera.target.y = lerp2(sTy, newTarget.y, p*0.25);
-        camera.target.z = lerp2(sTz, newTarget.z, p*0.25);
-      } else if(raw <= 0.7){
-        var p = (raw-0.4)/0.3;
-        camera.alpha  = destAlpha; camera.beta = targetBeta; camera.radius = pullR;
-        camera.target.x = lerp2(sTx, newTarget.x, 0.25+p*0.75);
-        camera.target.y = lerp2(sTy, newTarget.y, 0.25+p*0.75);
-        camera.target.z = lerp2(sTz, newTarget.z, 0.25+p*0.75);
-      } else {
-        var p = (raw-0.7)/0.3;
-        camera.alpha=destAlpha; camera.beta=targetBeta;
-        camera.radius = lerp2(pullR, newRadius, p);
-        camera.target.x=newTarget.x; camera.target.y=newTarget.y; camera.target.z=newTarget.z;
-      }
+      var p = Math.min(frames2/maxF2, 1);
+      // Ease: smooth start and end
+      var ep = p < 0.5 ? 2*p*p : 1-2*(1-p)*(1-p);
+      camera.alpha    = lerp2(sA,  destAlpha,  ep);
+      camera.beta     = lerp2(sB,  destBeta,   ep);
+      camera.radius   = lerp2(sR,  newRadius,  ep);
+      camera.target.x = lerp2(sTx, newTarget.x,ep);
+      camera.target.y = lerp2(sTy, newTarget.y,ep);
+      camera.target.z = lerp2(sTz, newTarget.z,ep);
       if(frames2 < maxF2) setTimeout(stepFocus, 16);
     }
     stepFocus();
@@ -1279,20 +1273,30 @@ function enterFocus(id){
 
 function resetFocus(fromPop){
   focusedId=null;
-  camera.lowerRadiusLimit = 35; // restore free-roam min
+  camera.lowerRadiusLimit = 35;
+
+  // Restore ALL nodes to full opacity immediately
+  Object.values(nodes).forEach(function(n){
+    n.sphere.material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
+    n.sphere.material.alpha = 1.0;
+    n.sphere.renderingGroupId = 1;
+    n.sphere.setEnabled(true);
+    if(n.rings) n.rings.forEach(function(r){
+      if(r && r.material){ r.material.alpha = 0.92; r.renderingGroupId = 1; }
+    });
+    if(n.label){ n.label.setEnabled(true); n.label.renderingGroupId = 1; }
+  });
+
   restoreOriginalPositions();
-
-  // (handled above with rings+labels)
-
-  clearConnectionVisuals();
-  restoreCameraState(); // renderConnections called at end of restore animation
+  renderConnections();       // show all lines immediately
+  restoreCameraState();      // smooth camera back to saved position
   resetInfo();
   hideSearchResults();
 
   if(!fromPop && history.state && history.state.focus){
     suppressPop=true;
     history.back();
-    setTimeout(()=>{suppressPop=false;},50);
+    setTimeout(function(){suppressPop=false;},50);
   }
 }
 
@@ -1613,18 +1617,17 @@ engine.runRenderLoop(()=>{
   particleSystem.emitter.z=Math.cos(performance.now()*0.00005)*200;
   // ── INERTIA: smooth deceleration after gesture ends ────────────────
   if (_inertiaActive) {
-    var DAMP = 0.88; // 0=instant stop, 1=never stops — 0.88 feels floaty
-    _velAlpha  *= DAMP; _velBeta   *= DAMP; _velRadius *= DAMP;
-    _velTx     *= DAMP; _velTy     *= DAMP; _velTz     *= DAMP;
+    var DAMP = 0.88;
+    _velAlpha *= DAMP; _velBeta *= DAMP;
+    _velTx    *= DAMP; _velTy   *= DAMP; _velTz *= DAMP;
+    _velRadius = 0; // zoom stops instantly — no coasting
     var MIN = 0.0001;
-    if (Math.abs(_velAlpha) > MIN)  camera.alpha    += _velAlpha;
-    if (Math.abs(_velBeta)  > MIN)  camera.beta     = _cb(camera.beta + _velBeta);
-    if (Math.abs(_velRadius)> MIN)  camera.radius   = _cr(camera.radius + _velRadius);
-    if (Math.abs(_velTx)    > MIN)  camera.target.x += _velTx;
-    if (Math.abs(_velTy)    > MIN)  camera.target.y += _velTy;
-    if (Math.abs(_velTz)    > MIN)  camera.target.z += _velTz;
-    // Stop inertia when all velocities negligible
-    if (Math.abs(_velAlpha)<MIN && Math.abs(_velBeta)<MIN && Math.abs(_velRadius)<MIN &&
+    if (Math.abs(_velAlpha) > MIN) camera.alpha    += _velAlpha;
+    if (Math.abs(_velBeta)  > MIN) camera.beta     = _cb(camera.beta + _velBeta);
+    if (Math.abs(_velTx)    > MIN) camera.target.x += _velTx;
+    if (Math.abs(_velTy)    > MIN) camera.target.y += _velTy;
+    if (Math.abs(_velTz)    > MIN) camera.target.z += _velTz;
+    if (Math.abs(_velAlpha)<MIN && Math.abs(_velBeta)<MIN &&
         Math.abs(_velTx)<MIN && Math.abs(_velTz)<MIN) {
       _inertiaActive = false;
     }
