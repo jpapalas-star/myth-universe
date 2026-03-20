@@ -282,7 +282,23 @@ var _pdist = 0;     // prev finger distance
 var _mdn   = null;  // mouse drag: {x,y,t,id,alpha,beta}
 
 
-function _pick(sx,sy){var p=scene.pick(sx,sy);return(p&&p.hit&&p.pickedMesh&&p.pickedMesh.metadata)?p.pickedMesh.metadata.id:null;}
+function _pick(sx,sy){
+  var p=scene.pick(sx,sy,function(m){
+    // Only pick actual sphere meshes, ignore labels/rings/connections
+    return m.name && m.name.startsWith('sphere_');
+  });
+  if(p&&p.hit&&p.pickedMesh&&p.pickedMesh.metadata) return p.pickedMesh.metadata.id;
+  // Fallback: pick anything with metadata
+  var p2=scene.pick(sx,sy);
+  if(!p2||!p2.hit||!p2.pickedMesh) return null;
+  var m=p2.pickedMesh;
+  // Walk up parent chain to find sphere with metadata
+  while(m){
+    if(m.metadata&&m.metadata.id) return m.metadata.id;
+    m=m.parent;
+  }
+  return null;
+}
 
 // ── ALL TOUCH & MOUSE INPUT ─────────────────────────────────────────────────
 // Google-Maps-style controls:
@@ -370,10 +386,12 @@ canvas.addEventListener('touchmove', function(e) {
     var dmy = my - _tf.my;
     _panDelta(dmx, dmy);
 
-    // 2. PINCH ZOOM — additive delta, feels linear and controlled
+    // 2. PINCH ZOOM — linear, proportional to movement
     if (_tf.dist > 1 && dist > 1) {
-      var dd = _tf.dist - dist; // positive = fingers closing = zoom in (smaller radius)
-      camera.radius = _cr(camera.radius + dd * 0.55);
+      var dd = _tf.dist - dist; // pixels fingers moved closer/further
+      // Scale by radius so it's consistent at any distance
+      var step = dd * (camera.radius / 400) * 1.8;
+      camera.radius = _cr(camera.radius + step);
     }
 
     _tf.mx = mx; _tf.my = my; _tf.dist = dist;
@@ -1157,7 +1175,7 @@ function restoreCameraState(){
   var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
   var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
   function lrp(a,b,t){return a+(b-a)*t;}
-  function esF(t){return t<0.5?2*t*t:1-2*(1-t)*(1-t);}
+  function esF(t){return t;} // linear — constant speed restore
   function stpR(){
     fr++;
     var p=esF(Math.min(fr/mxF,1));
@@ -1218,7 +1236,7 @@ function enterFocus(id){
     var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
     var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
     function lerp2(a,b,t){return a+(b-a)*t;}
-    function ease2(t){return t<0.5?2*t*t:1-2*(1-t)*(1-t);}
+    function ease2(t){return t;} // linear zoom — no acceleration
     function stepFocus(){
       frames2++;
       var p=ease2(Math.min(frames2/maxF2,1));
@@ -1358,7 +1376,8 @@ homeBtn.addEventListener('click',function(){
     n.sphere.material.transparencyMode=BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
     n.sphere.material.alpha=1;
     n.sphere.setEnabled(true);
-    if(n.label) { n.label.setEnabled(true); n.label.scaling.setAll(1); }
+    n.rings.forEach(function(r){ if(r.material) r.material.alpha=0.92; });
+    if(n.label){ n.label.setEnabled(true); n.label.material.alpha=0.88; n.label.scaling.setAll(1); }
   });
   resetInfo();
   hideSearchResults();
