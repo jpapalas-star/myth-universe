@@ -353,7 +353,7 @@ canvas.addEventListener('touchstart', function(e) {
     var dx = t0.clientX - t1.clientX, dy = t0.clientY - t1.clientY;
     var dist  = Math.hypot(dx, dy);
     var angle = Math.atan2(dy, dx);
-    _tf = { mx: mx, my: my, dist: dist };
+    _tf = { mx: mx, my: my, dist: dist, warmup: 3 };
   }
 }, { passive: false });
 
@@ -387,6 +387,9 @@ canvas.addEventListener('touchmove', function(e) {
     var my = (t0.clientY + t1.clientY) * 0.5 - rect.top;
     var dx = t0.clientX - t1.clientX, dy = t0.clientY - t1.clientY;
     var dist = Math.hypot(dx, dy);
+
+    // Skip first 3 frames — stabilise before processing
+    if(_tf.warmup > 0){ _tf.warmup--; _tf.mx=mx; _tf.my=my; _tf.dist=dist; return; }
 
     // 1. PAN: midpoint movement pans the galaxy
     var dmx = mx - _tf.mx;
@@ -781,29 +784,22 @@ function createLabel(text,parentMesh,size){
   const ctx=dt.getContext();
   ctx.clearRect(0,0,1024,256);
   ctx.textAlign='center';
-  ctx.fillStyle='#ffffff';
-  ctx.font='bold 56px Arial';
+  // Shadow for readability
+  ctx.shadowColor='rgba(0,0,0,0.9)';
+  ctx.shadowBlur=18;
+  ctx.fillStyle='#ffe040';  // warm golden yellow
+  ctx.font='bold 72px Arial';
   if(lines.length===1){
-    ctx.fillText(lines[0],512,120);
+    ctx.fillText(lines[0],512,130);
   }else{
-    ctx.fillText(lines[0],512,92);
-    ctx.fillText(lines[1],512,150);
+    ctx.fillText(lines[0],512,95);
+    ctx.fillText(lines[1],512,168);
   }
+  ctx.shadowBlur=0;
   dt.update();
 
   var longest=lines.reduce(function(m,s){return Math.max(m,s.length);},6);
-  const plane=BABYLON.MeshBuilder.CreatePlane('label_'+Math.random(),{
-    width:Math.max(10,size*2.4+longest*0.3),
-    height:Math.max(3.2,size*1.1)
-  },scene);
-
-  plane.parent=parentMesh;
-  // Position exactly above the sphere (size/2 = radius, plus small gap)
-  plane.position=new BABYLON.Vector3(0, size * 0.5 + 1.8, 0);
-  // Billboard ALL so text always faces camera but stays above sphere
-  plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
-
-  const mat=new BABYLON.StandardMaterial('lmat_'+Math.random(),scene);
+  const plane=BABYLON.BABYLON.MeshBuilder.CreatePlane('label_'+Math.random(),{width:Math.max(14,size*3.0+longest*0.4),height:Math.max(4.5,size*1.4)},scene);
   mat.diffuseTexture=dt;
   mat.opacityTexture=dt;
   mat.disableLighting=true;
@@ -1636,6 +1632,7 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     renderConnections();
     resetInfo();
     if(window._hideLoader) window._hideLoader();
+// disappears after 15 sec
   })
   .catch(err=>{
     infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';
