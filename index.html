@@ -1509,137 +1509,126 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     const families = buildFamilies(all);
     families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
 
-    // ══════════════════════════════════════════════════════════════════════
-    // DIRECT FAMILY CIRCLE LAYOUT
-    // Build family clusters directly from dataMap without relying on
-    // buildFamilies(). Each parent+its children = one circle.
-    // ══════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+    // SUNFLOWER SPIRAL LAYOUT — Family Solar Systems
+    //
+    // Each parent+children = one small solar system (visible circle).
+    // Systems scattered across the scene using golden-angle spiral.
+    // Tier determines which zone (inner/outer) each system lands in.
+    // MIN ORBIT = 28 so circles are clearly visible at any zoom.
+    // ═══════════════════════════════════════════════════════════
+
+    var GOLDEN = 2.39996; // golden angle in radians
+
+    // Tier → radial zone [minR, maxR] from Chaos
+    var ZONES = {
+      primordial: [70,  140],
+      titan:      [150, 240],
+      olympian:   [255, 360],
+      nymph:      [370, 440],
+      hero:       [370, 460],
+      mortal:     [370, 460],
+      monster:    [470, 570],
+      outer:      [470, 580]
+    };
 
     function getTier(d){
       if(!d) return 'hero';
       var m=String(d.ModelType||'').toLowerCase();
-      if(m==='energy')                                    return 'primordial';
-      if(m==='giant')                                     return 'titan';
-      if(m==='god'||m==='goddess'||m==='wind')            return 'olympian';
-      if(m==='nymph')                                     return 'nymph';
-      if(m==='hero'||m==='human')                        return 'hero';
-      if(m==='monster'||m==='spirit'||m==='underworld')  return 'monster';
+      if(m==='energy')  return 'primordial';
+      if(m==='giant')   return 'titan';
+      if(m==='god'||m==='goddess'||m==='wind') return 'olympian';
+      if(m==='nymph')   return 'nymph';
+      if(m==='human')   return 'mortal';
+      if(m==='hero')    return 'hero';
+      if(m==='monster'||m==='spirit'||m==='underworld') return 'monster';
       return 'hero';
     }
 
-    var BANDS = {
-      primordial:110, titan:210, olympian:330,
-      nymph:450, hero:450, mortal:450, monster:570, outer:570
-    };
+    // Build clusters from parent→children relationships
+    var clusterMap = {};
+    var childUsed   = {};
 
-    // Build clusters: one cluster per parent that has children
-    // Children point to parents via Parents field
-    var clusterMap = {}; // parentId → {parent:d, children:[d,...]}
-    var childrenAssigned = {};
-
-    // First pass: find all parents
     all.forEach(function(d){
-      if(!d||d.id==='PRIM_CHAOS_001') return;
-      var kids = idsFromField(d.Children).filter(function(id){
-        return dataMap[id] && id!=='PRIM_CHAOS_001';
-      });
-      if(kids.length>0){
-        clusterMap[d.id]={parent:d, children:[]};
+      if(!d || d.id==='PRIM_CHAOS_001') return;
+      if(idsFromField(d.Children).length > 0){
+        clusterMap[d.id] = {parent:d, children:[]};
+      }
+    });
+    all.forEach(function(d){
+      if(!d || d.id==='PRIM_CHAOS_001') return;
+      var pids = idsFromField(d.Parents).filter(function(id){ return !!clusterMap[id]; });
+      if(pids.length > 0 && !childUsed[d.id]){
+        clusterMap[pids[0]].children.push(d);
+        childUsed[d.id] = true;
       }
     });
 
-    // Second pass: assign each child to its first known parent
-    all.forEach(function(d){
-      if(!d||d.id==='PRIM_CHAOS_001') return;
-      var parents = idsFromField(d.Parents).filter(function(id){
-        return clusterMap[id];
-      });
-      if(parents.length>0 && !childrenAssigned[d.id]){
-        clusterMap[parents[0]].children.push(d);
-        childrenAssigned[d.id]=true;
-      }
-    });
-
-    // Group clusters by tier
-    var tierClusters={};
+    // Sort clusters by tier
+    var byTier = {};
     Object.keys(clusterMap).forEach(function(pid){
-      var cl=clusterMap[pid];
-      var tier=getTier(cl.parent);
-      if(!tierClusters[tier]) tierClusters[tier]=[];
-      tierClusters[tier].push(cl);
+      var cl = clusterMap[pid];
+      var t  = getTier(cl.parent);
+      if(!byTier[t]) byTier[t] = [];
+      byTier[t].push(cl);
     });
 
-    var GAP=10; // minimum gap between planet surfaces
-
-    // Place each tier's clusters around its band ring
-    var tierOrder=['primordial','titan','olympian','nymph','hero','mortal','monster','outer'];
+    // Place each tier using golden-angle spiral in its zone
+    var tierOrder = ['primordial','titan','olympian','nymph','hero','mortal','monster','outer'];
     tierOrder.forEach(function(tier){
-      var clusters=tierClusters[tier];
-      if(!clusters||!clusters.length) return;
-      var bandR=BANDS[tier]||450;
+      var cls = byTier[tier];
+      if(!cls || !cls.length) return;
+      var zone   = ZONES[tier] || [370,460];
+      var minR   = zone[0], maxR = zone[1];
+      var n      = cls.length;
 
-      // Compute footprint of each cluster
-      var clData=clusters.map(function(cl){
-        var pSize=sizeFor(cl.parent);
-        var nc=cl.children.length;
-        var maxCS=nc?Math.max.apply(null,cl.children.map(function(c){return sizeFor(c);})):0;
-        // Orbit radius: children circle around parent
-        var orbitR=nc===0?0:Math.max(
-          pSize/2+maxCS/2+GAP,         // radial clearance
-          (nc*(maxCS+GAP))/(2*Math.PI) // circumference
+      cls.forEach(function(cl, i){
+        // Spiral: r grows from minR to maxR across the n clusters
+        var t   = n===1 ? 0.5 : i/(n-1);
+        var r   = minR + (maxR-minR)*t;
+        var ang = i * GOLDEN;
+
+        // Hub of this family system
+        var hx = Math.cos(ang)*r;
+        var hz = Math.sin(ang)*r;
+        var hy = Math.sin(ang*1.7)*12;
+
+        // Orbit radius for children — minimum 28 so circle is clearly visible
+        var nc      = cl.children.length;
+        var pSize   = sizeFor(cl.parent);
+        var maxCS   = nc ? Math.max.apply(null,cl.children.map(function(c){return sizeFor(c);})) : 0;
+        var orbitR  = nc===0 ? 0 : Math.max(
+          28,                              // hard minimum — makes circle visible
+          pSize/2 + maxCS/2 + 10,          // radial clearance
+          nc * (maxCS+8) / (2*Math.PI)     // circumference fit
         );
-        // Footprint = outermost surface of outermost child
-        var fp=orbitR+(nc>0?maxCS/2:pSize/2)+GAP/2;
-        return {cl:cl, pSize:pSize, nc:nc, maxCS:maxCS, orbitR:orbitR, fp:fp};
-      });
 
-      // Total arc needed on band ring
-      var totalArc=clData.reduce(function(s,cd){return s+cd.fp*2+GAP;},0);
-      var effR=Math.max(bandR, totalArc/(2*Math.PI));
+        // Place parent at hub
+        createNode(cl.parent, hx, hy, hz, null);
 
-      // Place clusters
-      var angle=-Math.PI/2;
-      clData.forEach(function(cd){
-        var angStep=(cd.fp*2+GAP)/effR;
-        angle+=angStep/2;
-
-        var cx=Math.cos(angle)*effR;
-        var cz=Math.sin(angle)*effR;
-        var cy=Math.sin(angle*1.4)*14;
-
-        // Place parent at cluster center
-        createNode(cd.cl.parent, cx, cy, cz, null);
-
-        // Place children in a circle around parent
-        if(cd.nc>0){
-          cd.cl.children.forEach(function(child,ci){
-            var ca=(2*Math.PI*ci/cd.nc)-Math.PI/2;
-            createNode(child,
-              cx+Math.cos(ca)*cd.orbitR,
-              cy+Math.sin(ca*2)*3,
-              cz+Math.sin(ca)*cd.orbitR,
-              null
-            );
-          });
-        }
-
-        angle+=angStep/2;
+        // Place children in a full circle around parent
+        cl.children.forEach(function(child, ci){
+          var ca = (2*Math.PI*ci/nc) - Math.PI/2;
+          createNode(child,
+            hx + Math.cos(ca)*orbitR,
+            hy + Math.sin(ca*2)*3,
+            hz + Math.sin(ca)*orbitR,
+            null
+          );
+        });
       });
     });
 
-    // Place everyone else (no parent, no children, or Chaos children)
-    all.forEach(function(d){
-      if(!d||d.id==='PRIM_CHAOS_001'||placed.has(d.id)){return;}
-      var tier=getTier(d);
-      var R2=(BANDS[tier]||450)+60;
-      // Distribute evenly on a slightly larger ring
-      var allUnplaced=all.filter(function(x){
-        return x&&x.id!=='PRIM_CHAOS_001'&&!placed.has(x.id);
-      });
-      var idx2=allUnplaced.indexOf(d);
-      var n2=allUnplaced.length||1;
-      var a2=(2*Math.PI*idx2/n2)-Math.PI/2;
-      createNode(d, Math.cos(a2)*R2, Math.sin(a2*2)*10, Math.sin(a2)*R2, null);
+    // Solo entities (no family)
+    var solos = all.filter(function(d){
+      return d && d.id!=='PRIM_CHAOS_001' && !placed.has(d.id);
+    });
+    solos.forEach(function(d,i){
+      var tier = getTier(d);
+      var z2   = ZONES[tier]||[370,460];
+      var r2   = z2[1] + 20 + i*6;
+      var a2   = i * GOLDEN;
+      createNode(d, Math.cos(a2)*r2, Math.sin(a2*2)*8, Math.sin(a2)*r2, null);
     });
 
         saveOriginalPositions();
