@@ -324,10 +324,13 @@ function _panToKeep(wx, wy, wz, sx, sy) {
 }
 
 // ── Touch state ───────────────────────────────────────────────────────────────
-var _t1     = null;   // single finger: {x,y,t,id, wx,wy,wz} (world pos at touch start)
-var _multi  = false;  // gesture involved 2+ fingers → no tap
-// Two-finger state
-var _tf     = null;   // {mx,my, dist, angle, wx,wy,wz}  (prev frame values)
+var _t1     = null;   // single finger: {x,y,t,id, wx,wy,wz}
+var _multi  = false;  // 2+ fingers → no tap
+var _tf     = null;   // two-finger state {mx,my,dist}
+// Inertia / floating feel
+var _velAlpha=0, _velBeta=0, _velRadius=0, _velTx=0, _velTy=0, _velTz=0;
+var _prevAlpha=0, _prevBeta=0, _prevRadius=0, _prevTx=0, _prevTy=0, _prevTz=0;
+var _inertiaActive=false;
 
 // ── TOUCH START ───────────────────────────────────────────────────────────────
 canvas.addEventListener('touchstart', function(e) {
