@@ -367,28 +367,14 @@ canvas.addEventListener('touchmove', function(e) {
     var dmx2 = t.clientX - _t1.x, dmy2 = t.clientY - _t1.y;
     if (Math.hypot(dmx2, dmy2) > 10) _t1.id = null; // cancel tap
 
-    // 1 finger: PAN in free mode, ORBIT in focus mode
-    if(focusedId){
-      // Orbit around focused planet
-      camera.alpha -= dmx2 * 0.0015;
-      camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
-    } else {
-      // Pan the galaxy — but stop at system boundary
-      _panDelta(dmx2, dmy2);
-
-      // System boundary: ~600 units from origin
-      var BOUNDARY = 600;
-      var tx = camera.target.x, tz = camera.target.z;
-      var distFromCenter = Math.sqrt(tx*tx + tz*tz);
-
-      if(distFromCenter > BOUNDARY){
-        // Push target back inside boundary
-        var scale = BOUNDARY / distFromCenter;
-        camera.target.x = tx * scale;
-        camera.target.z = tz * scale;
-        // Also gently orbit so user isn't stuck at wall
-        camera.alpha -= dmx2 * 0.0008;
-      }
+    // 1 finger = ORBIT around Chaos (target stays at 0,0,0 unless focused)
+    camera.alpha -= dmx2 * 0.0015;
+    camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
+    // In free mode snap target back to Chaos centre so we orbit it
+    if(!focusedId){
+      camera.target.x *= 0.85;
+      camera.target.y *= 0.85;
+      camera.target.z *= 0.85;
     }
     _t1.x = t.clientX; _t1.y = t.clientY;
 
@@ -841,6 +827,31 @@ function createNode(d,x,y,z,familyRingColor){
 
   var sm=new BABYLON.StandardMaterial('sm_'+d.id,scene);
 
+  // If entity has a custom photo, use it directly as the sphere texture
+  if(d.photo){
+    var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
+    photoTex.hasAlpha=false;
+    sm.diffuseTexture=photoTex;
+    sm.diffuseColor=BABYLON.Color3.White();
+    sm.emissiveColor=tint.scale(0.25);
+    sm.specularColor=new BABYLON.Color3(0.04,0.03,0.02);
+    sm.specularPower=6;
+    sm.backFaceCulling=false;
+    sphere.material=sm;
+    sphere.renderingGroupId=1;
+    // Rings, label etc continue below
+    var photoLabel=createLabel(d.Name||d.id,sphere,size);
+    var photoRings=[];
+    if(String(d.id)==='PRIM_CHAOS_001') photoRings.push(addRing(sphere,c3('#ffffff'),size*1.36,0.13));
+    if(d.ModelType==='energy') photoRings.push(addRing(sphere,c3('#deb3ff'),size*1.18,0.10));
+    if(d.ModelType==='group'||d.Shape==='group'||d.ring===true) photoRings.push(addRing(sphere,tint,size*1.24,0.10));
+    if(familyRingColor) photoRings.push(addRing(sphere,familyRingColor,size*1.12,0.09));
+    sphere.metadata=Object.assign({},d,{isChaos:String(d.id)==='PRIM_CHAOS_001'});
+    nodes[d.id]={id:d.id,data:d,sphere:sphere,rings:photoRings,label:photoLabel,size:size,familyRingColor:familyRingColor||null};
+    placed.add(d.id);
+    return;
+  }
+
   // Seeded RNG from entity id
   var _s=(function(str){var h=5381;for(var i=0;i<str.length;i++)h=((h<<5)+h+str.charCodeAt(i))|0;return Math.abs(h);})(d.id||'x');
   function rng(){_s=(_s*1664525+1013904223)&0xFFFFFFFF;return(_s>>>0)/4294967296;}
@@ -1197,16 +1208,12 @@ function renderConnections(filterSet){
 }
 
 function getRelativesSet(id){
-  var set=new Set([id]);
-  var d=dataMap[id];
+  const set=new Set([id]);
+  const d=dataMap[id];
   if(!d) return set;
-  idsFromField(d.Parents).forEach(function(x){if(nodes[x])set.add(x);});
-  idsFromField(d.Partners).forEach(function(x){if(nodes[x])set.add(x);});
-  idsFromField(d.Children).forEach(function(x){if(nodes[x])set.add(x);});
-  // Reverse lookup: find all nodes that list this id as a parent
-  Object.keys(dataMap).forEach(function(xid){
-    if(nodes[xid] && idsFromField(dataMap[xid].Parents).indexOf(id)>=0) set.add(xid);
-  });
+  idsFromField(d.Parents).forEach(x=>{if(nodes[x])set.add(x);});
+  idsFromField(d.Partners).forEach(x=>{if(nodes[x])set.add(x);});
+  idsFromField(d.Children).forEach(x=>{if(nodes[x])set.add(x);});
   return set;
 }
 
