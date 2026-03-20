@@ -349,24 +349,16 @@ canvas.addEventListener('touchmove', function(e) {
 
   if (e.touches.length === 1 && !_multi && _t1) {
     var t = e.touches[0];
-    var sx = t.clientX - rect.left, sy = t.clientY - rect.top;
     var dmx2 = t.clientX - _t1.x, dmy2 = t.clientY - _t1.y;
     if (Math.hypot(dmx2, dmy2) > 10) _t1.id = null; // cancel tap
 
-    if (focusedId) {
-      // ── FOCUS MODE: 1 finger orbits around the focused planet ────────────
-      camera.alpha -= dmx2 * 0.007;
-      camera.beta   = _cb(camera.beta - dmy2 * 0.007);
-      _t1.x = t.clientX; _t1.y = t.clientY;
-    } else {
-      // ── FREE MODE: 1 finger pans ─────────────────────────────────────────
-      _panDelta(t.clientX - _t1.x, t.clientY - _t1.y);
-      _t1.x = t.clientX; _t1.y = t.clientY;
-    }
+    // 1 finger = ORBIT always (rotate the galaxy)
+    camera.alpha -= dmx2 * 0.003;
+    camera.beta   = _cb(camera.beta - dmy2 * 0.003);
+    _t1.x = t.clientX; _t1.y = t.clientY;
 
   } else if (e.touches.length >= 2 && _tf) {
-    // ── Two fingers: ORBIT left/right/up/down + PINCH zoom ───────────────────
-    // NO panning — midpoint movement drives rotation only.
+    // ── Two fingers: PAN (drag) + PINCH ZOOM ─────────────────────────────────
     _multi = true; _t1 = null;
     var t0 = e.touches[0], t1 = e.touches[1];
 
@@ -375,18 +367,15 @@ canvas.addEventListener('touchmove', function(e) {
     var dx = t0.clientX - t1.clientX, dy = t0.clientY - t1.clientY;
     var dist = Math.hypot(dx, dy);
 
-    // 1. ORBIT: midpoint horizontal movement → alpha (left/right)
-    //           midpoint vertical movement   → beta  (up/down)
+    // 1. PAN: midpoint movement pans the galaxy
     var dmx = mx - _tf.mx;
     var dmy = my - _tf.my;
-    camera.alpha -= dmx * 0.007;
-    camera.beta   = _cb(camera.beta - dmy * 0.007);
+    _panDelta(dmx, dmy);
 
-    // 2. PINCH ZOOM — dampened for comfortable speed
+    // 2. PINCH ZOOM (slow)
     if (_tf.dist > 1 && dist > 1) {
-      // Lerp scale toward 1 by 0.4 so zoom is ~40% of raw pinch speed
       var rawScale = _tf.dist / dist;
-      var scale = 1 + (rawScale - 1) * 0.4;
+      var scale = 1 + (rawScale - 1) * 0.25; // 25% of raw = slow zoom
       camera.radius = _cr(camera.radius * scale);
     }
 
@@ -435,7 +424,9 @@ canvas.addEventListener('mousedown', function(e) {
 window.addEventListener('mousemove', function(e) {
   if (!_mdn || !(e.buttons & 1)) return;
   var dx3 = e.clientX - _mdn.x, dy3 = e.clientY - _mdn.y;
-  _panDelta(dx3, dy3);
+  // Left drag = orbit
+  camera.alpha -= dx3 * 0.003;
+  camera.beta   = _cb(camera.beta - dy3 * 0.003);
   _mdn.x = e.clientX; _mdn.y = e.clientY;
   if (Math.hypot(dx3, dy3) > 8) _mdn.id = null;
 });
@@ -451,7 +442,7 @@ window.addEventListener('mouseup', function(e) {
 
 // Mouse wheel: zoom toward cursor
 canvas.addEventListener('wheel', function(e) {
-  var scale = e.deltaY > 0 ? 1.05 : 0.952; // slower wheel zoom
+  var scale = e.deltaY > 0 ? 1.03 : 0.971; // slow wheel zoom
   camera.radius = _cr(camera.radius * scale);
 }, { passive: true });
 
