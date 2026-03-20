@@ -1510,180 +1510,172 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
 
     // ══════════════════════════════════════════════════════════════════════
-    // SOLAR SYSTEM LAYOUT
+    // FAMILY CIRCLE LAYOUT
     //
-    // Each mythology group = its own mini solar system.
-    // • A glowing "group sun" sits at the hub of each system.
-    // • All members of that group orbit around the hub.
-    // • Families stay together: parents close to hub, children in arcs.
-    // • Minimum spacing enforced so no planet touches another.
+    // Concept:
+    //   • Each family (parents + children) = one small circle.
+    //   • Inside the circle: parents at center, children on outer ring.
+    //   • These family circles are then placed around Chaos in large
+    //     concentric band-rings, grouped by mythology tier.
     //
-    // Group hubs are placed on large rings around Chaos:
-    //   Ring 1 (r=220): Primordials
-    //   Ring 2 (r=220): Titans  (opposite side)
-    //   Ring 3 (r=420): Olympians
-    //   Ring 4 (r=420): Heroes + Nymphs
-    //   Ring 5 (r=420): Mortals
-    //   Ring 6 (r=620): Monsters + Spirits
-    //   Ring 7 (r=620): Groups / Outer
+    //   Chaos (center)
+    //     → Band 1 (r≈120):  Primordial families
+    //     → Band 2 (r≈230):  Titan families
+    //     → Band 3 (r≈350):  Olympian families
+    //     → Band 4 (r≈480):  Hero / Mortal / Nymph families
+    //     → Band 5 (r≈610):  Monster / Spirit families
+    //
+    // Within each band, family circles are spaced evenly around the ring.
+    // Min gap between any two planets = 8 units.
     // ══════════════════════════════════════════════════════════════════════
 
-    function mythGroup2(d){
+    var TIER_BAND = {
+      primordial: 120,
+      titan:      230,
+      olympian:   350,
+      hero:       480,
+      nymph:      480,
+      mortal:     480,
+      monster:    610,
+      outer:      610
+    };
+
+    function mythTier2(d){
       if(!d||d.id==='PRIM_CHAOS_001') return null;
-      var model=String(d.ModelType||'').toLowerCase();
-      if(model==='energy')   return 'primordial';
-      if(model==='giant')    return 'titan';
-      if(model==='god'||model==='goddess'||model==='wind') return 'olympian';
-      if(model==='nymph')    return 'nymph';
-      if(model==='human')    return 'mortal';
-      if(model==='hero')     return 'hero';
-      if(model==='monster'||model==='spirit'||model==='underworld') return 'monster';
-      if(model==='group')    return 'outer';
+      var m=String(d.ModelType||'').toLowerCase();
+      if(m==='energy')   return 'primordial';
+      if(m==='giant')    return 'titan';
+      if(m==='god'||m==='goddess'||m==='wind') return 'olympian';
+      if(m==='nymph')    return 'nymph';
+      if(m==='hero')     return 'hero';
+      if(m==='human')    return 'mortal';
+      if(m==='monster'||m==='spirit'||m==='underworld') return 'monster';
+      if(m==='group')    return 'outer';
       return 'hero';
     }
 
-    // Hub positions: [x, z] on the world plane (y=0 initially)
-    var GROUP_HUBS = {
-      primordial: { x:  0,    z: -220 },
-      titan:      { x:  0,    z:  220 },
-      olympian:   { x: -420,  z:    0 },
-      nymph:      { x:  260,  z: -320 },
-      hero:       { x:  420,  z:    0 },
-      mortal:     { x:  260,  z:  320 },
-      monster:    { x: -440,  z: -440 },
-      outer:      { x: -440,  z:  440 }
-    };
+    // Helper: compute the radius of a family circle given member sizes
+    // All members fit on a ring with minimum gap between surfaces.
+    function familyCircleRadius(memberSizes, minGap){
+      if(!memberSizes.length) return 0;
+      if(memberSizes.length===1) return 0; // only parent — no orbit needed
+      // Largest member diameter + gap is the arc slot needed
+      var maxD = Math.max.apply(null, memberSizes);
+      var slotArc = maxD + minGap;
+      // Circumference must fit all slots
+      var minCirc = memberSizes.length * slotArc;
+      return minCirc / (Math.PI * 2);
+    }
 
-    var GROUP_COLORS = {
-      primordial: '#b080ff', titan: '#c89040', olympian: '#ffd060',
-      nymph: '#40c8a0', hero: '#c06040', mortal: '#a08060',
-      monster: '#60a040', outer: '#6080c0'
-    };
-
-    // ── Create a glowing sun mesh for each group hub ──────────────────────
-    var groupSuns = {};
-    Object.keys(GROUP_HUBS).forEach(function(grp){
-      var hub = GROUP_HUBS[grp];
-      var sun = BABYLON.MeshBuilder.CreateSphere('grpsun_'+grp,
-        {diameter: 14, segments: 16}, scene);
-      sun.position = new BABYLON.Vector3(hub.x, 0, hub.z);
-
-      var sm2 = new BABYLON.StandardMaterial('grpsunmat_'+grp, scene);
-      var col = BABYLON.Color3.FromHexString(GROUP_COLORS[grp]);
-      sm2.emissiveColor = col.scale(1.8);
-      sm2.diffuseColor  = col;
-      sm2.specularColor = BABYLON.Color3.Black();
-      sun.material = sm2;
-      glow.addIncludedOnlyMesh(sun);
-
-      // Label
-      var ldt = new BABYLON.DynamicTexture('sunlbl_'+grp,{width:512,height:128},scene,true);
-      var lctx = ldt.getContext();
-      lctx.clearRect(0,0,512,128);
-      lctx.fillStyle='#ffffff';
-      lctx.font='bold 52px Arial';
-      lctx.textAlign='center';
-      lctx.fillText(grp.toUpperCase(),256,80);
-      ldt.update();
-      var lplane = BABYLON.MeshBuilder.CreatePlane('sunlbl_p_'+grp,{width:22,height:6},scene);
-      lplane.position = new BABYLON.Vector3(hub.x, 12, hub.z);
-      lplane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
-      var lmat = new BABYLON.StandardMaterial('sunlblmat_'+grp,scene);
-      lmat.diffuseTexture = ldt; lmat.opacityTexture = ldt;
-      lmat.disableLighting = true; lmat.emissiveColor = BABYLON.Color3.White();
-      lplane.material = lmat;
-
-      groupSuns[grp] = sun;
+    // Group families by tier
+    var famsByTier2 = {};
+    families.forEach(function(f){
+      if(f.parents.indexOf('PRIM_CHAOS_001')>=0) return;
+      var d0 = dataMap[f.parents[0]];
+      var tier = mythTier2(d0) || 'hero';
+      if(!famsByTier2[tier]) famsByTier2[tier]=[];
+      famsByTier2[tier].push(f);
     });
 
-    // ── Collect members per group ─────────────────────────────────────────
-    var groupMembers = {};
-    all.forEach(function(d){
-      if(!d||d.id==='PRIM_CHAOS_001') return;
-      var grp = mythGroup2(d);
-      if(!grp) return;
-      if(!groupMembers[grp]) groupMembers[grp]=[];
-      groupMembers[grp].push(d);
-    });
+    // For each tier, pack family circles evenly around the band ring
+    Object.keys(famsByTier2).forEach(function(tier){
+      var fams = famsByTier2[tier];
+      var bandR = TIER_BAND[tier] || 480;
+      var MIN_GAP = 8;
 
-    // ── Place each group as a solar system ───────────────────────────────
-    // Min spacing between planet surfaces
-    var MIN_GAP = 6;
+      // Compute the footprint (outer radius) of each family circle
+      var famData = fams.map(function(f){
+        var parents  = f.parents.map(function(id){return dataMap[id];}).filter(Boolean);
+        var children = f.children.map(function(id){return dataMap[id];}).filter(Boolean);
+        var allMembers = parents.concat(children);
 
-    Object.keys(groupMembers).forEach(function(grp){
-      var members = groupMembers[grp];
-      var hub = GROUP_HUBS[grp];
-      var hx = hub.x, hz = hub.z;
-      var n = members.length;
-      if(!n) return;
+        // Parent(s) sit at center of family circle.
+        // Children orbit around them.
+        // Family circle radius = enough for children to orbit outside parents.
+        var parentMaxSize = parents.length
+          ? Math.max.apply(null, parents.map(function(d){return sizeFor(d);}))
+          : 6;
+        var childSizes = children.map(function(d){return sizeFor(d);});
 
-      // Sort: parents before children (so parents land closer to hub)
-      // Use family grouping: parents at inner orbit, children at outer
-      // Simple approach: assign each member an orbit radius
-      // based on whether they are a "parent" (has children) or "child" (no children)
+        var famR;
+        if(children.length===0){
+          famR = parentMaxSize/2 + 2; // solo parent
+        } else {
+          // Radius so children fit around parents without touching
+          var maxChild = childSizes.length ? Math.max.apply(null,childSizes) : 6;
+          var minFamR = parentMaxSize/2 + maxChild/2 + MIN_GAP;
+          // Also need circumference for all children
+          var circumNeeded = children.length * (maxChild + MIN_GAP);
+          var rFromCircum = circumNeeded / (Math.PI*2);
+          famR = Math.max(minFamR, rFromCircum);
+        }
+        // Footprint = famR + max child radius + gap
+        var childMaxR = childSizes.length ? Math.max.apply(null,childSizes)/2 : 0;
+        var footprint = famR + childMaxR + MIN_GAP/2;
 
-      var parentSet = {};
-      members.forEach(function(d){
-        if(idsFromField(d.Children).length > 0) parentSet[d.id] = true;
+        return {f:f, parents:parents, children:children, famR:famR, footprint:footprint};
       });
 
-      var parents  = members.filter(function(d){ return  parentSet[d.id]; });
-      var children = members.filter(function(d){ return !parentSet[d.id]; });
+      // Total arc needed = sum of footprints * 2 (diameter of each circle)
+      var totalArc = famData.reduce(function(s,fd){return s+fd.footprint*2+MIN_GAP;},0);
+      // If total arc > circumference of band, expand band
+      var effBandR = Math.max(bandR, totalArc/(Math.PI*2));
 
-      // Inner orbit = parents, outer orbit = children
-      // Multiple orbits if needed to avoid crowding
-      function placeOnOrbits(items, startR, minR){
-        if(!items.length) return startR;
-        var r = startR;
-        var placed2 = [];
+      // Place family circles around the band
+      var angle = -Math.PI/2; // start from top
+      famData.forEach(function(fd){
+        var angSlot = (fd.footprint*2 + MIN_GAP) / effBandR; // radians for this circle
+        angle += angSlot/2;
 
-        // Pack items onto concentric orbits
-        var remaining = items.slice();
-        while(remaining.length > 0){
-          // How many fit on this orbit?
-          var circumference = Math.PI * 2 * r;
-          // Each slot needs ~(maxSize + MIN_GAP) arc
-          var slotArc = 18 + MIN_GAP; // approx diameter + gap
-          var fits = Math.max(1, Math.floor(circumference / slotArc));
-          var batch = remaining.splice(0, fits);
+        var cx = Math.cos(angle)*effBandR;
+        var cz = Math.sin(angle)*effBandR;
+        var cy = Math.sin(angle*1.5)*14; // gentle Y wave
 
-          batch.forEach(function(d, i){
-            var angle = (Math.PI * 2 * i / batch.length) - Math.PI/2;
-            // Add slight Y variation per orbit
-            var yOff = Math.sin(angle * 2) * (r * 0.06);
-            createNode(d,
-              hx + Math.cos(angle) * r,
-              yOff,
-              hz + Math.sin(angle) * r,
-              BABYLON.Color3.FromHexString(GROUP_COLORS[grp])
+        // Place parents at cluster center
+        if(fd.parents.length===1){
+          createNode(fd.parents[0], cx, cy, cz, familyColorByKey.get(fd.f.key));
+        } else if(fd.parents.length>=2){
+          var perpX=-Math.sin(angle), perpZ=Math.cos(angle);
+          var pSize=fd.parents.length>0?sizeFor(fd.parents[0]):8;
+          var gap2=pSize+MIN_GAP;
+          createNode(fd.parents[0], cx-perpX*gap2/2, cy, cz-perpZ*gap2/2, familyColorByKey.get(fd.f.key));
+          createNode(fd.parents[1], cx+perpX*gap2/2, cy, cz+perpZ*gap2/2, familyColorByKey.get(fd.f.key));
+        }
+
+        // Place children evenly on a ring around the cluster center
+        var nc=fd.children.length;
+        if(nc>0){
+          fd.children.forEach(function(child,ci){
+            var childAngle=(Math.PI*2*ci/nc)-Math.PI/2;
+            createNode(child,
+              cx+Math.cos(childAngle)*fd.famR,
+              cy+Math.sin(childAngle*2)*3,
+              cz+Math.sin(childAngle)*fd.famR,
+              familyColorByKey.get(fd.f.key)
             );
           });
-
-          r += slotArc * 0.85; // next orbit slightly larger
         }
-        return r;
-      }
 
-      // Inner ring: parents starting at r=35 (clear of sun size 14/2=7 + gap)
-      var nextR = placeOnOrbits(parents, 35, 35);
-      // Outer ring: children starting right after parents
-      placeOnOrbits(children, Math.max(nextR + 8, 55), 55);
+        angle += angSlot/2 + MIN_GAP/effBandR;
+      });
     });
 
-    // ── Leftovers ────────────────────────────────────────────────────────
-    var leftovers2 = all.filter(function(d){
-      return d && d.id && d.id !== 'PRIM_CHAOS_001' && !placed.has(d.id);
+    // Leftovers: not in any family
+    var leftovers3=all.filter(function(d){
+      return d&&d.id&&d.id!=='PRIM_CHAOS_001'&&!placed.has(d.id);
     });
-    leftovers2.forEach(function(d, i){
-      var R2 = 700;
-      var ang2 = Math.PI * 2 * i / Math.max(leftovers2.length, 1);
-      createNode(d, Math.cos(ang2)*R2, Math.sin(ang2*2)*8, Math.sin(ang2)*R2, null);
+    leftovers3.forEach(function(d,i){
+      var tier=mythTier2(d)||'hero';
+      var R3=(TIER_BAND[tier]||480)+40;
+      var ang3=Math.PI*2*i/Math.max(leftovers3.length,1);
+      createNode(d,Math.cos(ang3)*R3,Math.sin(ang3*2)*8,Math.sin(ang3)*R3,null);
     });
 
         saveOriginalPositions();
     buildConnections();
     renderConnections();
     resetInfo();
+    if(window._hideLoader) window._hideLoader();
   })
   .catch(err=>{
     infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';
@@ -1779,6 +1771,31 @@ engine.runRenderLoop(()=>{
 });
 
 window.addEventListener('resize',()=>engine.resize());
+</script>
+<div id="loadScreen" style="position:fixed;inset:0;background:#02040a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
+  <div style="color:#ffd060;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;letter-spacing:3px;">MYTH UNIVERSE</div>
+  <div style="margin-top:18px;display:flex;gap:8px;" id="loadDots">
+    <span class="ldot" style="width:10px;height:10px;border-radius:50%;background:#ffd060;opacity:0.2;display:inline-block;"></span>
+    <span class="ldot" style="width:10px;height:10px;border-radius:50%;background:#ffd060;opacity:0.2;display:inline-block;"></span>
+    <span class="ldot" style="width:10px;height:10px;border-radius:50%;background:#ffd060;opacity:0.2;display:inline-block;"></span>
+  </div>
+</div>
+<script>
+(function(){
+  var dots=document.querySelectorAll('.ldot');
+  var i=0;
+  var iv=setInterval(function(){
+    dots.forEach(function(d){d.style.opacity='0.2';});
+    dots[i%3].style.opacity='1';
+    i++;
+  },400);
+  // Hide once Babylon scene is loaded — hook onto fetch success
+  window._hideLoader=function(){
+    clearInterval(iv);
+    var ls=document.getElementById('loadScreen');
+    if(ls){ls.style.transition='opacity 0.6s';ls.style.opacity='0';setTimeout(function(){ls.remove();},700);}
+  };
+})();
 </script>
 </body>
 </html>
