@@ -486,18 +486,18 @@ function _doTap(pickedId) {
 }
 
 
-// Chaos is the SUN — single point light at origin
+// Chaos = sun light (creates shading effect on near planets)
 const chaosLight=new BABYLON.PointLight('chaosLight',new BABYLON.Vector3(0,0,0),scene);
-chaosLight.intensity=2200;  // strong enough to reach outer rings (~500 units)
-chaosLight.range=1200;
-chaosLight.diffuse=new BABYLON.Color3(1,0.95,0.85);   // warm sunlight
-chaosLight.specular=new BABYLON.Color3(0.2,0.18,0.14);
+chaosLight.intensity=800;
+chaosLight.range=800;
+chaosLight.diffuse=new BABYLON.Color3(1,0.95,0.85);
+chaosLight.specular=new BABYLON.Color3(0.1,0.09,0.07);
 
-// Very dim ambient so dark-side isn't pitch black
+// Strong ambient so all planets are visible at any distance
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
-hemi.intensity=0.12;
-hemi.diffuse=new BABYLON.Color3(0.5,0.55,0.7);
-hemi.groundColor=new BABYLON.Color3(0.05,0.05,0.1);
+hemi.intensity=1.2;
+hemi.diffuse=new BABYLON.Color3(0.8,0.82,0.9);
+hemi.groundColor=new BABYLON.Color3(0.3,0.3,0.4);
 
 // env texture removed
 
@@ -814,8 +814,9 @@ function createNode(d,x,y,z,familyRingColor){
   const size=sizeFor(d);
   const tint=genderPlanetTint(d);
 
-  const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:56},scene);
+  const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:18},scene);
   sphere.position=new BABYLON.Vector3(x,y,z);
+  sphere.renderingGroupId=1;
 
   var sm=new BABYLON.StandardMaterial('sm_'+d.id,scene);
 
@@ -880,12 +881,14 @@ function createNode(d,x,y,z,familyRingColor){
   btex.update();
 
   sm.diffuseTexture=ptex;
-  sm.emissiveTexture=spriteTex;  // sprite glows on surface
-  sm.emissiveColor=new BABYLON.Color3(0.4,0.4,0.4); // sprite visible but not overwhelming
+  sm.emissiveTexture=spriteTex;
+  // Strong emissive so planet is always visible regardless of distance from light
+  sm.emissiveColor=tint.scale(0.65);
+  sm.diffuseColor=tint.scale(0.5);
   sm.bumpTexture=btex;
-  sm.bumpTexture.level=0.8;
-  sm.specularColor=new BABYLON.Color3(0.06,0.05,0.04); // barely any shine
-  sm.specularPower=8;
+  sm.bumpTexture.level=0.6;
+  sm.specularColor=new BABYLON.Color3(0.05,0.04,0.03);
+  sm.specularPower=6;
   sm.backFaceCulling=false;
   sphere.material=sm;
 
@@ -1632,7 +1635,14 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     buildConnections();
     renderConnections();
     resetInfo();
-    }catch(layoutErr){console.error('Layout error:',layoutErr);}
+    }catch(layoutErr){
+      console.error('Layout error:',layoutErr);
+      // Show error on screen so we can see it on mobile
+      var errDiv=document.createElement('div');
+      errDiv.style.cssText='position:fixed;top:80px;left:10px;right:10px;background:rgba(180,0,0,0.9);color:#fff;padding:12px;border-radius:8px;z-index:9999;font-size:12px;font-family:monospace;';
+      errDiv.innerText='LAYOUT ERROR: '+String(layoutErr);
+      document.body.appendChild(errDiv);
+    }
     if(window._hideLoader) window._hideLoader();
   })
   .catch(err=>{
