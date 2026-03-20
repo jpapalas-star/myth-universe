@@ -478,10 +478,10 @@ function _doTap(pickedId) {
 
 
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
-hemi.intensity=0.96;
+hemi.intensity=1.4;
 
 const pointLight=new BABYLON.PointLight('p',new BABYLON.Vector3(0,60,0),scene);
-pointLight.intensity=1.15;
+pointLight.intensity=2.2;
 
 const sunLight=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-1,-2,-1),scene);
 sunLight.intensity=1.1;
@@ -489,7 +489,7 @@ sunLight.intensity=1.1;
 // env texture removed
 
 const glow=new BABYLON.GlowLayer("glow",scene,{blurKernelSize:64});
-glow.intensity=0.55;
+glow.intensity=0.8;
 glow.referenceMeshToUseItsOwnMaterial=true;
 
 // ---------- Procedural sky ----------
@@ -834,16 +834,16 @@ function createNode(d,x,y,z,familyRingColor){
   // Highlight shimmer
   var hx=40+(Math.abs(seed*17)%180), hy=20+(Math.abs(seed*31)%80);
   var hg=pctx.createRadialGradient(hx,hy,0,hx,hy,32);
-  hg.addColorStop(0,'rgba(255,255,255,0.25)'); hg.addColorStop(1,'rgba(255,255,255,0)');
+  hg.addColorStop(0,'rgba(255,255,255,0.55)'); hg.addColorStop(1,'rgba(255,255,255,0)');
   pctx.fillStyle=hg; pctx.fillRect(0,0,256,128);
   ptex.update();
 
   sm.albedoTexture=ptex;
   sm.albedoColor=tint;
-  sm.roughness=0.65;
-  sm.metallic=0.05;
+  sm.roughness=0.42;
+  sm.metallic=0.08;
   sm.environmentIntensity=0;
-  sm.emissiveColor=tint.scale(0.10);
+  sm.emissiveColor=tint.scale(0.35);
   sm.backFaceCulling=false;
   sphere.material=sm;
 
