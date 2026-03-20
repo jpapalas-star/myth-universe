@@ -296,31 +296,17 @@ function _cb(b){ return Math.max(camera.lowerBetaLimit,  Math.min(camera.upperBe
 
 // Project screen point onto the horizontal plane at camera.target.y
 // Returns world {x,y,z} or null
-function _screenToWorld(sx, sy) {
-  var ray = scene.createPickingRay(sx, sy, BABYLON.Matrix.Identity(), camera, false);
-  var dir = ray.direction;
-  if (Math.abs(dir.y) < 0.0001) return null;
-  var t = (camera.target.y - ray.origin.y) / dir.y;
-  if (t < 0) t = Math.max(camera.radius * 0.5, 0.1); // fallback behind camera
-  return new BABYLON.Vector3(
-    ray.origin.x + dir.x * t,
-    camera.target.y,
-    ray.origin.z + dir.z * t
-  );
-}
-
-// Pan so that world point W stays under screen point (sx, sy)
-function _panToKeep(wx, wy, wz, sx, sy) {
-  // Cast ray from new screen position and find where it hits the same world Y
-  var ray2 = scene.createPickingRay(sx, sy, BABYLON.Matrix.Identity(), camera, false);
-  var dir2 = ray2.direction;
-  if (Math.abs(dir2.y) < 0.0001) return;
-  var t2 = (camera.target.y - ray2.origin.y) / dir2.y;
-  if (t2 < 0) return;
-  var nowX = ray2.origin.x + dir2.x * t2;
-  var nowZ = ray2.origin.z + dir2.z * t2;
-  camera.target.x += wx - nowX;
-  camera.target.z += wz - nowZ;
+// Stable delta pan: moves camera target in camera-local right/up axes.
+// No ray casting = no ghost teleport.
+function _panDelta(dx, dy) {
+  var speed = camera.radius * 0.0014;
+  // right direction: perpendicular to camera look direction in XZ plane
+  var sinA = Math.sin(camera.alpha), cosA = Math.cos(camera.alpha);
+  // dx → move sideways (right vector)
+  camera.target.x += dx * speed * sinA;
+  camera.target.z -= dx * speed * cosA;
+  // dy → move up in world Y (scaled down so it feels natural)
+  camera.target.y -= dy * speed * 0.7;
 }
 
 // ── Touch state ───────────────────────────────────────────────────────────────
@@ -341,12 +327,7 @@ canvas.addEventListener('touchstart', function(e) {
     var t = e.touches[0];
     var rect = canvas.getBoundingClientRect();
     var sx = t.clientX - rect.left, sy = t.clientY - rect.top;
-    var w = _screenToWorld(sx, sy);
-    _t1 = { x: t.clientX, y: t.clientY, t: Date.now(),
-             id: _pick(sx, sy),
-             wx: w ? w.x : camera.target.x,
-             wy: camera.target.y,
-             wz: w ? w.z : camera.target.z };
+    _t1 = { x: t.clientX, y: t.clientY, t: Date.now(), id: _pick(sx, sy) };
 
   } else if (e.touches.length >= 2) {
     _multi = true; _t1 = null;
@@ -379,7 +360,8 @@ canvas.addEventListener('touchmove', function(e) {
       _t1.x = t.clientX; _t1.y = t.clientY;
     } else {
       // ── FREE MODE: 1 finger pans ─────────────────────────────────────────
-      _panToKeep(_t1.wx, _t1.wy, _t1.wz, sx, sy);
+      _panDelta(t.clientX - _t1.x, t.clientY - _t1.y);
+      _t1.x = t.clientX; _t1.y = t.clientY;
     }
 
   } else if (e.touches.length >= 2 && _tf) {
@@ -400,18 +382,12 @@ canvas.addEventListener('touchmove', function(e) {
     camera.alpha -= dmx * 0.007;
     camera.beta   = _cb(camera.beta - dmy * 0.007);
 
-    // 2. PINCH ZOOM toward midpoint world position
+    // 2. PINCH ZOOM — dampened for comfortable speed
     if (_tf.dist > 1 && dist > 1) {
-      var scale = _tf.dist / dist;
-      var newR  = _cr(camera.radius * scale);
-      var ratio = 1 - newR / camera.radius;
-      // Shift target toward zoom center point
-      var wMid = _screenToWorld(mx, my);
-      if (wMid) {
-        camera.target.x += (wMid.x - camera.target.x) * ratio;
-        camera.target.z += (wMid.z - camera.target.z) * ratio;
-      }
-      camera.radius = newR;
+      // Lerp scale toward 1 by 0.4 so zoom is ~40% of raw pinch speed
+      var rawScale = _tf.dist / dist;
+      var scale = 1 + (rawScale - 1) * 0.4;
+      camera.radius = _cr(camera.radius * scale);
     }
 
     _tf.mx = mx; _tf.my = my; _tf.dist = dist;
@@ -453,20 +429,15 @@ var _mdn = null;
 canvas.addEventListener('mousedown', function(e) {
   if (e.button !== 0) return;
   var sx = e.offsetX, sy = e.offsetY;
-  var w = _screenToWorld(sx, sy);
-  _mdn = { x: e.clientX, y: e.clientY, t: Date.now(),
-            id: _pick(sx, sy),
-            wx: w ? w.x : camera.target.x,
-            wy: camera.target.y,
-            wz: w ? w.z : camera.target.z };
+  _mdn = { x: e.clientX, y: e.clientY, t: Date.now(), id: _pick(e.offsetX, e.offsetY) };
 });
 
 window.addEventListener('mousemove', function(e) {
   if (!_mdn || !(e.buttons & 1)) return;
-  var rect = canvas.getBoundingClientRect();
-  var sx = e.clientX - rect.left, sy = e.clientY - rect.top;
-  _panToKeep(_mdn.wx, _mdn.wy, _mdn.wz, sx, sy);
-  if (Math.hypot(e.clientX - _mdn.x, e.clientY - _mdn.y) > 8) _mdn.id = null;
+  var dx3 = e.clientX - _mdn.x, dy3 = e.clientY - _mdn.y;
+  _panDelta(dx3, dy3);
+  _mdn.x = e.clientX; _mdn.y = e.clientY;
+  if (Math.hypot(dx3, dy3) > 8) _mdn.id = null;
 });
 
 window.addEventListener('mouseup', function(e) {
@@ -480,15 +451,8 @@ window.addEventListener('mouseup', function(e) {
 
 // Mouse wheel: zoom toward cursor
 canvas.addEventListener('wheel', function(e) {
-  var scale = e.deltaY > 0 ? 1.1 : 0.91;
-  var newR  = _cr(camera.radius * scale);
-  var ratio = 1 - newR / camera.radius;
-  var w = _screenToWorld(e.offsetX, e.offsetY);
-  if (w) {
-    camera.target.x += (w.x - camera.target.x) * ratio;
-    camera.target.z += (w.z - camera.target.z) * ratio;
-  }
-  camera.radius = newR;
+  var scale = e.deltaY > 0 ? 1.05 : 0.952; // slower wheel zoom
+  camera.radius = _cr(camera.radius * scale);
 }, { passive: true });
 
 
@@ -1241,6 +1205,8 @@ function enterFocus(id){
   var pos=getNodePos(id);
   if(pos){
     var newTarget = pos.clone();
+    var minDist = nodes[id].size * 1.2 + 18; // don't enter sphere
+    camera.lowerRadiusLimit = minDist;
     var newRadius = nodes[id].size * 10 + 60;
     var frames2=0, maxF2=35;
     var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
@@ -1265,6 +1231,7 @@ function enterFocus(id){
 
 function resetFocus(fromPop){
   focusedId=null;
+  camera.lowerRadiusLimit = 10; // restore free-roam min
   restoreOriginalPositions();
 
   Object.values(nodes).forEach(n=>{
