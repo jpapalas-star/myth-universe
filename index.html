@@ -263,7 +263,7 @@ const camera = new BABYLON.ArcRotateCamera(
 );
 
 camera.detachControl();
-camera.lowerRadiusLimit = 35;
+camera.lowerRadiusLimit = 40;
 camera.upperRadiusLimit = 12000;
 camera.lowerBetaLimit   = 0.08;
 camera.upperBetaLimit   = Math.PI / 2.02;
@@ -367,9 +367,15 @@ canvas.addEventListener('touchmove', function(e) {
     var dmx2 = t.clientX - _t1.x, dmy2 = t.clientY - _t1.y;
     if (Math.hypot(dmx2, dmy2) > 10) _t1.id = null; // cancel tap
 
-    // 1 finger = ORBIT always (rotate the galaxy)
+    // 1 finger = ORBIT around Chaos (target stays at 0,0,0 unless focused)
     camera.alpha -= dmx2 * 0.0015;
     camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
+    // In free mode snap target back to Chaos centre so we orbit it
+    if(!focusedId){
+      camera.target.x *= 0.85;
+      camera.target.y *= 0.85;
+      camera.target.z *= 0.85;
+    }
     _t1.x = t.clientX; _t1.y = t.clientY;
 
   } else if (e.touches.length >= 2 && _tf) {
@@ -1025,18 +1031,36 @@ function buildConnections(){
   const partnerDone=new Set();
   const parentDone=new Set();
 
-  allData.forEach(d=>{
-    idsFromField(d.Partners).forEach(pid=>{
+  // Pre-compute which entities share children (= real family partners)
+  const sharedChildMap={}; // key = sorted pair, value = shared child count
+  allData.forEach(function(d){
+    var kidsA=idsFromField(d.Children);
+    idsFromField(d.Partners).forEach(function(pid){
+      var pd=dataMap[pid];
+      if(!pd) return;
+      var kidsB=idsFromField(pd.Children);
+      var shared=kidsA.filter(function(k){return kidsB.indexOf(k)>=0;});
+      if(shared.length>0){
+        var key=[d.id,pid].sort().join('|');
+        sharedChildMap[key]=(sharedChildMap[key]||0)+shared.length;
+      }
+    });
+  });
+
+  allData.forEach(function(d){
+    // Partner lines: ONLY if they share children (= family pair)
+    idsFromField(d.Partners).forEach(function(pid){
       if(!nodes[d.id]||!nodes[pid]) return;
-      const k=[d.id,pid].sort().join('|');
+      var k=[d.id,pid].sort().join('|');
       if(partnerDone.has(k)) return;
       partnerDone.add(k);
       registerConnection('partner',d.id,pid,c3('#ff4b4b'));
     });
 
-    idsFromField(d.Parents).forEach(pid=>{
+    // Parent→child lines: always draw
+    idsFromField(d.Parents).forEach(function(pid){
       if(!nodes[pid]||!nodes[d.id]) return;
-      const k=`${pid}->${d.id}`;
+      var k=pid+'->'+d.id;
       if(parentDone.has(k)) return;
       parentDone.add(k);
       registerConnection('parent',pid,d.id,c3('#56a6ff'));
@@ -1313,7 +1337,7 @@ function resetFocus(fromPop){
   _animToken++;          // cancel any running focus animation
   _inertiaActive=false;  // stop inertia so it doesn't fight the restore
   _velAlpha=0; _velBeta=0; _velRadius=0; _velTx=0; _velTy=0; _velTz=0;
-  camera.lowerRadiusLimit = 35;
+  camera.lowerRadiusLimit = 40;
 
   // Restore ALL nodes to full opacity immediately
   Object.values(nodes).forEach(function(n){
@@ -1485,75 +1509,141 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     const families = buildFamilies(all);
     families.forEach(f=>familyColorByKey.set(f.key,hashColor(f.key)));
 
-    // ── CONCENTRIC RING LAYOUT — evenly filled ───────────────────────────────
-    // Each category ring has a fixed radius. Planets are placed by evenly
-    // distributing angle slots around each ring. Families cluster together:
-    // parents on the ring, children just inside (smaller radius).
+    // ══════════════════════════════════════════════════════════════════════
+    // FAMILY CLUSTER LAYOUT
+    // Each family = a small circular subsystem:
+    //   · parents at center of cluster
+    //   · children orbiting tightly around them
+    // Family clusters are grouped by mythology tier into concentric bands.
+    // Within each band, clusters are packed around a ring so lines stay short.
+    // ══════════════════════════════════════════════════════════════════════
 
-    var RING_R = {
-      primordial: 85,
-      titan:      160,
-      olympian:   245,
-      hero:       330,
-      mortal:     330,
-      monster:    415,
-      outer:      495
-    };
-
-    function mythGroup(d){
-      if(!d) return 'hero';
+    function mythTier(d){
+      if(!d) return 4;
       var model=String(d.ModelType||'').toLowerCase();
-      if(d.id==='PRIM_CHAOS_001') return 'center';
-      if(model==='energy')   return 'primordial';
-      if(model==='giant')    return 'titan';
-      if(model==='god'||model==='goddess'||model==='wind') return 'olympian';
-      if(model==='nymph'||model==='hero') return 'hero';
-      if(model==='human')    return 'mortal';
-      if(model==='monster'||model==='spirit'||model==='underworld') return 'monster';
-      if(model==='group')    return 'outer';
-      return 'hero';
+      if(d.id==='PRIM_CHAOS_001') return 0;
+      if(model==='energy')   return 1; // primordials
+      if(model==='giant')    return 2; // titans
+      if(model==='god'||model==='goddess'||model==='wind') return 3; // olympians
+      if(model==='nymph'||model==='hero'||model==='human') return 4; // heroes/mortals
+      if(model==='monster'||model==='spirit'||model==='underworld') return 5;
+      return 4;
     }
 
-    // Collect all entities (not Chaos) and sort into rings
-    var ringBuckets = {};
-    all.forEach(function(d){
-      if(!d||d.id==='PRIM_CHAOS_001') return;
-      var ring = mythGroup(d);
-      if(!ringBuckets[ring]) ringBuckets[ring]=[];
-      ringBuckets[ring].push(d);
+    // Tier ring radii — centre of each band
+    var TIER_R = [0, 90, 175, 265, 360, 450];
+
+    // ── Step 1: build all families ──────────────────────────────────────────
+    // families already built above into `families` array
+
+    // ── Step 2: assign each family to a tier ────────────────────────────────
+    var famsByTier = {1:[], 2:[], 3:[], 4:[], 5:[]};
+    families.forEach(function(f){
+      if(f.parents.indexOf('PRIM_CHAOS_001') >= 0) return;
+      // Tier = min tier of parents
+      var minTier = 99;
+      f.parents.forEach(function(pid){
+        var t = mythTier(dataMap[pid]);
+        if(t < minTier) minTier = t;
+      });
+      if(minTier < 1) minTier = 1;
+      if(minTier > 5) minTier = 5;
+      if(!famsByTier[minTier]) famsByTier[minTier] = [];
+      famsByTier[minTier].push(f);
     });
 
-    // Heroes and mortals share ring 330 — split by semicircle
-    // heroes: angle -PI/2 to PI/2 (right half)
-    // mortals: angle PI/2 to 3PI/2 (left half)
+    // ── Step 3: place each family as a tight circular cluster ───────────────
+    // cluster radius = just enough to fit all children around the parents
+    function clusterRadius(nChildren, parentSize){
+      if(nChildren === 0) return 0;
+      // min arc: each child needs ~2*childSize spacing
+      var childSize = 5.5;
+      var minR = (nChildren * childSize * 2.2) / (Math.PI * 2);
+      return Math.max(minR, parentSize + childSize + 4);
+    }
 
-    Object.keys(ringBuckets).forEach(function(ring){
-      var items = ringBuckets[ring];
-      var R = RING_R[ring] || 495;
-      var n = items.length;
-      if(!n) return;
+    var placed_families = [];
 
-      var startA = -Math.PI/2; // default: full circle starting from top
-      var arcLen  = Math.PI*2;
-      if(ring==='hero')   { startA=-Math.PI/2; arcLen=Math.PI; }   // right half
-      if(ring==='mortal') { startA= Math.PI/2; arcLen=Math.PI; }   // left half
+    Object.keys(famsByTier).forEach(function(tierStr){
+      var tier = Number(tierStr);
+      var fams = famsByTier[tier];
+      if(!fams || !fams.length) return;
 
-      items.forEach(function(d,i){
-        var angle = startA + arcLen*(i/Math.max(n,1));
-        // Small random jitter so they don't look too uniform
-        var jitter = (Math.sin(i*137.508)*0.5)*0.15; // golden-angle-based
-        angle += jitter;
-        var yOff = Math.sin(angle*2+i)*8;
-        createNode(d,
-          Math.cos(angle)*R,
-          yOff,
-          Math.sin(angle)*R,
-          null
-        );
+      var bandR = TIER_R[tier] || 360;
+
+      // Estimate how much arc each cluster needs
+      var clusterSizes = fams.map(function(f){
+        var parents = f.parents.map(function(id){return dataMap[id];}).filter(Boolean);
+        var children = f.children.map(function(id){return dataMap[id];}).filter(Boolean);
+        var pSize = parents.length ? 10 : 6; // approx parent size
+        var cr = clusterRadius(children.length, pSize);
+        return { f:f, parents:parents, children:children, cr:cr,
+                 angularWidth: (cr * 2 + 8) / bandR }; // arc needed in radians
+      });
+
+      // Total arc needed
+      var totalArc = clusterSizes.reduce(function(s,c){return s+c.angularWidth;}, 0);
+      // If it overflows, scale band outward slightly
+      var effectiveBandR = bandR;
+      if(totalArc > Math.PI * 2 * 0.92){
+        effectiveBandR = bandR * (totalArc / (Math.PI * 2 * 0.92));
+      }
+
+      // Distribute clusters evenly around the band
+      var angle = -Math.PI / 2; // start from top
+      clusterSizes.forEach(function(cs){
+        var halfArc = cs.angularWidth / 2;
+        angle += halfArc;
+
+        var cx = Math.cos(angle) * effectiveBandR;
+        var cz = Math.sin(angle) * effectiveBandR;
+        var cy = Math.sin(angle * 1.7) * 12; // gentle vertical wave
+
+        // Place parents at cluster center
+        if(cs.parents.length === 1){
+          createNode(cs.parents[0], cx, cy, cz, familyColorByKey.get(cs.f.key));
+        } else if(cs.parents.length >= 2){
+          // Side by side, perpendicular to radial direction
+          var perpX = -Math.sin(angle), perpZ = Math.cos(angle);
+          var gap = 9;
+          createNode(cs.parents[0], cx-perpX*gap/2, cy, cz-perpZ*gap/2, familyColorByKey.get(cs.f.key));
+          createNode(cs.parents[1], cx+perpX*gap/2, cy, cz+perpZ*gap/2, familyColorByKey.get(cs.f.key));
+        }
+
+        // Place children in a tight circle around the cluster center
+        var nc = cs.children.length;
+        var cr = cs.cr;
+        cs.children.forEach(function(child, ci){
+          var childAngle = (Math.PI * 2 * ci / Math.max(nc, 1)) - Math.PI / 2;
+          createNode(child,
+            cx + Math.cos(childAngle) * cr,
+            cy + Math.sin(childAngle * 2) * 3,
+            cz + Math.sin(childAngle) * cr,
+            familyColorByKey.get(cs.f.key)
+          );
+        });
+
+        angle += halfArc + 0.04; // small gap between clusters
       });
     });
 
-    saveOriginalPositions();
+    // ── Step 4: place leftovers (not in any family) ─────────────────────────
+    var leftovers = all.filter(function(d){
+      return d && d.id && d.id !== 'PRIM_CHAOS_001' && !placed.has(d.id);
+    });
+    leftovers.forEach(function(d, i){
+      var tier = mythTier(d);
+      var R2 = (TIER_R[tier] || 360) + 30;
+      var ang2 = Math.PI * 2 * i / Math.max(leftovers.length, 1);
+      createNode(d,
+        Math.cos(ang2) * R2,
+        Math.sin(ang2 * 2) * 8,
+        Math.sin(ang2) * R2,
+        null
+      );
+    });
+
+        saveOriginalPositions();
     buildConnections();
     renderConnections();
     resetInfo();
