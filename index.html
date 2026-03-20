@@ -331,6 +331,7 @@ var _tf     = null;   // two-finger state {mx,my,dist}
 var _velAlpha=0, _velBeta=0, _velRadius=0, _velTx=0, _velTy=0, _velTz=0;
 var _prevAlpha=0, _prevBeta=0, _prevRadius=0, _prevTx=0, _prevTy=0, _prevTz=0;
 var _inertiaActive=false;
+var _animToken=0; // increment to cancel all running animations
 
 // ── TOUCH START ───────────────────────────────────────────────────────────────
 canvas.addEventListener('touchstart', function(e) {
@@ -389,7 +390,7 @@ canvas.addEventListener('touchmove', function(e) {
     // 2. PINCH ZOOM — ratio based, capped per frame for consistency
     if (_tf.dist > 5 && dist > 5) {
       var ratio = _tf.dist / dist;          // >1 = fingers closer = zoom in
-      ratio = 1 + (ratio - 1) * 0.18;      // dampen to 18% of raw change
+      ratio = 1 + (ratio - 1) * 0.45;      // dampen to 45% of raw change
       camera.radius = _cr(camera.radius * ratio);
     }
 
@@ -1174,7 +1175,9 @@ function restoreCameraState(){
   var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
   function lrp(a,b,t){return a+(b-a)*t;}
   function esF(t){return t;} // linear — constant speed restore
+  _animToken++; var myTok=_animToken;
   function stpR(){
+    if(_animToken!==myTok) return; // cancelled
     fr++;
     var p=esF(Math.min(fr/mxF,1));
     camera.alpha    = lrp(sA, st.alpha,    p);
@@ -1247,22 +1250,23 @@ function enterFocus(id){
     var destAlpha = camera.alpha + dA;
     var destBeta  = Math.PI/5; // gentle top-down angle
 
+    _animToken++; var myToken=_animToken; // cancel any running anim
     var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
     var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
-    var frames2=0, maxF2=50;
+    var frames2=0, maxF2=40;
     function lerp2(a,b,t){return a+(b-a)*t;}
     function stepFocus(){
+      if(_animToken!==myToken) return; // cancelled
       frames2++;
       var p = Math.min(frames2/maxF2, 1);
-      // Ease: smooth start and end
-      var ep = p < 0.5 ? 2*p*p : 1-2*(1-p)*(1-p);
+      var ep = p<0.5?2*p*p:1-2*(1-p)*(1-p);
       camera.alpha    = lerp2(sA,  destAlpha,  ep);
       camera.beta     = lerp2(sB,  destBeta,   ep);
       camera.radius   = lerp2(sR,  newRadius,  ep);
       camera.target.x = lerp2(sTx, newTarget.x,ep);
       camera.target.y = lerp2(sTy, newTarget.y,ep);
       camera.target.z = lerp2(sTz, newTarget.z,ep);
-      if(frames2 < maxF2) setTimeout(stepFocus, 16);
+      if(frames2<maxF2) setTimeout(stepFocus,16);
     }
     stepFocus();
   }
@@ -1412,7 +1416,9 @@ homeBtn.addEventListener('click',function(){
   var tA3=-Math.PI/2, tB3=Math.PI/3.1, tR3=760;
   function lerp3(a,b,t){return a+(b-a)*t;}
   function ease3(t){return t<0.5?2*t*t:1-2*(1-t)*(1-t);}
+  _animToken++; var myTok3=_animToken;
   function stepHome(){
+    if(_animToken!==myTok3) return;
     frames3++;
     var p=ease3(Math.min(frames3/maxF3,1));
     camera.alpha    = lerp3(sA3, tA3, p);
