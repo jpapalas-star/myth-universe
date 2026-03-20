@@ -771,7 +771,7 @@ function createLabel(text,parentMesh,size){
   const ctx=dt.getContext();
   ctx.clearRect(0,0,1024,256);
   ctx.textAlign='center';
-  ctx.fillStyle='#ead271';
+  ctx.fillStyle='#ffffff';
   ctx.font='bold 56px Arial';
   if(lines.length===1){
     ctx.fillText(lines[0],512,120);
@@ -797,7 +797,7 @@ function createLabel(text,parentMesh,size){
   mat.diffuseTexture=dt;
   mat.opacityTexture=dt;
   mat.disableLighting=true;
-  mat.emissiveColor=BABYLON.Color3.White().scale(0.88);
+  mat.emissiveColor=BABYLON.Color3.White();
   mat.backFaceCulling=false;
   plane.material=mat;
   return plane;
@@ -811,39 +811,15 @@ function createNode(d,x,y,z,familyRingColor){
   const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:56},scene);
   sphere.position=new BABYLON.Vector3(x,y,z);
 
-  var sm=new BABYLON.PBRMaterial('sm_'+d.id,scene);
-
-  // Procedural planet surface texture
-  var ptex=new BABYLON.DynamicTexture('ptex_'+d.id,{width:256,height:128},scene,false);
-  var pctx=ptex.getContext();
-  var r0=Math.round(tint.r*255), g0=Math.round(tint.g*255), b0=Math.round(tint.b*255);
-  var r1=Math.max(0,r0-55), g1=Math.max(0,g0-55), b1=Math.max(0,b0-55);
-  var grad=pctx.createLinearGradient(0,0,256,128);
-  grad.addColorStop(0,'rgb('+r0+','+g0+','+b0+')');
-  grad.addColorStop(0.5,'rgb('+r1+','+g1+','+b1+')');
-  grad.addColorStop(1,'rgb('+r0+','+g0+','+b0+')');
-  pctx.fillStyle=grad; pctx.fillRect(0,0,256,128);
-  // Band streaks
-  var seed=(d.id||'').split('').reduce(function(a,c){return a*31+c.charCodeAt(0)|0;},1)&0xFFFFFF;
-  for(var bi=0;bi<7;bi++){
-    var yb=((Math.abs(seed*(bi+1)*37))%100)/100*128;
-    var hb=1+((Math.abs(seed*(bi+3)*13))%7);
-    var ab=(5+((Math.abs(seed*(bi+7)*7))%12))/100;
-    pctx.fillStyle='rgba(0,0,0,'+ab+')'; pctx.fillRect(0,yb,256,hb);
-  }
-  // Highlight shimmer
-  var hx=40+(Math.abs(seed*17)%180), hy=20+(Math.abs(seed*31)%80);
-  var hg=pctx.createRadialGradient(hx,hy,0,hx,hy,32);
-  hg.addColorStop(0,'rgba(255,255,255,0.55)'); hg.addColorStop(1,'rgba(255,255,255,0)');
-  pctx.fillStyle=hg; pctx.fillRect(0,0,256,128);
-  ptex.update();
-
-  sm.albedoTexture=ptex;
-  sm.albedoColor=tint;
-  sm.roughness=0.42;
-  sm.metallic=0.08;
-  sm.environmentIntensity=0;
-  sm.emissiveColor=tint.scale(0.35);
+  // Use StandardMaterial — bright, no env needed, sprites wrap naturally on sphere
+  var sm=new BABYLON.StandardMaterial('sm_'+d.id,scene);
+  var spriteTex=new BABYLON.Texture('./'+spriteFile(d),scene,true,false);
+  spriteTex.hasAlpha=true;
+  sm.diffuseTexture=spriteTex;
+  sm.diffuseColor=tint;
+  sm.specularColor=new BABYLON.Color3(0,0,0); // no shine — matte surface
+  sm.specularPower=0;
+  sm.emissiveColor=tint.scale(0.55); // strong self-glow so visible in dark
   sm.backFaceCulling=false;
   sphere.material=sm;
 
@@ -1198,12 +1174,10 @@ function enterFocus(id){
     var rel = relatives.has(n.id);
     if(rel){
       // Relatives: fully opaque, render in front (group 1)
-      n.sphere.material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
       n.sphere.material.alpha = 1.0;
       n.sphere.renderingGroupId = 1;
     } else {
       // Non-relatives: semi-transparent, render behind (group 0)
-      n.sphere.material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
       n.sphere.material.alpha = 0.18;
       n.sphere.renderingGroupId = 0;
     }
@@ -1279,7 +1253,6 @@ function resetFocus(fromPop){
 
   // Restore ALL nodes to full opacity immediately
   Object.values(nodes).forEach(function(n){
-    n.sphere.material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
     n.sphere.material.alpha = 1.0;
     n.sphere.renderingGroupId = 1;
     n.sphere.setEnabled(true);
@@ -1396,7 +1369,6 @@ homeBtn.addEventListener('click',function(){
   restoreOriginalPositions();
   renderConnections();
   Object.values(nodes).forEach(function(n){
-    n.sphere.material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
     n.sphere.material.alpha = 1.0;
     n.sphere.renderingGroupId = 1; // all in front group
     n.sphere.setEnabled(true);
