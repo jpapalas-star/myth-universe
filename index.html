@@ -807,6 +807,12 @@ function createLabel(text,parentMesh,size){
   mat.emissiveColor=BABYLON.Color3.White();
   mat.backFaceCulling=false;
   plane.material=mat;
+  // Parent label to sphere so it follows the planet
+  plane.parent=parentMesh;
+  plane.position=new BABYLON.Vector3(0, size*0.72+2.5, 0);
+  // Always face the camera
+  plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+  plane.renderingGroupId=2;
   return plane;
 }
 
