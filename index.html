@@ -837,43 +837,42 @@ function createNode(d,x,y,z,familyRingColor){
     sphere.material=sm;
     sphere.renderingGroupId=1;
 
-    // Two billboard planes: front and back, always facing camera
+    // Two planes fixed in world space:
+    // Front: faces OUTWARD from Chaos (away from origin)
+    // Back:  faces INWARD toward Chaos — same image, not mirrored
+    // Both are oriented at creation using the sphere's world position.
+
     var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
     photoTex.hasAlpha=true;
 
-    // Front plane — normal orientation
-    var bPlane=BABYLON.MeshBuilder.CreatePlane('photo_'+d.id,{width:size,height:size},scene);
+    var pMat=new BABYLON.StandardMaterial('photomat_'+d.id,scene);
+    pMat.diffuseTexture=photoTex;
+    pMat.opacityTexture=photoTex;
+    pMat.emissiveColor=BABYLON.Color3.White().scale(0.9);
+    pMat.disableLighting=true;
+    pMat.backFaceCulling=false; // visible from both sides with same texture
+
+    // Compute outward direction (from Chaos origin to this sphere)
+    var spx=x, spz=z, dist2d=Math.sqrt(spx*spx+spz*spz);
+    // Angle pointing OUTWARD from center
+    var outAngle = dist2d>0.1 ? Math.atan2(spz, spx) : 0;
+
+    // Front plane — faces outward
+    var bPlane=BABYLON.MeshBuilder.CreatePlane('photo_'+d.id,{width:size*1.05,height:size*1.05},scene);
     bPlane.parent=sphere;
     bPlane.position=BABYLON.Vector3.Zero();
-    bPlane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+    // Rotate so it faces outward: plane's +Z points away from origin
+    bPlane.rotation.y = outAngle + Math.PI/2;
     bPlane.renderingGroupId=1;
+    bPlane.material=pMat;
 
-    var bMat=new BABYLON.StandardMaterial('photomat_'+d.id,scene);
-    bMat.diffuseTexture=photoTex;
-    bMat.opacityTexture=photoTex;
-    bMat.emissiveColor=BABYLON.Color3.White().scale(0.9);
-    bMat.disableLighting=true;
-    bMat.backFaceCulling=true;
-    bPlane.material=bMat;
-
-    // Back plane — mirrored (flipped on U axis so it reads correctly from behind)
-    var bPlane2=BABYLON.MeshBuilder.CreatePlane('photo2_'+d.id,{width:size,height:size},scene);
+    // Back plane — faces inward (180° rotation), same image
+    var bPlane2=BABYLON.MeshBuilder.CreatePlane('photo2_'+d.id,{width:size*1.05,height:size*1.05},scene);
     bPlane2.parent=sphere;
     bPlane2.position=BABYLON.Vector3.Zero();
-    bPlane2.rotation.y=Math.PI; // face the other direction
-    bPlane2.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+    bPlane2.rotation.y = outAngle - Math.PI/2; // opposite direction
     bPlane2.renderingGroupId=1;
-
-    var bMat2=new BABYLON.StandardMaterial('photomat2_'+d.id,scene);
-    var photoTex2=new BABYLON.Texture(d.photo,scene,true,false);
-    photoTex2.hasAlpha=true;
-    photoTex2.uScale=-1; // mirror horizontally so it reads correctly from back
-    bMat2.diffuseTexture=photoTex2;
-    bMat2.opacityTexture=photoTex2;
-    bMat2.emissiveColor=BABYLON.Color3.White().scale(0.9);
-    bMat2.disableLighting=true;
-    bMat2.backFaceCulling=true;
-    bPlane2.material=bMat2;
+    bPlane2.material=pMat; // same material = same image
 
     var photoLabel=createLabel(d.Name||d.id,sphere,size);
     var photoRings=[];
