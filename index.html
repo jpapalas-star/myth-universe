@@ -627,7 +627,7 @@ let tapCandidate=null;
 let panelOpen=false;
 let searchMatches=[];
 let activeSearchIndex=-1;
-let linesVisible=true;
+var linesVisible=true;
 
 function c3(hex){return BABYLON.Color3.FromHexString(hex);}
 function hslToHex(h,s,l){
@@ -1186,9 +1186,23 @@ function getRelativesSet(id){
   const set=new Set([id]);
   const d=dataMap[id];
   if(!d) return set;
+  // Parents
   idsFromField(d.Parents).forEach(x=>{if(nodes[x])set.add(x);});
-  idsFromField(d.Partners).forEach(x=>{if(nodes[x])set.add(x);});
+  // Partners + their parents (so couple lines show)
+  idsFromField(d.Partners).forEach(x=>{
+    if(nodes[x]){
+      set.add(x);
+      idsFromField((dataMap[x]||{}).Parents||'').forEach(p=>{if(nodes[p])set.add(p);});
+    }
+  });
+  // ALL children
   idsFromField(d.Children).forEach(x=>{if(nodes[x])set.add(x);});
+  // Also add co-parents (partners of each child's other parent)
+  idsFromField(d.Partners).forEach(pid=>{
+    const pd=dataMap[pid];
+    if(!pd) return;
+    idsFromField(pd.Children).forEach(x=>{if(nodes[x])set.add(x);});
+  });
   return set;
 }
 
@@ -1650,7 +1664,17 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
       errDiv.innerText='LAYOUT ERROR: '+String(layoutErr);
       document.body.appendChild(errDiv);
     }
-    if(window._hideLoader) window._hideLoader();
+    // Delay hiding loader until Babylon has actually rendered the planets
+    var _hideFrames=0;
+    function _waitRender(){
+      _hideFrames++;
+      if(_hideFrames>=5){
+        if(window._hideLoader) window._hideLoader();
+      } else {
+        requestAnimationFrame(_waitRender);
+      }
+    }
+    requestAnimationFrame(_waitRender);
   })
   .catch(err=>{
     infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';
