@@ -1197,7 +1197,24 @@ function enterFocus(id){
     var minDist = nodes[id].size * 1.2 + 18; // don't enter sphere
     camera.lowerRadiusLimit = minDist;
     var newRadius = nodes[id].size * 10 + 60;
-    var frames2=0, maxF2=35;
+    // Determine the direction from Chaos (0,0,0) to the planet
+    // so we approach from OUTSIDE the galaxy (not from inside)
+    var toX = newTarget.x, toZ = newTarget.z;
+    var dist2D = Math.sqrt(toX*toX + toZ*toZ);
+    // Alpha: angle to look AT the planet from outside (planet direction + PI = approach from outside)
+    var targetAlpha = dist2D > 5
+      ? Math.atan2(toZ, toX) + Math.PI  // approach from outside the ring
+      : camera.alpha;                     // near chaos: keep current angle
+    // Beta: slightly above horizon for a clear 3/4 view
+    var targetBeta = Math.PI / 4;
+
+    // Normalise alpha difference to shortest rotation path
+    var dA = targetAlpha - camera.alpha;
+    while(dA >  Math.PI) dA -= Math.PI*2;
+    while(dA < -Math.PI) dA += Math.PI*2;
+    var destAlpha = camera.alpha + dA;
+
+    var frames2=0, maxF2=45;
     var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
     var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
     function lerp2(a,b,t){return a+(b-a)*t;}
@@ -1205,10 +1222,12 @@ function enterFocus(id){
     function stepFocus(){
       frames2++;
       var p=ease2(Math.min(frames2/maxF2,1));
-      camera.radius   = lerp2(sR,  newRadius,   p);
-      camera.target.x = lerp2(sTx, newTarget.x, p);
-      camera.target.y = lerp2(sTy, newTarget.y, p);
-      camera.target.z = lerp2(sTz, newTarget.z, p);
+      camera.alpha    = lerp2(sA,   destAlpha,   p);
+      camera.beta     = lerp2(sB,   targetBeta,  p);
+      camera.radius   = lerp2(sR,   newRadius,   p);
+      camera.target.x = lerp2(sTx,  newTarget.x, p);
+      camera.target.y = lerp2(sTy,  newTarget.y, p);
+      camera.target.z = lerp2(sTz,  newTarget.z, p);
       if(frames2<maxF2) setTimeout(stepFocus,16);
     }
     stepFocus();
