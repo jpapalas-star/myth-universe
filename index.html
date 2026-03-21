@@ -457,7 +457,7 @@ canvas.addEventListener('touchmove', function(e) {
     _tf.p0x = t0.clientX; _tf.p0y = t0.clientY;
     _tf.p1x = t1.clientX; _tf.p1y = t1.clientY;
 
-    // 2. PINCH ZOOM — anchor at first finger (t0)
+    // 2. PINCH ZOOM — anchor at midpoint of two fingers
     if (_tf.dist > 5 && dist > 5) {
       var ratio = _tf.dist / dist;
       ratio = 1 + (ratio - 1) * 0.45;
@@ -465,24 +465,31 @@ canvas.addEventListener('touchmove', function(e) {
       var newRadius = _cr(oldRadius * ratio);
       var dr = oldRadius - newRadius; // positive = zooming in
 
-      // Anchor: move camera.target toward the first finger (t0) world direction
-      // so that the point under t0 stays fixed as we zoom
-      if (Math.abs(dr) > 0.05 && _tf.f0x !== undefined) {
+      // The correct approach: the world point under the finger midpoint
+      // should stay fixed. We do this by moving camera.target
+      // proportional to the finger offset from screen center × zoom amount.
+      // The key formula: target shift = (fingerOffset / screenSize) * dr * fovScale
+      if (Math.abs(dr) > 0.01) {
         var cw2 = rect.width, ch2 = rect.height;
-        // Offset of first finger from screen center, normalised -1..1
-        var offX = (_tf.f0x - cw2 * 0.5) / (cw2 * 0.5);
-        var offY = -(_tf.f0y - ch2 * 0.5) / (ch2 * 0.5);
 
-        // Camera right and up vectors (horizontal plane mostly)
-        var camFwd   = camera.target.subtract(camera.position).normalize();
-        var camRight = BABYLON.Vector3.Cross(camFwd, BABYLON.Vector3.Up()).normalize();
-        var camUp    = BABYLON.Vector3.Cross(camRight, camFwd).normalize();
+        // Use PREVIOUS midpoint for offset (current midpoint movement handled by pan)
+        var offPxX = _tf.mx - cw2 * 0.5;
+        var offPxY = _tf.my - ch2 * 0.5;
 
-        // How much to shift: proportional to zoom amount and finger offset
-        // Larger offset = finger is further from center = bigger shift needed
-        var shift = dr * 0.5;
-        camera.target.addInPlace(camRight.scale(offX * shift));
-        camera.target.addInPlace(camUp.scale(offY * shift));
+        // Scale: how many world units per pixel at current distance
+        // Approximate: tan(fov/2) * radius / (screenHeight/2)
+        var fovRad = camera.fov || (Math.PI / 4);
+        var worldPerPx = Math.tan(fovRad * 0.5) * oldRadius / (ch2 * 0.5);
+
+        // Move target by the offset scaled by how much we zoomed
+        // (1 - newRadius/oldRadius) = fraction zoomed
+        var zoomFrac = 1 - newRadius / oldRadius;
+        var camFwd2   = camera.target.subtract(camera.position).normalize();
+        var camRight2 = BABYLON.Vector3.Cross(camFwd2, BABYLON.Vector3.Up()).normalize();
+        var camUp2    = BABYLON.Vector3.Cross(camRight2, camFwd2).normalize();
+
+        camera.target.addInPlace(camRight2.scale( offPxX * worldPerPx * zoomFrac));
+        camera.target.addInPlace(camUp2.scale(   -offPxY * worldPerPx * zoomFrac));
       }
 
       camera.radius = newRadius;
