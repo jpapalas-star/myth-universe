@@ -1053,18 +1053,16 @@ function showInfo(d){
   var isEN = appLang==='en';
   var name     = isEN ? (d.Name_EN||d.Name||d.id) : (d.Name||d.id);
   var fulltext = isEN ? (d.FullText_EN||d.FullText||'-') : (d.FullText||d.FullText_EN||'-');
-  var lbl      = isEN ? {sum:'Summary',par:'Parents',prt:'Partners',chi:'Children',txt:'Description'} :
-                        {sum:'Περίληψη',par:'Γονείς',prt:'Σύντροφοι',chi:'Παιδιά',txt:'Περιγραφή'};
+  var lbl      = isEN ? {par:'Parents',prt:'Partners',txt:'Description'} :
+                        {par:'Γονείς',prt:'Σύντροφοι',txt:'Περιγραφή'};
   infoEl.innerHTML=
     `<h2>${name}</h2>`+
-    `<div class="sub">${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation!=null?d.Generation:'-'}</div>`+
-    `<div class="sec">${lbl.sum}</div><div class="txt">${d.Summary||'-'}</div>`+
+    
     `<div class="sec">${lbl.par}</div><div class="txt">${listInfoLinks(d.Parents)}</div>`+
     `<div class="sec">${lbl.prt}</div><div class="txt">${listInfoLinks(d.Partners)}</div>`+
-    `<div class="sec">${lbl.chi}</div><div class="txt">${listInfoLinks(d.Children)}</div>`+
     `<div class="sec">${lbl.txt}</div><div class="txt" id="infoFullText">${fulltext}</div>`+
     `<div style="margin-top:10px;display:flex;gap:8px;">
-      <button onclick="speakText()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:6px 14px;font-size:12px;cursor:pointer;">🔊 Ακρόαση</button>
+      <button onclick="speakText()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:6px 14px;font-size:12px;cursor:pointer;">${appLang==="en"?"🔊 Listen":"🔊 Ακρόαση"}</button>
       <button onclick="stopSpeak()" style="background:rgba(255,100,60,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:16px;color:#ff8866;padding:6px 14px;font-size:12px;cursor:pointer;">⏹ Stop</button>
     </div>`+
 "";
@@ -1074,6 +1072,9 @@ function showInfo(d){
 function toggleLang(){
   appLang = appLang==='gr' ? 'en' : 'gr';
   document.getElementById('langBtn').textContent = appLang==='gr' ? 'GR / EN' : 'EN / GR';
+  var hb = document.getElementById('homeBtn');
+  if(hb) hb.textContent = appLang==='gr' ? 'Μυθολογία' : 'Mythology';
+  resetInfo();
   if(_lastInfoD) showInfo(_lastInfoD);
 }
 
@@ -1373,8 +1374,8 @@ function applyFocusLayout(centerId,relativeSet){
   const partners=idsFromField(d.Partners).filter(id=>relativeSet.has(id));
   const children=idsFromField(d.Children).filter(id=>relativeSet.has(id));
 
-  const SPREAD=22;
-  const CHILD_R=Math.max(20,14+children.length*2.4);
+  const SPREAD=55;
+  const CHILD_R=Math.max(50,35+children.length*4.5);
 
   partners.forEach((pid,i)=>{
     const p=nodes[pid]; if(!p)return;
