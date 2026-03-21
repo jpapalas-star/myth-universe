@@ -1386,15 +1386,10 @@ function enterFocus(id){
       }
       if(disc){ disc.setEnabled(true); disc.renderingGroupId = 1; }
     } else {
+      // Non-relatives: hide completely during focus
+      n.sphere.material.alpha = 0.0;
       n.sphere.renderingGroupId = 0;
-      if(hasPhoto){
-        n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
-        n.sphere.material.alpha = 0.04;
-        if(disc) disc.setEnabled(false);
-      } else {
-        n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
-        n.sphere.material.alpha = 0.12;
-      }
+      if(disc) disc.setEnabled(false);
     }
     n.sphere.setEnabled(true);
     if(n.rings) n.rings.forEach(function(r){

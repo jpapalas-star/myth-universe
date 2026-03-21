@@ -3543,7 +3543,7 @@
   },
   {
     "id": "OLYMP_ZEUS_001",
-    "Name": "Ζευς (Zeus)",
+    "Name": "Δίας (Zeus)",
     "Name_EN": "Zeus",
     "Category": "Ολύμπιος",
     "Type": "person",
@@ -6020,6 +6020,7 @@
     "sprite": "titan-male",
     "ring": true,
     "glow": 0.45,
-    "photo": "./Assets/Titans/Titan_Photos/ΙΑΠΕΤΟΣ.png"
+    "photo": "./Assets/Heros/Photos/ΠΕΡΣΕΑΣ.png",
+    "video": "./Assets/Heros/Videos/ΠΕΡΣΕΑΣ.mp4"
   }
 ]
