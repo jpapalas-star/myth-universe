@@ -380,7 +380,11 @@ canvas.addEventListener('touchmove', function(e) {
       var mya0=(ta0.clientY+tb0.clientY)*0.5-rect.top;
       _tf={mx:mxa0,my:mya0,dist:Math.hypot(ta0.clientX-tb0.clientX,ta0.clientY-tb0.clientY),
            warmup:2, f0x:ta0.clientX-rect.left, f0y:ta0.clientY-rect.top};
-      return; // skip this frame, wait for next move
+      // fall through immediately to 2-finger handler
+    } else {
+      // _tf exists but may have stale f0 — refresh anchor each time 2 fingers active
+      _tf.f0x = e.touches[0].clientX - rect.left;
+      _tf.f0y = e.touches[0].clientY - rect.top;
     }
     // Fall through to 2-finger handler below
   }
@@ -494,8 +498,14 @@ canvas.addEventListener('touchend', function(e) {
   e.preventDefault();
   if (e.touches.length > 0) {
     _multi = true; _t1 = null;
-    // If one finger lifted and one remains, reset 2-finger state
-    if (e.touches.length === 1) _tf = null;
+    // One finger lifted, one remains — reset to 1-finger mode
+    if (e.touches.length === 1) {
+      _tf = null;
+      _multi = false;
+      var rem = e.touches[0];
+      var rect2 = canvas.getBoundingClientRect();
+      _t1 = { x: rem.clientX, y: rem.clientY, t: Date.now(), id: null, firstMove: true };
+    }
     return;
   }
   // All fingers up
