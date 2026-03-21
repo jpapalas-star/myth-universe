@@ -443,7 +443,7 @@ canvas.addEventListener('touchmove', function(e) {
     var STILL = 4; // px — below this = "stationary"
     // Only pan if BOTH fingers moved, not just one
     if (d0 > STILL && d1 > STILL) {
-      _panDelta(dmx, dmy);
+      _panDelta(dmx * 2.2, dmy * 2.2); // 2-finger pan faster
     }
     // Update individual finger positions
     _tf.p0x = t0.clientX; _tf.p0y = t0.clientY;
