@@ -443,16 +443,25 @@ canvas.addEventListener('touchmove', function(e) {
     var STILL = 4; // px — below this = "stationary"
     // Only pan if BOTH fingers moved, not just one
     if (d0 > STILL && d1 > STILL) {
-      _panDelta(dmx * 2.2, dmy * 2.2); // 2-finger pan faster
+      _panDelta(dmx * 3.5, dmy * 3.5); // 2-finger pan faster
     }
     // Update individual finger positions
     _tf.p0x = t0.clientX; _tf.p0y = t0.clientY;
     _tf.p1x = t1.clientX; _tf.p1y = t1.clientY;
 
-    // 2. PINCH ZOOM
+    // 2. PINCH ZOOM — adaptive speed: faster when far, slower when close
     if (_tf.dist > 5 && dist > 5) {
       var ratio = _tf.dist / dist;
-      ratio = 1 + (ratio - 1) * 0.45;
+      var rawChange = ratio - 1; // how much fingers moved
+
+      // Base damping: 0.45 at close range, up to 1.2 when far
+      // lowerRadiusLimit ~35, typical far = 800+
+      var minR = camera.lowerRadiusLimit || 35;
+      var maxR = camera.upperRadiusLimit || 900;
+      var t = Math.max(0, Math.min(1, (camera.radius - minR) / (maxR - minR)));
+      var damping = 0.45 + t * 0.75; // 0.45 close → 1.2 far
+
+      ratio = 1 + rawChange * damping;
       camera.radius = _cr(camera.radius * ratio);
     }
 
