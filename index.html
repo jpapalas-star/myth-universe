@@ -368,7 +368,20 @@ canvas.addEventListener('touchmove', function(e) {
   e.preventDefault();
   var rect = canvas.getBoundingClientRect();
 
-  if (e.touches.length === 1 && !_multi && _t1) {
+  // If 2+ fingers detected mid-move, switch to multi mode immediately
+  if (e.touches.length >= 2 && !_multi) {
+    _multi = true; _t1 = null;
+    var ta = e.touches[0], tb = e.touches[1];
+    var mxa = (ta.clientX+tb.clientX)*0.5-rect.left;
+    var mya = (ta.clientY+tb.clientY)*0.5-rect.top;
+    var dxa = ta.clientX-tb.clientX, dya = ta.clientY-tb.clientY;
+    var dista = Math.hypot(dxa,dya);
+    if(!_tf) _tf={mx:mxa,my:mya,dist:dista,warmup:2,
+                  f0x:ta.clientX-rect.left,f0y:ta.clientY-rect.top};
+    return;
+  }
+
+  if (e.touches.length === 1 && _t1) {
     var t = e.touches[0];
     var dmx2 = t.clientX - _t1.x, dmy2 = t.clientY - _t1.y;
 
