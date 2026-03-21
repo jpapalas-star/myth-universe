@@ -237,6 +237,8 @@ html,body{
 <canvas id="renderCanvas"></canvas>
 
 <script>
+var appLang='gr';
+var _lastInfoD=null;
 const canvas=document.getElementById('renderCanvas');
 const infoEl=document.getElementById('info');
 const homeBtn=document.getElementById('homeBtn');
@@ -1046,7 +1048,6 @@ function bindInfoLinks(){
     el.addEventListener('mouseleave',()=>highlightNode(id,false));
   });
 }
-var _lastInfoD = null;
 function showInfo(d){
   _lastInfoD = d;
   var isEN = appLang==='en';
