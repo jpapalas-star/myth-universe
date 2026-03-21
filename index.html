@@ -753,6 +753,22 @@ function spriteFile(d){
   return 'default.png';
 }
 
+function groupRingColor(d){
+  var m=String(d.ModelType||'').toLowerCase();
+  var id=String(d.id||'');
+  if(id==='PRIM_CHAOS_001')     return c3('#ffffff');
+  if(m==='energy')              return c3('#9966ff'); // primordials: purple
+  if(m==='giant')               return c3('#cc7700'); // titans: burnt gold
+  if(m==='god'||m==='goddess')  return c3('#ffe040'); // olympians: bright gold
+  if(m==='wind')                return c3('#88ccff'); // winds: sky blue
+  if(m==='nymph')               return c3('#44ddaa'); // nymphs: teal
+  if(m==='human'||m==='hero')   return c3('#cc4422'); // heroes: red-bronze
+  if(m==='monster')             return c3('#44aa22'); // monsters: dark green
+  if(m==='spirit')              return c3('#7799bb'); // spirits: steel blue
+  if(m==='underworld')          return c3('#882244'); // underworld: dark red
+  return c3('#8899bb'); // default: slate
+}
+
 function sizeFor(d){
   var model=String(d.ModelType||'').toLowerCase();
   var id=String(d.id||'');
@@ -907,8 +923,9 @@ function createNode(d,x,y,z,familyRingColor){
 
     var photoLabel=createLabel(d.Name||d.id,sphere,size);
     var photoRings=[];
-    if(familyRingColor) photoRings.push(addRing(sphere,familyRingColor,size*1.12,0.09));
-    photoRings.push(addRing(sphere,tint,size*1.18,0.11));
+    var grc2=groupRingColor(d);
+    photoRings.push(addRing(sphere, grc2, size*1.28, 0.11));
+    if(familyRingColor) photoRings.push(addRing(sphere, familyRingColor, size*1.14, 0.07));
 
     nodes[d.id]={id:d.id,data:d,sphere:sphere,rings:photoRings,label:photoLabel,size:size,familyRingColor:familyRingColor||null};
     placed.add(d.id);
@@ -990,10 +1007,11 @@ function createNode(d,x,y,z,familyRingColor){
   const label=createLabel(d.Name||d.id,sphere,size);
 
   const rings=[];
-  if(String(d.id)==='PRIM_CHAOS_001') rings.push(addRing(sphere,c3('#ffffff'),size*1.36,0.13));
-  if(d.ModelType==='energy') rings.push(addRing(sphere,c3('#deb3ff'),size*1.18,0.10));
-  if(d.ModelType==='group'||d.Shape==='group'||d.ring===true) rings.push(addRing(sphere,tint,size*1.24,0.10));
-  if(familyRingColor) rings.push(addRing(sphere,familyRingColor,size*1.12,0.09));
+  var grc=groupRingColor(d);
+  // Outer group-colored ring (always)
+  rings.push(addRing(sphere, grc, size*1.28, 0.10));
+  // Inner family ring if in a family
+  if(familyRingColor) rings.push(addRing(sphere, familyRingColor, size*1.14, 0.07));
 
   sphere.metadata=Object.assign({},d,{isChaos:String(d.id)==='PRIM_CHAOS_001'});
   nodes[d.id]={id:d.id,data:d,sphere,rings,label,size,familyRingColor:familyRingColor||null};
@@ -1433,11 +1451,13 @@ function enterFocus(id){
   }
 
   showInfo(dataMap[id]);
+  if(typeof playEntityVideo==='function') playEntityVideo(dataMap[id]);
   if(!suppressPop) history.pushState({focus:id},'');
 }
 
 function resetFocus(fromPop){
   focusedId=null;
+  if(typeof closeVideo==='function') closeVideo();
   _animToken++;          // cancel any running focus animation
   _inertiaActive=false;  // stop inertia so it doesn't fight the restore
   _velAlpha=0; _velBeta=0; _velRadius=0; _velTx=0; _velTy=0; _velTz=0;
@@ -1885,6 +1905,44 @@ window.addEventListener('resize',()=>engine.resize());
     }
   };
 })();
+</script>
+
+<!-- VIDEO OVERLAY -->
+<div id="videoOverlay" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;">
+  <!-- Title -->
+  <div id="videoTitle" style="text-align:center;margin-bottom:14px;padding:0 20px;">
+    <div id="videoTitleGR" style="font-family:Arial,sans-serif;font-size:22px;font-weight:bold;color:#ffe040;letter-spacing:2px;text-shadow:0 2px 8px #000;"></div>
+    <div id="videoTitleEN" style="font-family:Arial,sans-serif;font-size:14px;color:#ccc;margin-top:4px;letter-spacing:1px;"></div>
+  </div>
+  <!-- Video frame with border -->
+  <div style="border:3px solid #222;border-radius:16px;box-shadow:0 0 60px 8px #000,0 0 0 6px #111,inset 0 0 20px #000;overflow:hidden;max-width:95vw;max-height:70vh;">
+    <video id="videoEl" style="display:block;max-width:95vw;max-height:70vh;background:#000;" playsinline autoplay></video>
+  </div>
+  <!-- Skip button -->
+  <button id="videoSkip" type="button" onclick="closeVideo()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.25);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:8001;letter-spacing:1px;">SKIP ✕</button>
+</div>
+
+<script>
+function playEntityVideo(d){
+  if(!d||!d.video) return;
+  var ov=document.getElementById('videoOverlay');
+  var vid=document.getElementById('videoEl');
+  var tgr=document.getElementById('videoTitleGR');
+  var ten=document.getElementById('videoTitleEN');
+  tgr.textContent=d.Name||'';
+  ten.textContent=d.Name_EN||'';
+  vid.src=d.video;
+  ov.style.display='flex';
+  vid.play();
+  vid.onended=function(){ closeVideo(); };
+}
+function closeVideo(){
+  var ov=document.getElementById('videoOverlay');
+  var vid=document.getElementById('videoEl');
+  ov.style.display='none';
+  vid.pause();
+  vid.src='';
+}
 </script>
 </body>
 </html>

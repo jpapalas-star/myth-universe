@@ -940,7 +940,9 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΑΧΙΛΛΕΑΣ.png",
+    "video": "./Assets/Heros/Videos/ΑΧΙΛΛΕΑΣ.mp4"
   },
   {
     "id": "HERO_AGAMEMNON_001",
@@ -986,7 +988,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "video": "./Assets/Heros/Videos/ΑΙΑΣ.mp4"
   },
   {
     "id": "HERO_ALCMENE_001",
@@ -1101,7 +1104,8 @@
     "theme": "bronze-light",
     "sprite": "heroine",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΑΤΑΛΑΝΤΗ.png"
   },
   {
     "id": "HERO_BELLEROPHON_001",
@@ -1124,7 +1128,9 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΒΕΛΛΕΡΟΦΟΝΤΗΣ.png",
+    "video": "./Assets/Heros/Videos/ΒΕΛΛΕΡΟΦΟΝΤΗΣ.mp4"
   },
   {
     "id": "HERO_CADMUS_001",
@@ -1147,7 +1153,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "video": "./Assets/Heros/Videos/ΚΑΔΜΟΣ.mp4"
   },
   {
     "id": "HERO_DAEDALUS_001",
@@ -1216,7 +1223,9 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΔΙΟΜΗΔΗΣ.png",
+    "video": "./Assets/Heros/Videos/ΔΙΟΜΗΔΗΣ.mp4"
   },
   {
     "id": "HERO_HECTOR_001",
@@ -1262,7 +1271,9 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΗΡΑΚΛΗΣ.png",
+    "video": "./Assets/Heros/Videos/ΗΡΑΚΛΗΣ.mp4"
   },
   {
     "id": "HERO_HYLLOS_001",
@@ -1354,7 +1365,9 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΙΑΣΟΝΑΣ.png",
+    "video": "./Assets/Heros/Videos/ΙΑΣΩΝΑΣ.mp4"
   },
   {
     "id": "HERO_LAIUS_001",
@@ -1446,7 +1459,9 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΟΔΥΣΣΕΑΣ.png",
+    "video": "./Assets/Heros/Videos/ΟΔΥΣΣΕΑΣ.mp4"
   },
   {
     "id": "HERO_OEDIPUS_001",
@@ -1492,7 +1507,9 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΟΡΦΕΑΣ.png",
+    "video": "./Assets/Heros/Videos/ΟΡΦΕΑΣ.mp4"
   },
   {
     "id": "HERO_PARIS_001",
@@ -1538,7 +1555,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "video": "./Assets/Heros/Videos/ΠΑΤΡΟΚΛΟΣ.mp4"
   },
   {
     "id": "HERO_PELEUS_001",
@@ -1561,7 +1579,9 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΠΗΛΕΑΣ.png",
+    "video": "./Assets/Heros/Videos/ΠΗΛΕΑΣ.mp4"
   },
   {
     "id": "HERO_PERSEUS_001",
@@ -1584,7 +1604,9 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΠΕΡΣΕΑΣ.png",
+    "video": "./Assets/Heros/Videos/ΠΕΡΣΕΑΣ.mp4"
   },
   {
     "id": "HERO_THESEUS_001",
@@ -1607,7 +1629,9 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΘΗΣΕΑΣ.png",
+    "video": "./Assets/Heros/Videos/ΘΗΣΕΑΣ.mp4"
   },
   {
     "id": "HUNDRED_BRIAREUS_001",
@@ -3080,7 +3104,8 @@
     "sprite": "goddess",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΑΦΡΟΔΙΤΗ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΑΦΡΟΔΙΤΗ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΑΦΡΟΔΙΤΗ.mp4"
   },
   {
     "id": "OLYMP_APOLLO_001",
@@ -3104,7 +3129,8 @@
     "sprite": "god",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΑΠΟΛΛΩΝΑΣ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΑΠΟΛΛΩΝΑΣ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΑΠΟΛΛΩΝΑΣ.mp4"
   },
   {
     "id": "OLYMP_ARES_001",
@@ -3128,7 +3154,8 @@
     "sprite": "god",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΑΡΗΣ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΑΡΗΣ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΑΡΗΣ.mp4"
   },
   {
     "id": "OLYMP_ARTEMIS_001",
@@ -3152,7 +3179,8 @@
     "sprite": "goddess",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΑΡΤΕΜΙΣ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΑΡΤΕΜΙΣ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΑΡΤΕΜΙΣ.mp4"
   },
   {
     "id": "OLYMP_ATHENA_001",
@@ -3176,7 +3204,8 @@
     "sprite": "goddess",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΑΘΗΝΑ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΑΘΗΝΑ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΑΘΗΝΑ.mp4"
   },
   {
     "id": "OLYMP_DEMETER_001",
@@ -3200,7 +3229,8 @@
     "sprite": "goddess",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΔΗΜΗΤΡΑ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΔΗΜΗΤΡΑ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΔΗΜΗΤΡΑ.mp4"
   },
   {
     "id": "OLYMP_DIONYSUS_001",
@@ -3224,7 +3254,8 @@
     "sprite": "god",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΔΙΟΝΥΣΟΣ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΔΙΟΝΥΣΟΣ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΔΙΟΝΥΣΟΣ.mp4"
   },
   {
     "id": "OLYMP_EROS_002",
@@ -3317,7 +3348,8 @@
     "sprite": "god",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΗΦΑΙΣΤΟΣ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΗΦΑΙΣΤΟΣ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΗΦΑΙΣΤΟΣ.mp4"
   },
   {
     "id": "OLYMP_HERA_001",
@@ -3341,7 +3373,8 @@
     "sprite": "goddess",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΗΡΑ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΗΡΑ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΗΡΑ.mp4"
   },
   {
     "id": "OLYMP_HERMES_001",
@@ -3365,7 +3398,8 @@
     "sprite": "god",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΕΡΜΗΣ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΕΡΜΗΣ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΕΡΜΗΣ.mp4"
   },
   {
     "id": "OLYMP_HESTIA_001",
@@ -3481,7 +3515,8 @@
     "sprite": "god",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΠΟΣΕΙΔΩΝΑΣ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΠΟΣΕΙΔΩΝΑΣ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΠΟΣΕΙΔΩΝΑΣ.mp4"
   },
   {
     "id": "OLYMP_SEMELE_001",
@@ -3528,7 +3563,8 @@
     "sprite": "god",
     "ring": true,
     "glow": 0.85,
-    "photo": "./Assets/Gods_Photos/ΔΙΑΣ.png"
+    "photo": "./Assets/Gods/Gods_Photos/ΔΙΑΣ.png",
+    "video": "./Assets/Gods/Gods_Videos/ΔΙΑΣ.mp4"
   },
   {
     "id": "PRIM_AETHER_001",
@@ -4011,7 +4047,9 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΑΤΛΑΣ.png",
+    "video": "./Assets/Titans/Titan_Videos/ΑΤΛΑΣ.mp4"
   },
   {
     "id": "TITAN_COEUS_001",
@@ -4034,7 +4072,9 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΚΟΙΟΣ.png",
+    "video": "./Assets/Titans/Titan_Videos/ΚΟΙΟΣ.mp4"
   },
   {
     "id": "TITAN_CRIUS_001",
@@ -4057,7 +4097,9 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΚΡΙΟΣ.png",
+    "video": "./Assets/Titans/Titan_Videos/ΚΡΙΟΣ.mp4"
   },
   {
     "id": "TITAN_CRONUS_001",
@@ -4080,7 +4122,9 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΚΡΟΝΟΣ.png",
+    "video": "./Assets/Titans/Titan_Videos/ΚΡΟΝΟΣ.mp4"
   },
   {
     "id": "TITAN_EPIMETHEUS_001",
@@ -4103,7 +4147,8 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΚΟΙΟΣ.png"
   },
   {
     "id": "TITAN_HYPERION_001",
@@ -4126,7 +4171,9 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΥΠΕΡΙΩΝ.png",
+    "video": "./Assets/Titans/Titan_Videos/ΥΠΕΡΙΩΝΑΣ.mp4"
   },
   {
     "id": "TITAN_IAPETUS_001",
@@ -4149,7 +4196,9 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΙΑΠΕΤΟΣ.png",
+    "video": "./Assets/Titans/Titan_Videos/ΙΑΠΕΤΟΣ.mp4"
   },
   {
     "id": "TITAN_MENOETIUS_001",
@@ -4172,7 +4221,8 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΚΡΙΟΣ.png"
   },
   {
     "id": "TITAN_MNEMOSYNE_001",
@@ -4195,7 +4245,8 @@
     "theme": "stone-gold",
     "sprite": "titan-female",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΜΝΗΜΟΣΥΝΗ.png"
   },
   {
     "id": "TITAN_OCEANUS_001",
@@ -4218,7 +4269,9 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΩΚΕΑΝΟΣ.png",
+    "video": "./Assets/Titans/Titan_Videos/ΩΚΕΑΝΟΣ.mp4"
   },
   {
     "id": "TITAN_PHOEBE_001",
@@ -4241,7 +4294,8 @@
     "theme": "stone-gold",
     "sprite": "titan-female",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΦΟΙΒΗ.png"
   },
   {
     "id": "TITAN_PROMETHEUS_001",
@@ -4264,7 +4318,9 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΑΤΛΑΣ.png",
+    "video": "./Assets/Heros/Videos/ΠΡΟΜΗΘΕΑΣ.mp4"
   },
   {
     "id": "TITAN_RHEA_001",
@@ -4287,7 +4343,9 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΡΕΑ.png",
+    "video": "./Assets/Titans/Titan_Videos/ΡΕΑ.mp4"
   },
   {
     "id": "TITAN_TETHYS_001",
@@ -4310,7 +4368,9 @@
     "theme": "stone-gold",
     "sprite": "titan-female",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΤΥΘΗΣ.png",
+    "video": "./Assets/Titans/Titan_Videos/ΤΗΘΥΣ.mp4"
   },
   {
     "id": "TITAN_THEIA_001",
@@ -4333,7 +4393,8 @@
     "theme": "stone-gold",
     "sprite": "titan-female",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΜΝΗΜΟΣΥΝΗ.png"
   },
   {
     "id": "TITAN_THEMIS_001",
@@ -4356,7 +4417,9 @@
     "theme": "stone-gold",
     "sprite": "titan-female",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΘΕΜΙΣ.png",
+    "video": "./Assets/Titans/Titan_Videos/ΘΕΜΙΣ.mp4"
   },
   {
     "id": "TROY_AENEAS_001",
@@ -4379,7 +4442,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΑΙΝΕΙΑΣ.png"
   },
   {
     "id": "TROY_ANDROMACHE_001",
@@ -4632,7 +4696,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "video": "./Assets/Heros/Videos/ΜΙΝΟΣ.mp4"
   },
   {
     "id": "ZEUS_SARPEDON_001",
@@ -4977,7 +5042,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "video": "./Assets/Heros/Videos/ΚΑΣΤΟΡΑΣ.mp4"
   },
   {
     "id": "HERO_POLYDEUCES_001",
@@ -5000,7 +5066,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "video": "./Assets/Heros/Videos/ΠΟΛΥΔΕΥΚΗΣ.mp4"
   },
   {
     "id": "HERO_TELEMACHUS_001",
@@ -5023,7 +5090,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΤΗΛΕΜΑΧΟΣ.png"
   },
   {
     "id": "MONSTER_CHIRON_001",
@@ -5115,7 +5183,9 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΜΕΛΕΑΓΡΟΣ.png",
+    "video": "./Assets/Heros/Videos/ΜΕΛΕΑΓΡΟΣ.mp4"
   },
   {
     "id": "KING_AGENOR_001",
@@ -5276,7 +5346,8 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΚΟΙΟΣ.png"
   },
   {
     "id": "TITAN_ASTERIA_001",
@@ -5299,7 +5370,8 @@
     "theme": "stone-gold",
     "sprite": "titan-female",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΦΟΙΒΗ.png"
   },
   {
     "id": "MORTAL_CELEUS_001",
@@ -5644,7 +5716,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΑΙΓΕΑΣ.png"
   },
   {
     "id": "HERO_MEDEA_001",
@@ -5759,7 +5832,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "video": "./Assets/Heros/Videos/ΓΑΝΥΜΗΔΗΣ.mp4"
   },
   {
     "id": "HERO_ENDYMION_001",
@@ -5782,7 +5856,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "video": "./Assets/Heros/Videos/ΕΝΔΥΜΙΩΝ.mp4"
   },
   {
     "id": "HERO_TIRESIAS_001",
@@ -5851,7 +5926,8 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "video": "./Assets/Heros/Videos/ΙΠΠΟΛΥΤΟΣ.mp4"
   },
   {
     "id": "MORTAL_ALCESTIS_001",
@@ -5943,6 +6019,7 @@
     "theme": "stone-gold",
     "sprite": "titan-male",
     "ring": true,
-    "glow": 0.45
+    "glow": 0.45,
+    "photo": "./Assets/Titans/Titan_Photos/ΙΑΠΕΤΟΣ.png"
   }
 ]
