@@ -342,6 +342,7 @@ canvas.addEventListener('touchstart', function(e) {
 
   if (e.touches.length === 1) {
     _multi = false;
+    _tf = null; // clear any stale 2-finger state
     var t = e.touches[0];
     var rect = canvas.getBoundingClientRect();
     var sx = t.clientX - rect.left, sy = t.clientY - rect.top;
@@ -357,7 +358,7 @@ canvas.addEventListener('touchstart', function(e) {
     var dist  = Math.hypot(dx, dy);
     var angle = Math.atan2(dy, dx);
     var rect0 = canvas.getBoundingClientRect();
-    _tf = { mx: mx, my: my, dist: dist, warmup: 3,
+    _tf = { mx: mx, my: my, dist: dist, warmup: 0,
             f0x: t0.clientX - rect0.left, f0y: t0.clientY - rect0.top,
             p0x: t0.clientX, p0y: t0.clientY,
             p1x: t1.clientX, p1y: t1.clientY };
@@ -379,7 +380,7 @@ canvas.addEventListener('touchmove', function(e) {
       var mxa0=(ta0.clientX+tb0.clientX)*0.5-rect.left;
       var mya0=(ta0.clientY+tb0.clientY)*0.5-rect.top;
       _tf={mx:mxa0,my:mya0,dist:Math.hypot(ta0.clientX-tb0.clientX,ta0.clientY-tb0.clientY),
-           warmup:2, f0x:ta0.clientX-rect.left, f0y:ta0.clientY-rect.top};
+           warmup:0, f0x:ta0.clientX-rect.left, f0y:ta0.clientY-rect.top};
       // fall through immediately to 2-finger handler
     } else {
       // _tf exists but may have stale f0 — refresh anchor each time 2 fingers active
