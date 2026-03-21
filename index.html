@@ -1376,20 +1376,25 @@ function enterFocus(id){
     var disc = n.sphere.metadata && n.sphere.metadata.disc;
 
     if(rel){
-      // Relatives: fully visible in front
       n.sphere.renderingGroupId = 1;
       if(hasPhoto){
-        // Photo sphere: keep natural transparent look
+        n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
         n.sphere.material.alpha = 0.22;
       } else {
+        n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
         n.sphere.material.alpha = 1.0;
       }
       if(disc){ disc.setEnabled(true); disc.renderingGroupId = 1; }
     } else {
-      // Non-relatives: dim and push behind
       n.sphere.renderingGroupId = 0;
-      n.sphere.material.alpha = hasPhoto ? 0.05 : 0.12;
-      if(disc){ disc.setEnabled(false); } // hide disc for non-relatives
+      if(hasPhoto){
+        n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+        n.sphere.material.alpha = 0.04;
+        if(disc) disc.setEnabled(false);
+      } else {
+        n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+        n.sphere.material.alpha = 0.12;
+      }
     }
     n.sphere.setEnabled(true);
     if(n.rings) n.rings.forEach(function(r){
@@ -1467,7 +1472,13 @@ function resetFocus(fromPop){
   Object.values(nodes).forEach(function(n){
     var hasPhoto2 = n.sphere.metadata && n.sphere.metadata.hasPhoto;
     var disc2 = n.sphere.metadata && n.sphere.metadata.disc;
-    n.sphere.material.alpha = hasPhoto2 ? 0.22 : 1.0;
+    if(hasPhoto2){
+      n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+      n.sphere.material.alpha = 0.22;
+    } else {
+      n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
+      n.sphere.material.alpha = 1.0;
+    }
     n.sphere.renderingGroupId = 1;
     n.sphere.setEnabled(true);
     if(disc2){ disc2.setEnabled(true); disc2.renderingGroupId = 1; }
