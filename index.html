@@ -356,7 +356,10 @@ canvas.addEventListener('touchstart', function(e) {
     var dx = t0.clientX - t1.clientX, dy = t0.clientY - t1.clientY;
     var dist  = Math.hypot(dx, dy);
     var angle = Math.atan2(dy, dx);
-    _tf = { mx: mx, my: my, dist: dist, warmup: 3 };
+    // Store first finger screen position for zoom anchor
+    var rect0 = canvas.getBoundingClientRect();
+    _tf = { mx: mx, my: my, dist: dist, warmup: 3,
+            f0x: t0.clientX - rect0.left, f0y: t0.clientY - rect0.top };
   }
 }, { passive: false });
 
@@ -418,11 +421,33 @@ canvas.addEventListener('touchmove', function(e) {
     var dmy = my - _tf.my;
     _panDelta(dmx, dmy);
 
-    // 2. PINCH ZOOM — ratio based, capped per frame for consistency
+    // 2. PINCH ZOOM — zoom toward first finger position
     if (_tf.dist > 5 && dist > 5) {
-      var ratio = _tf.dist / dist;          // >1 = fingers closer = zoom in
-      ratio = 1 + (ratio - 1) * 0.45;      // dampen to 45% of raw change
-      camera.radius = _cr(camera.radius * ratio);
+      var ratio = _tf.dist / dist;
+      ratio = 1 + (ratio - 1) * 0.45;
+      var oldRadius = camera.radius;
+      var newRadius = _cr(oldRadius * ratio);
+      var dr = oldRadius - newRadius; // how much we zoomed in
+
+      // Move target toward the first finger's direction in world space
+      // Convert first finger screen pos to a world-space direction
+      if(dr > 0.1 && _tf.f0x !== undefined){
+        // Screen center
+        var cw = rect.width, ch = rect.height;
+        var ndcX = (_tf.f0x / cw - 0.5) * 2;   // -1..1
+        var ndcY = -(_tf.f0y / ch - 0.5) * 2;
+
+        // Move target slightly toward first finger
+        // Use camera right/up vectors scaled by ndc offset
+        var fwd = camera.target.subtract(camera.position).normalize();
+        var right = BABYLON.Vector3.Cross(fwd, BABYLON.Vector3.Up()).normalize();
+        var up    = BABYLON.Vector3.Cross(right, fwd).normalize();
+        var shift = dr * 0.28;
+        camera.target.addInPlace(right.scale(ndcX * shift));
+        camera.target.addInPlace(up.scale(ndcY * shift));
+      }
+
+      camera.radius = newRadius;
     }
 
     _tf.mx = mx; _tf.my = my; _tf.dist = dist;
