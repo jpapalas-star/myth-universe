@@ -207,6 +207,7 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
+<button id="langBtn" onclick="toggleLang()" style="position:fixed;top:12px;right:130px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;letter-spacing:1px;">GR / EN</button>
 <button id="homeBtn" type="button">Μυθολογία</button>
 
 <input id="searchBox" type="text" placeholder="Search name, id, category..." autocomplete="off">
@@ -1045,16 +1046,50 @@ function bindInfoLinks(){
     el.addEventListener('mouseleave',()=>highlightNode(id,false));
   });
 }
+var _lastInfoD = null;
 function showInfo(d){
+  _lastInfoD = d;
+  var isEN = appLang==='en';
+  var name     = isEN ? (d.Name_EN||d.Name||d.id) : (d.Name||d.id);
+  var fulltext = isEN ? (d.FullText_EN||d.FullText||'-') : (d.FullText||d.FullText_EN||'-');
+  var lbl      = isEN ? {sum:'Summary',par:'Parents',prt:'Partners',chi:'Children',txt:'Description'} :
+                        {sum:'Περίληψη',par:'Γονείς',prt:'Σύντροφοι',chi:'Παιδιά',txt:'Περιγραφή'};
   infoEl.innerHTML=
-    `<h2>${d.Name||d.id}</h2>`+
+    `<h2>${name}</h2>`+
     `<div class="sub">${d.Category||''} · ${d.ModelType||''} · Gen ${d.Generation!=null?d.Generation:'-'}</div>`+
-    `<div class="sec">Summary</div><div class="txt">${d.Summary||'-'}</div>`+
-    `<div class="sec">Parents</div><div class="txt">${listInfoLinks(d.Parents)}</div>`+
-    `<div class="sec">Partners</div><div class="txt">${listInfoLinks(d.Partners)}</div>`+
-    `<div class="sec">Children</div><div class="txt">${listInfoLinks(d.Children)}</div>`+
-    `<div class="sec">FullText</div><div class="txt">${d.FullText||'-'}</div>`;
+    `<div class="sec">${lbl.sum}</div><div class="txt">${d.Summary||'-'}</div>`+
+    `<div class="sec">${lbl.par}</div><div class="txt">${listInfoLinks(d.Parents)}</div>`+
+    `<div class="sec">${lbl.prt}</div><div class="txt">${listInfoLinks(d.Partners)}</div>`+
+    `<div class="sec">${lbl.chi}</div><div class="txt">${listInfoLinks(d.Children)}</div>`+
+    `<div class="sec">${lbl.txt}</div><div class="txt" id="infoFullText">${fulltext}</div>`+
+    `<div style="margin-top:10px;display:flex;gap:8px;">
+      <button onclick="speakText()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:6px 14px;font-size:12px;cursor:pointer;">🔊 Ακρόαση</button>
+      <button onclick="stopSpeak()" style="background:rgba(255,100,60,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:16px;color:#ff8866;padding:6px 14px;font-size:12px;cursor:pointer;">⏹ Stop</button>
+    </div>`;
   bindInfoLinks();
+}
+
+function toggleLang(){
+  appLang = appLang==='gr' ? 'en' : 'gr';
+  document.getElementById('langBtn').textContent = appLang==='gr' ? 'GR / EN' : 'EN / GR';
+  if(_lastInfoD) showInfo(_lastInfoD);
+}
+
+function speakText(){
+  stopSpeak();
+  var el=document.getElementById('infoFullText');
+  if(!el||!window.speechSynthesis) return;
+  var txt=el.textContent||'';
+  if(!txt||txt==='-') return;
+  var utt=new SpeechSynthesisUtterance(txt);
+  utt.lang = appLang==='en' ? 'en-US' : 'el-GR';
+  utt.rate=0.92;
+  utt.pitch=1.0;
+  window.speechSynthesis.speak(utt);
+}
+
+function stopSpeak(){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
 }
 function resetInfo(){
   infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">Chaos center · generation rings · family clusters</div><div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>`;
@@ -1458,6 +1493,7 @@ function enterFocus(id){
 function resetFocus(fromPop){
   focusedId=null;
   if(typeof closeVideo==='function') closeVideo();
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
   _animToken++;          // cancel any running focus animation
   _inertiaActive=false;  // stop inertia so it doesn't fight the restore
   _velAlpha=0; _velBeta=0; _velRadius=0; _velTx=0; _velTy=0; _velTz=0;
