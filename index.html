@@ -360,10 +360,12 @@ canvas.addEventListener('touchstart', function(e) {
     var dist  = Math.hypot(dx, dy);
     var angle = Math.atan2(dy, dx);
     var rect0 = canvas.getBoundingClientRect();
+    var initAngle = Math.atan2(t1.clientY - t0.clientY, t1.clientX - t0.clientX);
     _tf = { mx: mx, my: my, dist: dist, warmup: 0,
             f0x: t0.clientX - rect0.left, f0y: t0.clientY - rect0.top,
             p0x: t0.clientX, p0y: t0.clientY,
-            p1x: t1.clientX, p1y: t1.clientY };
+            p1x: t1.clientX, p1y: t1.clientY,
+            angle: initAngle };
   }
 }, { passive: false });
 
@@ -381,8 +383,9 @@ canvas.addEventListener('touchmove', function(e) {
       var ta0=e.touches[0], tb0=e.touches[1];
       var mxa0=(ta0.clientX+tb0.clientX)*0.5-rect.left;
       var mya0=(ta0.clientY+tb0.clientY)*0.5-rect.top;
+      var midAngle=Math.atan2(tb0.clientY-ta0.clientY, tb0.clientX-ta0.clientX);
       _tf={mx:mxa0,my:mya0,dist:Math.hypot(ta0.clientX-tb0.clientX,ta0.clientY-tb0.clientY),
-           warmup:0, f0x:ta0.clientX-rect.left, f0y:ta0.clientY-rect.top};
+           warmup:0, f0x:ta0.clientX-rect.left, f0y:ta0.clientY-rect.top, angle:midAngle};
       // fall through immediately to 2-finger handler
     } else {
       // _tf exists but may have stale f0 — refresh anchor each time 2 fingers active
@@ -473,6 +476,22 @@ canvas.addEventListener('touchmove', function(e) {
       ratio = 1 + rawChange * damping;
       camera.radius = _cr(camera.radius * ratio);
     }
+
+    // 3. TWIST ROTATION — rotate camera.alpha based on finger angle change
+    var curAngle = Math.atan2(t1.clientY - t0.clientY, t1.clientX - t0.clientX);
+    if(_tf.angle !== undefined){
+      var dAngle = curAngle - _tf.angle;
+      // Wrap angle delta to -PI..PI
+      if(dAngle >  Math.PI) dAngle -= Math.PI*2;
+      if(dAngle < -Math.PI) dAngle += Math.PI*2;
+      // Only apply rotation if twist is significant (ignore tiny wobbles)
+      // and NOT during a strong pinch (to avoid fighting zoom)
+      var distChange = Math.abs(dist - _tf.dist);
+      if(Math.abs(dAngle) > 0.008 && distChange < 30){
+        camera.alpha -= dAngle * 0.7; // 0.7 = rotation sensitivity
+      }
+    }
+    _tf.angle = curAngle;
 
     _tf.mx = mx; _tf.my = my; _tf.dist = dist;
     // p0x/p1y already updated above
