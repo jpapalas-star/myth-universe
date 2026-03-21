@@ -457,39 +457,42 @@ canvas.addEventListener('touchmove', function(e) {
     _tf.p0x = t0.clientX; _tf.p0y = t0.clientY;
     _tf.p1x = t1.clientX; _tf.p1y = t1.clientY;
 
-    // 2. PINCH ZOOM — anchor at midpoint of two fingers
+    // 2. PINCH ZOOM — mathematically correct zoom-to-pinch-point
     if (_tf.dist > 5 && dist > 5) {
       var ratio = _tf.dist / dist;
       ratio = 1 + (ratio - 1) * 0.45;
       var oldRadius = camera.radius;
       var newRadius = _cr(oldRadius * ratio);
-      var dr = oldRadius - newRadius; // positive = zooming in
+      var zoomFrac = 1.0 - newRadius / oldRadius; // +ve = zoom in, -ve = zoom out
 
-      // The correct approach: the world point under the finger midpoint
-      // should stay fixed. We do this by moving camera.target
-      // proportional to the finger offset from screen center × zoom amount.
-      // The key formula: target shift = (fingerOffset / screenSize) * dr * fovScale
-      if (Math.abs(dr) > 0.01) {
+      if (Math.abs(zoomFrac) > 0.0001) {
         var cw2 = rect.width, ch2 = rect.height;
 
-        // Use PREVIOUS midpoint for offset (current midpoint movement handled by pan)
-        var offPxX = _tf.mx - cw2 * 0.5;
-        var offPxY = _tf.my - ch2 * 0.5;
+        // Pinch midpoint offset from screen centre (pixels)
+        var offPxX = mx - cw2 * 0.5;
+        var offPxY = my - ch2 * 0.5;
 
-        // Scale: how many world units per pixel at current distance
-        // Approximate: tan(fov/2) * radius / (screenHeight/2)
-        var fovRad = camera.fov || (Math.PI / 4);
-        var worldPerPx = Math.tan(fovRad * 0.5) * oldRadius / (ch2 * 0.5);
+        // Convert pixel offset → world units at the target plane.
+        // World height visible at target distance = 2 * R * tan(fov/2)
+        // So world-per-pixel (vertical) = R * tan(fov/2) / (ch/2)
+        var fovRad = camera.fov || (Math.PI * 0.25);
+        var worldPerPxV = oldRadius * Math.tan(fovRad * 0.5) / (ch2 * 0.5);
+        var aspect = cw2 / ch2;
+        var worldPerPxH = worldPerPxV * aspect;
 
-        // Move target by the offset scaled by how much we zoomed
-        // (1 - newRadius/oldRadius) = fraction zoomed
-        var zoomFrac = 1 - newRadius / oldRadius;
-        var camFwd2   = camera.target.subtract(camera.position).normalize();
-        var camRight2 = BABYLON.Vector3.Cross(camFwd2, BABYLON.Vector3.Up()).normalize();
-        var camUp2    = BABYLON.Vector3.Cross(camRight2, camFwd2).normalize();
+        // World offset of pinch midpoint from camera target
+        var worldOffX =  offPxX * worldPerPxH;
+        var worldOffY = -offPxY * worldPerPxV;
 
-        camera.target.addInPlace(camRight2.scale( offPxX * worldPerPx * zoomFrac));
-        camera.target.addInPlace(camUp2.scale(   -offPxY * worldPerPx * zoomFrac));
+        // Camera basis vectors
+        var camFwd3   = camera.target.subtract(camera.position).normalize();
+        var camRight3 = BABYLON.Vector3.Cross(camFwd3, BABYLON.Vector3.Up()).normalize();
+        var camUp3    = BABYLON.Vector3.Cross(camRight3, camFwd3).normalize();
+
+        // Move target toward pinch point by zoomFrac of the world offset.
+        // This keeps the world point under the pinch midpoint stationary.
+        camera.target.addInPlace(camRight3.scale(worldOffX * zoomFrac));
+        camera.target.addInPlace(camUp3.scale(worldOffY * zoomFrac));
       }
 
       camera.radius = newRadius;
