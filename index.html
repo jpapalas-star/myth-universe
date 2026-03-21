@@ -356,10 +356,11 @@ canvas.addEventListener('touchstart', function(e) {
     var dx = t0.clientX - t1.clientX, dy = t0.clientY - t1.clientY;
     var dist  = Math.hypot(dx, dy);
     var angle = Math.atan2(dy, dx);
-    // Store first finger screen position for zoom anchor
     var rect0 = canvas.getBoundingClientRect();
     _tf = { mx: mx, my: my, dist: dist, warmup: 3,
-            f0x: t0.clientX - rect0.left, f0y: t0.clientY - rect0.top };
+            f0x: t0.clientX - rect0.left, f0y: t0.clientY - rect0.top,
+            p0x: t0.clientX, p0y: t0.clientY,
+            p1x: t1.clientX, p1y: t1.clientY };
   }
 }, { passive: false });
 
@@ -368,17 +369,20 @@ canvas.addEventListener('touchmove', function(e) {
   e.preventDefault();
   var rect = canvas.getBoundingClientRect();
 
-  // If 2+ fingers detected mid-move, switch to multi mode immediately
-  if (e.touches.length >= 2 && !_multi) {
+  // Route by touch count — mutually exclusive
+  if (e.touches.length >= 2) {
+    // Always treat as 2-finger regardless of _multi state
     _multi = true; _t1 = null;
-    var ta = e.touches[0], tb = e.touches[1];
-    var mxa = (ta.clientX+tb.clientX)*0.5-rect.left;
-    var mya = (ta.clientY+tb.clientY)*0.5-rect.top;
-    var dxa = ta.clientX-tb.clientX, dya = ta.clientY-tb.clientY;
-    var dista = Math.hypot(dxa,dya);
-    if(!_tf) _tf={mx:mxa,my:mya,dist:dista,warmup:2,
-                  f0x:ta.clientX-rect.left,f0y:ta.clientY-rect.top};
-    return;
+    if (!_tf) {
+      // Initialize _tf if not set yet (2nd finger appeared mid-move)
+      var ta0=e.touches[0], tb0=e.touches[1];
+      var mxa0=(ta0.clientX+tb0.clientX)*0.5-rect.left;
+      var mya0=(ta0.clientY+tb0.clientY)*0.5-rect.top;
+      _tf={mx:mxa0,my:mya0,dist:Math.hypot(ta0.clientX-tb0.clientX,ta0.clientY-tb0.clientY),
+           warmup:2, f0x:ta0.clientX-rect.left, f0y:ta0.clientY-rect.top};
+      return; // skip this frame, wait for next move
+    }
+    // Fall through to 2-finger handler below
   }
 
   if (e.touches.length === 1 && _t1) {
@@ -432,12 +436,22 @@ canvas.addEventListener('touchmove', function(e) {
     var dist = Math.hypot(dx, dy);
 
     // Skip first 3 frames — stabilise before processing
-    if(_tf.warmup > 0){ _tf.warmup--; _tf.mx=mx; _tf.my=my; _tf.dist=dist; return; }
+    if(_tf.warmup > 0){ _tf.warmup--; _tf.mx=mx; _tf.my=my; _tf.dist=dist; _tf.p0x=t0.clientX; _tf.p0y=t0.clientY; _tf.p1x=t1.clientX; _tf.p1y=t1.clientY; return; }
 
-    // 1. PAN: midpoint movement pans the galaxy
+    // 1. PAN: only if both fingers moved (not one stationary + one moving)
     var dmx = mx - _tf.mx;
     var dmy = my - _tf.my;
-    _panDelta(dmx, dmy);
+    // Check individual finger deltas
+    var d0 = Math.hypot(t0.clientX - _tf.p0x, t0.clientY - _tf.p0y);
+    var d1 = Math.hypot(t1.clientX - _tf.p1x, t1.clientY - _tf.p1y);
+    var STILL = 4; // px — below this = "stationary"
+    // Only pan if BOTH fingers moved, not just one
+    if (d0 > STILL && d1 > STILL) {
+      _panDelta(dmx, dmy);
+    }
+    // Update individual finger positions
+    _tf.p0x = t0.clientX; _tf.p0y = t0.clientY;
+    _tf.p1x = t1.clientX; _tf.p1y = t1.clientY;
 
     // 2. PINCH ZOOM — anchor at first finger (t0)
     if (_tf.dist > 5 && dist > 5) {
@@ -471,6 +485,7 @@ canvas.addEventListener('touchmove', function(e) {
     }
 
     _tf.mx = mx; _tf.my = my; _tf.dist = dist;
+    // p0x/p1y already updated above
   }
 }, { passive: false });
 
