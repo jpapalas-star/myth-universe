@@ -403,28 +403,19 @@ canvas.addEventListener('touchmove', function(e) {
       camera.alpha -= dmx2 * 0.0015;
       camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
     } else {
-      var swipeSpeed = Math.hypot(dmx2, dmy2);
-      var FAST = 16; // px/frame threshold
+      // Pan always
+      _velAlpha = 0; _velBeta = 0;
+      _panDelta(dmx2, dmy2);
 
-      if (swipeSpeed > FAST) {
-        // FAST swipe: orbit around current screen center (camera.target)
-        camera.alpha -= dmx2 * 0.0015;
-        camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
-      } else {
-        // SLOW swipe: pan the world
-        _velAlpha = 0; _velBeta = 0;
-        _panDelta(dmx2, dmy2);
-
-        // Boundary
-        var WALL = 560;
-        var tx = camera.target.x, tz = camera.target.z;
-        var distW = Math.sqrt(tx*tx + tz*tz);
-        if (distW > WALL) {
-          var over = distW - WALL;
-          camera.target.x -= (tx / distW) * over * 0.3;
-          camera.target.z -= (tz / distW) * over * 0.3;
-          camera.alpha -= dmx2 * 0.0008;
-        }
+      // Boundary
+      var WALL = 560;
+      var tx = camera.target.x, tz = camera.target.z;
+      var distW = Math.sqrt(tx*tx + tz*tz);
+      if (distW > WALL) {
+        var over = distW - WALL;
+        camera.target.x -= (tx / distW) * over * 0.3;
+        camera.target.z -= (tz / distW) * over * 0.3;
+        camera.alpha -= dmx2 * 0.0008;
       }
     }
     _t1.x = t.clientX; _t1.y = t.clientY;
@@ -457,45 +448,11 @@ canvas.addEventListener('touchmove', function(e) {
     _tf.p0x = t0.clientX; _tf.p0y = t0.clientY;
     _tf.p1x = t1.clientX; _tf.p1y = t1.clientY;
 
-    // 2. PINCH ZOOM — mathematically correct zoom-to-pinch-point
+    // 2. PINCH ZOOM
     if (_tf.dist > 5 && dist > 5) {
       var ratio = _tf.dist / dist;
       ratio = 1 + (ratio - 1) * 0.45;
-      var oldRadius = camera.radius;
-      var newRadius = _cr(oldRadius * ratio);
-      var zoomFrac = 1.0 - newRadius / oldRadius; // +ve = zoom in, -ve = zoom out
-
-      if (Math.abs(zoomFrac) > 0.0001) {
-        var cw2 = rect.width, ch2 = rect.height;
-
-        // Pinch midpoint offset from screen centre (pixels)
-        var offPxX = mx - cw2 * 0.5;
-        var offPxY = my - ch2 * 0.5;
-
-        // Convert pixel offset → world units at the target plane.
-        // World height visible at target distance = 2 * R * tan(fov/2)
-        // So world-per-pixel (vertical) = R * tan(fov/2) / (ch/2)
-        var fovRad = camera.fov || (Math.PI * 0.25);
-        var worldPerPxV = oldRadius * Math.tan(fovRad * 0.5) / (ch2 * 0.5);
-        var aspect = cw2 / ch2;
-        var worldPerPxH = worldPerPxV * aspect;
-
-        // World offset of pinch midpoint from camera target
-        var worldOffX =  offPxX * worldPerPxH;
-        var worldOffY = -offPxY * worldPerPxV;
-
-        // Camera basis vectors
-        var camFwd3   = camera.target.subtract(camera.position).normalize();
-        var camRight3 = BABYLON.Vector3.Cross(camFwd3, BABYLON.Vector3.Up()).normalize();
-        var camUp3    = BABYLON.Vector3.Cross(camRight3, camFwd3).normalize();
-
-        // Move target toward pinch point by zoomFrac of the world offset.
-        // This keeps the world point under the pinch midpoint stationary.
-        camera.target.addInPlace(camRight3.scale(worldOffX * zoomFrac));
-        camera.target.addInPlace(camUp3.scale(worldOffY * zoomFrac));
-      }
-
-      camera.radius = newRadius;
+      camera.radius = _cr(camera.radius * ratio);
     }
 
     _tf.mx = mx; _tf.my = my; _tf.dist = dist;
