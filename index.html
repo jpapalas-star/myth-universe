@@ -488,7 +488,9 @@ canvas.addEventListener('touchmove', function(e) {
       // and NOT during a strong pinch (to avoid fighting zoom)
       var distChange = Math.abs(dist - _tf.dist);
       if(Math.abs(dAngle) > 0.008 && distChange < 30){
-        camera.alpha -= dAngle * 0.7; // 0.7 = rotation sensitivity
+        camera.alpha -= dAngle * 0.7;
+        _velAlpha = 0; // prevent inertia from running after twist
+        _multi = true; // ensure tap is not registered after twist
       }
     }
     _tf.angle = curAngle;
