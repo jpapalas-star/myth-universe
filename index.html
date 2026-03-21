@@ -1066,7 +1066,8 @@ function showInfo(d){
     `<div style="margin-top:10px;display:flex;gap:8px;">
       <button onclick="speakText()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:6px 14px;font-size:12px;cursor:pointer;">🔊 Ακρόαση</button>
       <button onclick="stopSpeak()" style="background:rgba(255,100,60,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:16px;color:#ff8866;padding:6px 14px;font-size:12px;cursor:pointer;">⏹ Stop</button>
-    </div>`;
+    </div>`+
+"";
   bindInfoLinks();
 }
 
@@ -1083,17 +1084,44 @@ function speakText(){
   var txt=el.textContent||'';
   if(!txt||txt==='-') return;
   var utt=new SpeechSynthesisUtterance(txt);
-  utt.lang = appLang==='en' ? 'en-US' : 'el-GR';
-  utt.rate=0.92;
-  utt.pitch=1.0;
+  // Greek female voice
+  if(appLang==='en'){
+    utt.lang='en-US';
+  } else {
+    utt.lang='el-GR';
+    // Try to find a Greek voice
+    var voices=window.speechSynthesis.getVoices();
+    var grVoice=voices.find(function(v){
+      return v.lang.indexOf('el')===0 && v.name.toLowerCase().indexOf('female')>=0;
+    }) || voices.find(function(v){
+      return v.lang.indexOf('el')===0;
+    });
+    if(grVoice) utt.voice=grVoice;
+  }
+  utt.rate=0.88;
+  utt.pitch=1.05;
+  var ttsBtn=document.getElementById('ttsStop');
+  if(ttsBtn) ttsBtn.style.display='block';
+  utt.onend=function(){ if(ttsBtn) ttsBtn.style.display='none'; };
   window.speechSynthesis.speak(utt);
+}
+
+function stopSpeak(){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  var ttsBtn=document.getElementById('ttsStop');
+  if(ttsBtn) ttsBtn.style.display='none';
 }
 
 function stopSpeak(){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
 }
 function resetInfo(){
-  infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">Chaos center · generation rings · family clusters</div><div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>`;
+  var isEN=appLang==='en';
+  var sub = isEN ? 'Chaos center · generation rings · family clusters'
+                 : 'Κέντρο Χάους · δακτύλιοι γενεών · οικογενειακά συστήματα';
+  var txt = isEN ? 'Tap a planet for info. Tap again or tap «Mythology» to reset.'
+                 : 'Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.';
+  infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">${sub}</div><div class="txt">${txt}</div>`;
 }
 
 function getNodePos(id){return nodes[id]&&nodes[id].sphere?nodes[id].sphere.position:null;}
@@ -1414,18 +1442,21 @@ function enterFocus(id){
     if(rel){
       n.sphere.renderingGroupId = 1;
       if(hasPhoto){
-        n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
-        n.sphere.material.alpha = 0.22;
+        // Photo entity: hide atmosphere spheres, show only the disc
+        n.sphere.material.alpha = 0.0;
+        // Also hide inner atmosphere sphere if present
+        var inner = n.sphere.getChildMeshes(true).find(function(m){ return m.name && m.name.indexOf('inner_')===0; });
+        if(inner) inner.setEnabled(false);
       } else {
         n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
         n.sphere.material.alpha = 1.0;
       }
       if(disc){ disc.setEnabled(true); disc.renderingGroupId = 1; }
     } else {
-      // Non-relatives: hide completely during focus
-      n.sphere.material.alpha = 0.0;
-      n.sphere.renderingGroupId = 0;
+      // Non-relatives: hide completely
+      n.sphere.setEnabled(false);
       if(disc) disc.setEnabled(false);
+      return;
     }
     n.sphere.setEnabled(true);
     if(n.rings) n.rings.forEach(function(r){
@@ -1488,6 +1519,10 @@ function enterFocus(id){
 
   showInfo(dataMap[id]);
   if(typeof playEntityVideo==='function') playEntityVideo(dataMap[id]);
+  // Auto-start TTS after video or immediately if no video
+  setTimeout(function(){
+    if(typeof speakText==='function') speakText();
+  }, dataMap[id]&&dataMap[id].video ? 100 : 400);
   if(!suppressPop) history.pushState({focus:id},'');
 }
 
@@ -1505,8 +1540,11 @@ function resetFocus(fromPop){
     var hasPhoto2 = n.sphere.metadata && n.sphere.metadata.hasPhoto;
     var disc2 = n.sphere.metadata && n.sphere.metadata.disc;
     if(hasPhoto2){
-      n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
       n.sphere.material.alpha = 0.22;
+      n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+      // Restore inner atmosphere sphere
+      var inner2 = n.sphere.getChildMeshes(true).find(function(m){ return m.name && m.name.indexOf('inner_')===0; });
+      if(inner2) inner2.setEnabled(true);
     } else {
       n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
       n.sphere.material.alpha = 1.0;
@@ -1958,11 +1996,26 @@ window.addEventListener('resize',()=>engine.resize());
     <div id="videoTitleEN" style="font-family:Arial,sans-serif;font-size:14px;color:#ccc;margin-top:4px;letter-spacing:1px;"></div>
   </div>
   <!-- Video frame with border -->
-  <div style="border:3px solid #222;border-radius:16px;box-shadow:0 0 60px 8px #000,0 0 0 6px #111,inset 0 0 20px #000;overflow:hidden;max-width:95vw;max-height:70vh;">
-    <video id="videoEl" style="display:block;max-width:95vw;max-height:70vh;background:#000;" playsinline autoplay></video>
+  <div style="
+    position:relative;
+    border-radius:18px;
+    padding:5px;
+    background:linear-gradient(135deg,#8B6914,#FFD700,#8B6914,#FFD700,#8B6914);
+    box-shadow:0 0 40px 10px rgba(255,200,50,0.35), 0 0 80px 20px rgba(0,0,0,0.8), inset 0 0 8px rgba(255,220,80,0.3);
+    max-width:96vw;
+  ">
+    <div style="border-radius:14px;overflow:hidden;background:#000;border:2px solid #1a0a00;">
+      <video id="videoEl" style="display:block;width:min(480px,92vw);max-height:72vh;background:#000;" playsinline autoplay></video>
+    </div>
+    <!-- corner ornaments -->
+    <div style="position:absolute;top:4px;left:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
+    <div style="position:absolute;top:4px;right:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
+    <div style="position:absolute;bottom:4px;left:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
+    <div style="position:absolute;bottom:4px;right:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
   </div>
   <!-- Skip button -->
   <button id="videoSkip" type="button" onclick="closeVideo()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.25);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:8001;letter-spacing:1px;">SKIP ✕</button>
+<button id="ttsStop" type="button" onclick="stopSpeak()" style="position:fixed;top:18px;right:110px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,160,60,0.4);border-radius:10px;color:#ffa040;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:7000;letter-spacing:1px;display:none;">🔊 Stop</button>
 </div>
 
 <script>
