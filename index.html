@@ -394,10 +394,16 @@ canvas.addEventListener('touchmove', function(e) {
     var t = e.touches[0];
     var dmx2 = t.clientX - _t1.x, dmy2 = t.clientY - _t1.y;
 
-    // Skip first move frame to avoid teleport on initial touch
-    if (_t1.firstMove) { _t1.firstMove=false; _t1.x=t.clientX; _t1.y=t.clientY; return; }
+    // Cap delta to avoid teleport on first frame (instead of skipping)
+    var rawSpeed = Math.hypot(dmx2, dmy2);
+    var MAX_DELTA = 20; // max pixels per frame
+    if (rawSpeed > MAX_DELTA) {
+      dmx2 = dmx2 * MAX_DELTA / rawSpeed;
+      dmy2 = dmy2 * MAX_DELTA / rawSpeed;
+    }
+    _t1.firstMove = false;
 
-    if (Math.hypot(dmx2, dmy2) > 10) _t1.id = null; // cancel tap
+    if (rawSpeed > 10) _t1.id = null; // cancel tap
 
     if (focusedId) {
       // Focus mode: orbit around focused planet
