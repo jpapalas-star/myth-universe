@@ -1,4 +1,16 @@
-<!DOCTYPE html>
+<!DOC
+
+<div id="settingsPanel" style="display:none;position:fixed;top:60px;left:10px;background:rgba(10,5,25,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:16px 20px;z-index:300;min-width:200px;box-shadow:0 4px 24px rgba(0,0,0,0.6);">
+  <div style="color:#ffe040;font-size:14px;font-weight:bold;margin-bottom:12px;letter-spacing:1px;">⚙ Navigation</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span style="color:#aaa;font-size:13px;">Slow</span>
+    <div id="navToggle" onclick="toggleNavSpeed()" style="width:48px;height:26px;border-radius:13px;background:#333;cursor:pointer;position:relative;transition:background 0.2s;border:1px solid rgba(255,255,255,0.15);">
+      <div id="navThumb" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#888;transition:left 0.2s,background 0.2s;"></div>
+    </div>
+    <span style="color:#aaa;font-size:13px;">Fast</span>
+  </div>
+  <div id="navLabel" style="color:#888;font-size:11px;margin-top:8px;">Normal navigation</div>
+</div>TYPE html>
 <html lang="el">
 <head>
 <meta charset="UTF-8">
@@ -207,6 +219,7 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
+<button id="settingsBtn" type="button" onclick="toggleSettings()" style="background:rgba(20,10,40,0.85);border:1px solid rgba(255,255,255,0.2);border-radius:22px;color:#fff;font-size:18px;padding:6px 14px;cursor:pointer;margin-left:6px;">⚙</button>
 <button id="langBtn" onclick="toggleLang()" style="position:fixed;top:12px;right:130px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;letter-spacing:1px;">GR / EN</button>
 <button id="homeBtn" type="button">Μυθολογία</button>
 
@@ -238,6 +251,7 @@ html,body{
 
 <script>
 var appLang='gr';
+var navFast=false; // false=slow, true=fast
 var _lastInfoD=null;
 const canvas=document.getElementById('renderCanvas');
 const infoEl=document.getElementById('info');
@@ -449,7 +463,7 @@ canvas.addEventListener('touchmove', function(e) {
     var STILL = 4; // px — below this = "stationary"
     // Only pan if BOTH fingers moved, not just one
     if (d0 > STILL && d1 > STILL) {
-      _panDelta(dmx * 3.5, dmy * 3.5); // 2-finger pan faster
+      _panDelta(dmx * (navFast ? 6.5 : 3.5), dmy * (navFast ? 6.5 : 3.5));
     }
     // Update individual finger positions
     _tf.p0x = t0.clientX; _tf.p0y = t0.clientY;
@@ -465,7 +479,8 @@ canvas.addEventListener('touchmove', function(e) {
       var minR = camera.lowerRadiusLimit || 35;
       var maxR = camera.upperRadiusLimit || 900;
       var t = Math.max(0, Math.min(1, (camera.radius - minR) / (maxR - minR)));
-      var damping = 0.45 + t * 0.75; // 0.45 close → 1.2 far
+      var dampMax = navFast ? 1.8 : 1.2;
+      var damping = 0.45 + t * (dampMax - 0.45); // 0.45 close → dampMax far
 
       ratio = 1 + rawChange * damping;
       camera.radius = _cr(camera.radius * ratio);
@@ -1121,6 +1136,40 @@ function showInfo(d){
 "";
   bindInfoLinks();
 }
+
+function toggleSettings(){
+  var p=document.getElementById('settingsPanel');
+  if(p) p.style.display=(p.style.display==='none'?'block':'none');
+}
+
+function toggleNavSpeed(){
+  navFast=!navFast;
+  var thumb=document.getElementById('navThumb');
+  var toggle=document.getElementById('navToggle');
+  var label=document.getElementById('navLabel');
+  if(navFast){
+    thumb.style.left='25px';
+    thumb.style.background='#ffe040';
+    toggle.style.background='rgba(255,224,64,0.25)';
+    label.textContent='Fast navigation';
+    label.style.color='#ffe040';
+  } else {
+    thumb.style.left='3px';
+    thumb.style.background='#888';
+    toggle.style.background='#333';
+    label.textContent='Normal navigation';
+    label.style.color='#888';
+  }
+}
+
+// Close settings when tapping outside
+document.addEventListener('click', function(e){
+  var sp=document.getElementById('settingsPanel');
+  var sb=document.getElementById('settingsBtn');
+  if(sp && sb && !sp.contains(e.target) && e.target!==sb){
+    sp.style.display='none';
+  }
+});
 
 function toggleLang(){
   appLang = appLang==='gr' ? 'en' : 'gr';
