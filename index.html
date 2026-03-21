@@ -378,27 +378,32 @@ canvas.addEventListener('touchmove', function(e) {
     if (Math.hypot(dmx2, dmy2) > 10) _t1.id = null; // cancel tap
 
     if (focusedId) {
-      // In focus mode: orbit around focused planet
+      // Focus mode: orbit around focused planet
       camera.alpha -= dmx2 * 0.0015;
       camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
     } else {
-      // Free mode: PAN — kill any orbit inertia so it doesn't fight the pan
-      _velAlpha = 0; _velBeta = 0;
+      var swipeSpeed = Math.hypot(dmx2, dmy2);
+      var FAST = 16; // px/frame threshold
 
-      _panDelta(dmx2, dmy2);
+      if (swipeSpeed > FAST) {
+        // FAST swipe: orbit around current screen center (camera.target)
+        camera.alpha -= dmx2 * 0.0015;
+        camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
+      } else {
+        // SLOW swipe: pan the world
+        _velAlpha = 0; _velBeta = 0;
+        _panDelta(dmx2, dmy2);
 
-      // Boundary: when target drifts too far, gently push back + add curvature
-      var WALL = 560;
-      var tx = camera.target.x, tz = camera.target.z;
-      var dist = Math.sqrt(tx*tx + tz*tz);
-      if (dist > WALL) {
-        // How far past the wall
-        var over = dist - WALL;
-        // Push target back proportionally
-        camera.target.x -= (tx / dist) * over * 0.3;
-        camera.target.z -= (tz / dist) * over * 0.3;
-        // Add gentle alpha rotation so user glides around the edge instead of bouncing
-        camera.alpha -= dmx2 * 0.0008;
+        // Boundary
+        var WALL = 560;
+        var tx = camera.target.x, tz = camera.target.z;
+        var distW = Math.sqrt(tx*tx + tz*tz);
+        if (distW > WALL) {
+          var over = distW - WALL;
+          camera.target.x -= (tx / distW) * over * 0.3;
+          camera.target.z -= (tz / distW) * over * 0.3;
+          camera.alpha -= dmx2 * 0.0008;
+        }
       }
     }
     _t1.x = t.clientX; _t1.y = t.clientY;
@@ -421,30 +426,32 @@ canvas.addEventListener('touchmove', function(e) {
     var dmy = my - _tf.my;
     _panDelta(dmx, dmy);
 
-    // 2. PINCH ZOOM — zoom toward first finger position
+    // 2. PINCH ZOOM — anchor at first finger (t0)
     if (_tf.dist > 5 && dist > 5) {
       var ratio = _tf.dist / dist;
       ratio = 1 + (ratio - 1) * 0.45;
       var oldRadius = camera.radius;
       var newRadius = _cr(oldRadius * ratio);
-      var dr = oldRadius - newRadius; // how much we zoomed in
+      var dr = oldRadius - newRadius; // positive = zooming in
 
-      // Move target toward the first finger's direction in world space
-      // Convert first finger screen pos to a world-space direction
-      if(dr > 0.1 && _tf.f0x !== undefined){
-        // Screen center
-        var cw = rect.width, ch = rect.height;
-        var ndcX = (_tf.f0x / cw - 0.5) * 2;   // -1..1
-        var ndcY = -(_tf.f0y / ch - 0.5) * 2;
+      // Anchor: move camera.target toward the first finger (t0) world direction
+      // so that the point under t0 stays fixed as we zoom
+      if (Math.abs(dr) > 0.05 && _tf.f0x !== undefined) {
+        var cw2 = rect.width, ch2 = rect.height;
+        // Offset of first finger from screen center, normalised -1..1
+        var offX = (_tf.f0x - cw2 * 0.5) / (cw2 * 0.5);
+        var offY = -(_tf.f0y - ch2 * 0.5) / (ch2 * 0.5);
 
-        // Move target slightly toward first finger
-        // Use camera right/up vectors scaled by ndc offset
-        var fwd = camera.target.subtract(camera.position).normalize();
-        var right = BABYLON.Vector3.Cross(fwd, BABYLON.Vector3.Up()).normalize();
-        var up    = BABYLON.Vector3.Cross(right, fwd).normalize();
-        var shift = dr * 0.28;
-        camera.target.addInPlace(right.scale(ndcX * shift));
-        camera.target.addInPlace(up.scale(ndcY * shift));
+        // Camera right and up vectors (horizontal plane mostly)
+        var camFwd   = camera.target.subtract(camera.position).normalize();
+        var camRight = BABYLON.Vector3.Cross(camFwd, BABYLON.Vector3.Up()).normalize();
+        var camUp    = BABYLON.Vector3.Cross(camRight, camFwd).normalize();
+
+        // How much to shift: proportional to zoom amount and finger offset
+        // Larger offset = finger is further from center = bigger shift needed
+        var shift = dr * 0.5;
+        camera.target.addInPlace(camRight.scale(offX * shift));
+        camera.target.addInPlace(camUp.scale(offY * shift));
       }
 
       camera.radius = newRadius;
