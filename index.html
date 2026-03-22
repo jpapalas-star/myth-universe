@@ -2028,15 +2028,15 @@ function toggleDriveMode(){
 }
 function _gyroCb(e){_gyroAlpha=(e.gamma||0)/45;_gyroBeta=(e.beta||0)/45;}
 
-var _thrId=null,_thrY0=0,_thrX0=0,_thrXCur=0;
+var _thrId=null,_thrY0=0,_thrX0=0,_thrXCur=0,_thrXPrev=0;
 document.addEventListener('DOMContentLoaded',function(){
   var ta=document.getElementById('throttleArea');if(!ta)return;
-  ta.addEventListener('touchstart',function(e){if(!driveMode)return;_thrId=e.changedTouches[0].identifier;_thrY0=e.changedTouches[0].clientY;_thrX0=e.changedTouches[0].clientX;_thrXCur=_thrX0;driveThrottle=0;e.preventDefault();},{passive:false});
+  ta.addEventListener('touchstart',function(e){if(!driveMode)return;_thrId=e.changedTouches[0].identifier;_thrY0=e.changedTouches[0].clientY;_thrX0=e.changedTouches[0].clientX;_thrXCur=_thrX0;_thrXPrev=_thrX0;driveThrottle=0;e.preventDefault();},{passive:false});
   ta.addEventListener('touchmove',function(e){
     if(!driveMode||_thrId===null)return;
     for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];if(t.identifier===_thrId){
       driveThrottle=Math.max(-1,Math.min(1,(t.clientY-_thrY0)/100));
-      _thrXCur=t.clientX;
+      _thrXPrev=_thrXCur; _thrXCur=t.clientX;
       var tb=document.getElementById('throttleBar'),bb=document.getElementById('brakeBar');
       if(driveThrottle>0){if(tb)tb.style.height=(driveThrottle*50)+'%';if(bb)bb.style.height='0%';}
       else{if(tb)tb.style.height='0%';if(bb)bb.style.height=((-driveThrottle)*50)+'%';}
@@ -2045,7 +2045,7 @@ document.addEventListener('DOMContentLoaded',function(){
   },{passive:false});
   ta.addEventListener('touchend',function(e){
     for(var i=0;i<e.changedTouches.length;i++){if(e.changedTouches[i].identifier===_thrId){
-      _thrId=null;driveThrottle=0;_thrXCur=_thrX0;
+      _thrId=null;driveThrottle=0;_thrXCur=_thrX0;_thrXPrev=_thrX0;
       var tb=document.getElementById('throttleBar'),bb=document.getElementById('brakeBar');
       if(tb)tb.style.height='0%';if(bb)bb.style.height='0%';
     }}
@@ -2155,8 +2155,10 @@ engine.runRenderLoop(()=>{
     // Gyro steers ONLY when throttle is pressed
     if(throttleOn){
       // Finger left/right = yaw (alpha)
-      var fingerDX = (_thrXCur - _thrX0) / (window.innerWidth || 400);
-      if(Math.abs(fingerDX)>0.01) camera.alpha -= fingerDX * 0.06;
+      // Finger delta per frame = no drift, stops when finger stops
+      var fingerDX = (_thrXCur - _thrXPrev) / (window.innerWidth || 400);
+      if(Math.abs(fingerDX)>0.001) camera.alpha -= fingerDX * 1.8;
+      _thrXPrev = _thrXCur;
 
       // Gyro = only up/down (beta/pitch)
       var DZ=0.2;
