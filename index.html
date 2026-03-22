@@ -2084,7 +2084,7 @@ document.addEventListener('DOMContentLoaded',function(){
     if(!driveMode||_thrId===null)return;
     for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];if(t.identifier===_thrId){
       driveThrottle=Math.max(-1,Math.min(1,(_thrY0-t.clientY)/100));
-      _thrXPrev=_thrXCur; _thrXCur=t.clientX;
+      _thrXCur=t.clientX;
       var tb=document.getElementById('throttleBar'),bb=document.getElementById('brakeBar');
       if(driveThrottle>0){if(tb)tb.style.height=(driveThrottle*50)+'%';if(bb)bb.style.height='0%';}
       else{if(tb)tb.style.height='0%';if(bb)bb.style.height=((-driveThrottle)*50)+'%';}
@@ -2217,22 +2217,23 @@ engine.runRenderLoop(()=>{
 
     // Gyro steers ONLY when throttle is pressed
     if(throttleOn){
-      // Finger left/right = yaw (alpha)
+      // Finger left/right = yaw: use per-frame delta (no drift)
       var fingerDX = (_thrXCur - _thrXPrev) / (window.innerWidth || 400);
-      if(Math.abs(fingerDX)>0.001) camera.alpha -= fingerDX * 1.1;
-      _thrXPrev = _thrXCur;
+      if(Math.abs(fingerDX)>0.0005) camera.alpha -= fingerDX * 2.2;
 
       // Gyro = only up/down (beta/pitch)
       var DZ=0.2;
       var rawB=_gyroBeta;
       if(Math.abs(rawB)>DZ) camera.beta=_cb(camera.beta+(rawB>0?rawB-DZ:rawB+DZ)*0.016);
     }
+    // Always reset prev so delta is clean next frame
+    _thrXPrev = _thrXCur;
 
-    // Move forward in XZ plane (camera.alpha direction) + Y from beta
+    // Move forward: negate so positive throttle = fly toward where camera looks
     if(Math.abs(driveSpeed)>0.01){
-      camera.target.x+=Math.cos(camera.alpha)*driveSpeed;
-      camera.target.z+=Math.sin(camera.alpha)*driveSpeed;
-      camera.target.y+=Math.cos(camera.beta)*driveSpeed*0.4;
+      camera.target.x -= Math.cos(camera.alpha)*driveSpeed;
+      camera.target.z -= Math.sin(camera.alpha)*driveSpeed;
+      camera.target.y -= Math.sin(camera.beta-Math.PI/2)*driveSpeed*0.4;
       // Boundary: wrap-around at r=620
       var tx=camera.target.x,tz2=camera.target.z;
       var tD=Math.sqrt(tx*tx+tz2*tz2);
