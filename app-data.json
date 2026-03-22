@@ -733,7 +733,12 @@
     "theme": "cosmic",
     "sprite": "orb-group",
     "ring": true,
-    "glow": 0.7
+    "glow": 0.7,
+    "photo": "./Assets/Other_Beings/Other_Beings_Photos/ΜΟΙΡΕΣ.png",
+    "focusPhoto": "./Assets/Other_Beings/Other_Beings_Photos/ΜΟΙΡΕΣ.png",
+    "photos": [
+      "./Assets/Other_Beings/Other_Beings_Photos/ΜΟΙΡΕΣ.png"
+    ]
   },
   {
     "id": "GROUP_MONSTERS",
@@ -942,7 +947,11 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Heros/Photos/ΑΧΙΛΛΕΑΣ.png",
-    "video": "./Assets/Heros/Videos/ΑΧΙΛΛΕΑΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΑΧΙΛΛΕΑΣ.mp4",
+    "photos": [
+      "./Assets/Heros/Photos/ΑΧΙΛΛΕΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΑΧΙΛΛΕΑΣ.png"
   },
   {
     "id": "HERO_AGAMEMNON_001",
@@ -965,7 +974,12 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00035-ΑΓΑΜΕΜΝΩΝ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00035-ΑΓΑΜΕΜΝΩΝ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00035-ΑΓΑΜΕΜΝΩΝ.png"
+    ]
   },
   {
     "id": "HERO_AJAX_001",
@@ -989,7 +1003,18 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "video": "./Assets/Heros/Videos/ΑΙΑΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΑΙΑΣ.mp4",
+    "photo": "./Assets/Auto_Ai/00000-ΑΙΑΣ (1).png",
+    "focusPhoto": "./Assets/Auto_Ai/00045-ΑΙΑΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00000-ΑΙΑΣ (1).png",
+      "./Assets/Auto_Ai/00000-ΑΙΑΣ.png",
+      "./Assets/Auto_Ai/00039-ΑΙΑΣ.png",
+      "./Assets/Auto_Ai/00071-ΑΙΑΣ.png",
+      "./Assets/Auto_Ai/00074-ΑΙΑΣ.png",
+      "./Assets/Auto_Ai/00043-ΑΙΑΣ.png",
+      "./Assets/Auto_Ai/00045-ΑΙΑΣ.png"
+    ]
   },
   {
     "id": "HERO_ALCMENE_001",
@@ -1035,7 +1060,15 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00015-ΑΜΦΙΤΡΥΩΝ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00036-ΑΜΦΙΤΡΥΩΝ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00015-ΑΜΦΙΤΡΥΩΝ.png",
+      "./Assets/Auto_Ai/00036-ΑΜΦΙΤΡΥΩΝ.png",
+      "./Assets/Auto_Ai/00060-ΑΜΦΙΤΡΥΩΝ.png",
+      "./Assets/Auto_Ai/00089-ΑΜΦΙΤΡΥΩΝ.png"
+    ]
   },
   {
     "id": "HERO_ANDROMEDA_001",
@@ -1105,7 +1138,11 @@
     "sprite": "heroine",
     "ring": false,
     "glow": 0.4,
-    "photo": "./Assets/Heros/Photos/ΑΤΑΛΑΝΤΗ.png"
+    "photo": "./Assets/Heros/Photos/ΑΤΑΛΑΝΤΗ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΑΤΑΛΑΝΤΗ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΑΤΑΛΑΝΤΗ.png"
   },
   {
     "id": "HERO_BELLEROPHON_001",
@@ -1130,7 +1167,11 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Heros/Photos/ΒΕΛΛΕΡΟΦΟΝΤΗΣ.png",
-    "video": "./Assets/Heros/Videos/ΒΕΛΛΕΡΟΦΟΝΤΗΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΒΕΛΛΕΡΟΦΟΝΤΗΣ.mp4",
+    "photos": [
+      "./Assets/Heros/Photos/ΒΕΛΛΕΡΟΦΟΝΤΗΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΒΕΛΛΕΡΟΦΟΝΤΗΣ.png"
   },
   {
     "id": "HERO_CADMUS_001",
@@ -1154,7 +1195,12 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "video": "./Assets/Heros/Videos/ΚΑΔΜΟΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΚΑΔΜΟΣ.mp4",
+    "photo": "./Assets/Heros/Photos/ΚΑΔΜΟΣ.png",
+    "focusPhoto": "./Assets/Heros/Photos/ΚΑΔΜΟΣ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΚΑΔΜΟΣ.png"
+    ]
   },
   {
     "id": "HERO_DAEDALUS_001",
@@ -1177,7 +1223,14 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00079-ΔΑΙΔΑΛΟΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00050-ΔΑΙΔΑΛΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00005-ΔΑΙΔΑΛΟΣ.png",
+      "./Assets/Auto_Ai/00050-ΔΑΙΔΑΛΟΣ.png",
+      "./Assets/Auto_Ai/00079-ΔΑΙΔΑΛΟΣ.png"
+    ]
   },
   {
     "id": "HERO_DEIANIRA_001",
@@ -1225,7 +1278,11 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Heros/Photos/ΔΙΟΜΗΔΗΣ.png",
-    "video": "./Assets/Heros/Videos/ΔΙΟΜΗΔΗΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΔΙΟΜΗΔΗΣ.mp4",
+    "photos": [
+      "./Assets/Heros/Photos/ΔΙΟΜΗΔΗΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΔΙΟΜΗΔΗΣ.png"
   },
   {
     "id": "HERO_HECTOR_001",
@@ -1273,7 +1330,11 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Heros/Photos/ΗΡΑΚΛΗΣ.png",
-    "video": "./Assets/Heros/Videos/ΗΡΑΚΛΗΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΗΡΑΚΛΗΣ.mp4",
+    "photos": [
+      "./Assets/Heros/Photos/ΗΡΑΚΛΗΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΗΡΑΚΛΗΣ.png"
   },
   {
     "id": "HERO_HYLLOS_001",
@@ -1319,7 +1380,14 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00006-ΙΚΑΡΟΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00051-ΙΚΑΡΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00006-ΙΚΑΡΟΣ.png",
+      "./Assets/Auto_Ai/00051-ΙΚΑΡΟΣ.png",
+      "./Assets/Auto_Ai/00080-ΙΚΑΡΟΣ.png"
+    ]
   },
   {
     "id": "HERO_IOLE_001",
@@ -1367,7 +1435,11 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Heros/Photos/ΙΑΣΟΝΑΣ.png",
-    "video": "./Assets/Heros/Videos/ΙΑΣΩΝΑΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΙΑΣΩΝΑΣ.mp4",
+    "photos": [
+      "./Assets/Heros/Photos/ΙΑΣΟΝΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΙΑΣΟΝΑΣ.png"
   },
   {
     "id": "HERO_LAIUS_001",
@@ -1413,7 +1485,12 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00034-ΜΕΝΕΛΑΟΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00034-ΜΕΝΕΛΑΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00034-ΜΕΝΕΛΑΟΣ.png"
+    ]
   },
   {
     "id": "HERO_NESTOR_001",
@@ -1461,7 +1538,11 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Heros/Photos/ΟΔΥΣΣΕΑΣ.png",
-    "video": "./Assets/Heros/Videos/ΟΔΥΣΣΕΑΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΟΔΥΣΣΕΑΣ.mp4",
+    "photos": [
+      "./Assets/Heros/Photos/ΟΔΥΣΣΕΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΟΔΥΣΣΕΑΣ.png"
   },
   {
     "id": "HERO_OEDIPUS_001",
@@ -1509,7 +1590,11 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Heros/Photos/ΟΡΦΕΑΣ.png",
-    "video": "./Assets/Heros/Videos/ΟΡΦΕΑΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΟΡΦΕΑΣ.mp4",
+    "photos": [
+      "./Assets/Heros/Photos/ΟΡΦΕΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΟΡΦΕΑΣ.png"
   },
   {
     "id": "HERO_PARIS_001",
@@ -1556,7 +1641,16 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "video": "./Assets/Heros/Videos/ΠΑΤΡΟΚΛΟΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΠΑΤΡΟΚΛΟΣ.mp4",
+    "photo": "./Assets/Auto_Ai/00044-ΠΑΤΡΟΚΛΟΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00040-ΠΑΤΡΟΚΛΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00001-ΠΑΤΡΟΚΛΟΣ.png",
+      "./Assets/Auto_Ai/00040-ΠΑΤΡΟΚΛΟΣ.png",
+      "./Assets/Auto_Ai/00044-ΠΑΤΡΟΚΛΟΣ.png",
+      "./Assets/Auto_Ai/00046-ΠΑΤΡΟΚΛΟΣ.png",
+      "./Assets/Auto_Ai/00075-ΠΑΤΡΟΚΛΟΣ.png"
+    ]
   },
   {
     "id": "HERO_PELEUS_001",
@@ -1581,7 +1675,11 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Heros/Photos/ΠΗΛΕΑΣ.png",
-    "video": "./Assets/Heros/Videos/ΠΗΛΕΑΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΠΗΛΕΑΣ.mp4",
+    "photos": [
+      "./Assets/Heros/Photos/ΠΗΛΕΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΠΗΛΕΑΣ.png"
   },
   {
     "id": "HERO_PERSEUS_001",
@@ -1606,7 +1704,11 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Heros/Photos/ΠΕΡΣΕΑΣ.png",
-    "video": "./Assets/Heros/Videos/ΠΕΡΣΕΑΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΠΕΡΣΕΑΣ.mp4",
+    "photos": [
+      "./Assets/Heros/Photos/ΠΕΡΣΕΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΠΕΡΣΕΑΣ.png"
   },
   {
     "id": "HERO_THESEUS_001",
@@ -1631,7 +1733,11 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Heros/Photos/ΘΗΣΕΑΣ.png",
-    "video": "./Assets/Heros/Videos/ΘΗΣΕΑΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΘΗΣΕΑΣ.mp4",
+    "photos": [
+      "./Assets/Heros/Photos/ΘΗΣΕΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΘΗΣΕΑΣ.png"
   },
   {
     "id": "HUNDRED_BRIAREUS_001",
@@ -1838,7 +1944,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Auto_Ai/00108-ΧΑΡΥΒΔΗ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00108-ΧΑΡΥΒΔΗ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00108-ΧΑΡΥΒΔΗ.png"
+    ]
   },
   {
     "id": "MONSTER_CHIMERA_001",
@@ -1861,7 +1972,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Auto_Ai/00106-ΧΙΜΑΙΡΑ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00106-ΧΙΜΑΙΡΑ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00106-ΧΙΜΑΙΡΑ.png"
+    ]
   },
   {
     "id": "MONSTER_ECHIDNA_001",
@@ -1884,7 +2000,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Auto_Ai/00104-ΕΧΙΔΝΑ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00104-ΕΧΙΔΝΑ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00104-ΕΧΙΔΝΑ.png"
+    ]
   },
   {
     "id": "MONSTER_GORGONS_001",
@@ -1953,7 +2074,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Auto_Ai/00110-ΛΑΔΩΝ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00110-ΛΑΔΩΝ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00110-ΛΑΔΩΝ.png"
+    ]
   },
   {
     "id": "MONSTER_MEDUSA_001",
@@ -1976,7 +2102,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Auto_Ai/00115-ΜΕΔΟΥΣΑ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00115-ΜΕΔΟΥΣΑ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00115-ΜΕΔΟΥΣΑ.png"
+    ]
   },
   {
     "id": "MONSTER_MINOTAUR_001",
@@ -2068,7 +2199,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Auto_Ai/00103-ΤΥΦΩΝ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00103-ΤΥΦΩΝ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00103-ΤΥΦΩΝ.png"
+    ]
   },
   {
     "id": "MORTAL_ARIADNE_001",
@@ -2551,7 +2687,14 @@
     "theme": "aqua-light",
     "sprite": "nymph",
     "ring": false,
-    "glow": 0.7
+    "glow": 0.7,
+    "photo": "./Assets/Auto_Ai/00082-ΗΛΕΚΤΡΑ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00008-ΗΛΕΚΤΡΑ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00008-ΗΛΕΚΤΡΑ.png",
+      "./Assets/Auto_Ai/00053-ΗΛΕΚΤΡΑ.png",
+      "./Assets/Auto_Ai/00082-ΗΛΕΚΤΡΑ.png"
+    ]
   },
   {
     "id": "NYMPH_HYADES_001",
@@ -2827,7 +2970,12 @@
     "theme": "silver-light",
     "sprite": "goddess",
     "ring": true,
-    "glow": 0.75
+    "glow": 0.75,
+    "photo": "./Assets/Other_Beings/Other_Beings_Photos/ΕΡΙΣ.png",
+    "focusPhoto": "./Assets/Other_Beings/Other_Beings_Photos/ΕΡΙΣ.png",
+    "photos": [
+      "./Assets/Other_Beings/Other_Beings_Photos/ΕΡΙΣ.png"
+    ]
   },
   {
     "id": "NYX_GERAS_001",
@@ -2873,7 +3021,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Other_Beings/Other_Beings_Photos/ΥΠΝΟΣ.png",
+    "focusPhoto": "./Assets/Other_Beings/Other_Beings_Photos/ΥΠΝΟΣ.png",
+    "photos": [
+      "./Assets/Other_Beings/Other_Beings_Photos/ΥΠΝΟΣ.png"
+    ]
   },
   {
     "id": "NYX_KERES_001",
@@ -2896,7 +3049,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Other_Beings/Other_Beings_Photos/ΚΗΡΕΣ.png",
+    "focusPhoto": "./Assets/Other_Beings/Other_Beings_Photos/ΚΗΡΕΣ.png",
+    "photos": [
+      "./Assets/Other_Beings/Other_Beings_Photos/ΚΗΡΕΣ.png"
+    ]
   },
   {
     "id": "NYX_MOMUS_001",
@@ -2942,7 +3100,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Other_Beings/Other_Beings_Photos/ΜΟΡΟΣ.png",
+    "focusPhoto": "./Assets/Other_Beings/Other_Beings_Photos/ΜΟΡΟΣ.png",
+    "photos": [
+      "./Assets/Other_Beings/Other_Beings_Photos/ΜΟΡΟΣ.png"
+    ]
   },
   {
     "id": "NYX_NEMESIS_001",
@@ -2965,7 +3128,12 @@
     "theme": "silver-light",
     "sprite": "goddess",
     "ring": true,
-    "glow": 0.75
+    "glow": 0.75,
+    "photo": "./Assets/Other_Beings/Other_Beings_Photos/ΝΕΜΕΣΙΣ.png",
+    "focusPhoto": "./Assets/Other_Beings/Other_Beings_Photos/ΝΕΜΕΣΙΣ.png",
+    "photos": [
+      "./Assets/Other_Beings/Other_Beings_Photos/ΝΕΜΕΣΙΣ.png"
+    ]
   },
   {
     "id": "NYX_OIZYS_001",
@@ -2988,7 +3156,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Other_Beings/Other_Beings_Photos/ΟΙΖΥΣ.png",
+    "focusPhoto": "./Assets/Other_Beings/Other_Beings_Photos/ΟΙΖΥΣ.png",
+    "photos": [
+      "./Assets/Other_Beings/Other_Beings_Photos/ΟΙΖΥΣ.png"
+    ]
   },
   {
     "id": "NYX_ONIROI_001",
@@ -3057,7 +3230,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Other_Beings/Other_Beings_Photos/ΘΑΝΑΤΟΣ.png",
+    "focusPhoto": "./Assets/Other_Beings/Other_Beings_Photos/ΘΑΝΑΤΟΣ.png",
+    "photos": [
+      "./Assets/Other_Beings/Other_Beings_Photos/ΘΑΝΑΤΟΣ.png"
+    ]
   },
   {
     "id": "OCEANID_CLYMENE_001",
@@ -3105,7 +3283,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΑΦΡΟΔΙΤΗ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΑΦΡΟΔΙΤΗ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΑΦΡΟΔΙΤΗ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΑΦΡΟΔΙΤΗ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΑΦΡΟΔΙΤΗ.png"
   },
   {
     "id": "OLYMP_APOLLO_001",
@@ -3130,7 +3312,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΑΠΟΛΛΩΝΑΣ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΑΠΟΛΛΩΝΑΣ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΑΠΟΛΛΩΝΑΣ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΑΠΟΛΛΩΝΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΑΠΟΛΛΩΝΑΣ.png"
   },
   {
     "id": "OLYMP_ARES_001",
@@ -3155,7 +3341,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΑΡΗΣ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΑΡΗΣ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΑΡΗΣ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΑΡΗΣ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΑΡΗΣ.png"
   },
   {
     "id": "OLYMP_ARTEMIS_001",
@@ -3180,7 +3370,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΑΡΤΕΜΙΣ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΑΡΤΕΜΙΣ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΑΡΤΕΜΙΣ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΑΡΤΕΜΙΣ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΑΡΤΕΜΙΣ.png"
   },
   {
     "id": "OLYMP_ATHENA_001",
@@ -3205,7 +3399,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΑΘΗΝΑ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΑΘΗΝΑ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΑΘΗΝΑ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΑΘΗΝΑ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΑΘΗΝΑ.png"
   },
   {
     "id": "OLYMP_DEMETER_001",
@@ -3230,7 +3428,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΔΗΜΗΤΡΑ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΔΗΜΗΤΡΑ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΔΗΜΗΤΡΑ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΔΗΜΗΤΡΑ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΔΗΜΗΤΡΑ.png"
   },
   {
     "id": "OLYMP_DIONYSUS_001",
@@ -3255,7 +3457,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΔΙΟΝΥΣΟΣ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΔΙΟΝΥΣΟΣ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΔΙΟΝΥΣΟΣ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΔΙΟΝΥΣΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΔΙΟΝΥΣΟΣ.png"
   },
   {
     "id": "OLYMP_EROS_002",
@@ -3349,7 +3555,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΗΦΑΙΣΤΟΣ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΗΦΑΙΣΤΟΣ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΗΦΑΙΣΤΟΣ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΗΦΑΙΣΤΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΗΦΑΙΣΤΟΣ.png"
   },
   {
     "id": "OLYMP_HERA_001",
@@ -3374,7 +3584,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΗΡΑ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΗΡΑ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΗΡΑ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΗΡΑ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΗΡΑ.png"
   },
   {
     "id": "OLYMP_HERMES_001",
@@ -3399,7 +3613,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΕΡΜΗΣ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΕΡΜΗΣ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΕΡΜΗΣ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΕΡΜΗΣ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΕΡΜΗΣ.png"
   },
   {
     "id": "OLYMP_HESTIA_001",
@@ -3516,7 +3734,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΠΟΣΕΙΔΩΝΑΣ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΠΟΣΕΙΔΩΝΑΣ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΠΟΣΕΙΔΩΝΑΣ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΠΟΣΕΙΔΩΝΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΠΟΣΕΙΔΩΝΑΣ.png"
   },
   {
     "id": "OLYMP_SEMELE_001",
@@ -3564,7 +3786,11 @@
     "ring": true,
     "glow": 0.85,
     "photo": "./Assets/Gods/Gods_Photos/ΔΙΑΣ.png",
-    "video": "./Assets/Gods/Gods_Videos/ΔΙΑΣ.mp4"
+    "video": "./Assets/Gods/Gods_Videos/ΔΙΑΣ.mp4",
+    "photos": [
+      "./Assets/Gods/Gods_Photos/ΔΙΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Gods/Gods_Photos/ΔΙΑΣ.png"
   },
   {
     "id": "PRIM_AETHER_001",
@@ -3587,7 +3813,12 @@
     "theme": "void-light",
     "sprite": "energy-neutral",
     "ring": false,
-    "glow": 1.0
+    "glow": 1.0,
+    "photo": "./Assets/Primordial/Photos/ΑΙΘΗΡ.png",
+    "focusPhoto": "./Assets/Primordial/Photos/ΑΙΘΗΡ.png",
+    "photos": [
+      "./Assets/Primordial/Photos/ΑΙΘΗΡ.png"
+    ]
   },
   {
     "id": "PRIM_CHAOS_001",
@@ -3610,7 +3841,10 @@
     "theme": "void-light",
     "sprite": "energy-neutral",
     "ring": false,
-    "glow": 1.0
+    "glow": 1.0,
+    "chaosPhoto": "./Assets/Primordial/Photos/ΧΑΟΣ.png",
+    "photo": "./Assets/Primordial/Photos/ΧΑΟΣ.png",
+    "focusPhoto": "./Assets/Primordial/Photos/ΧΑΟΣ.png"
   },
   {
     "id": "PRIM_EREBUS_001",
@@ -3633,7 +3867,12 @@
     "theme": "void-light",
     "sprite": "energy-neutral",
     "ring": false,
-    "glow": 1.0
+    "glow": 1.0,
+    "photo": "./Assets/Primordial/Photos/ΕΡΕΒΟΣ.png",
+    "focusPhoto": "./Assets/Primordial/Photos/ΕΡΕΒΟΣ.png",
+    "photos": [
+      "./Assets/Primordial/Photos/ΕΡΕΒΟΣ.png"
+    ]
   },
   {
     "id": "PRIM_EROS_001",
@@ -3656,7 +3895,12 @@
     "theme": "void-light",
     "sprite": "energy-neutral",
     "ring": false,
-    "glow": 1.0
+    "glow": 1.0,
+    "photo": "./Assets/Primordial/Photos/ΕΡΩΣ.png",
+    "focusPhoto": "./Assets/Primordial/Photos/ΕΡΩΣ.png",
+    "photos": [
+      "./Assets/Primordial/Photos/ΕΡΩΣ.png"
+    ]
   },
   {
     "id": "PRIM_GAIA_001",
@@ -3679,7 +3923,12 @@
     "theme": "void-light",
     "sprite": "energy-neutral",
     "ring": false,
-    "glow": 1.0
+    "glow": 1.0,
+    "photo": "./Assets/Primordial/Photos/ΓΑΙΑ.png",
+    "focusPhoto": "./Assets/Primordial/Photos/ΓΑΙΑ.png",
+    "photos": [
+      "./Assets/Primordial/Photos/ΓΑΙΑ.png"
+    ]
   },
   {
     "id": "PRIM_HEMERA_001",
@@ -3702,7 +3951,12 @@
     "theme": "void-light",
     "sprite": "energy-neutral",
     "ring": false,
-    "glow": 1.0
+    "glow": 1.0,
+    "photo": "./Assets/Primordial/Photos/ΗΜΕΡΑ.png",
+    "focusPhoto": "./Assets/Primordial/Photos/ΗΜΕΡΑ.png",
+    "photos": [
+      "./Assets/Primordial/Photos/ΗΜΕΡΑ.png"
+    ]
   },
   {
     "id": "PRIM_NYX_001",
@@ -3725,7 +3979,12 @@
     "theme": "void-light",
     "sprite": "energy-neutral",
     "ring": false,
-    "glow": 1.0
+    "glow": 1.0,
+    "photo": "./Assets/Primordial/Photos/ΝΥΞ.png",
+    "focusPhoto": "./Assets/Primordial/Photos/ΝΥΞ.png",
+    "photos": [
+      "./Assets/Primordial/Photos/ΝΥΞ.png"
+    ]
   },
   {
     "id": "PRIM_PONTUS_001",
@@ -3748,7 +4007,12 @@
     "theme": "void-light",
     "sprite": "energy-neutral",
     "ring": false,
-    "glow": 1.0
+    "glow": 1.0,
+    "photo": "./Assets/Primordial/Photos/ΠΟΝΤΟΣ.png",
+    "focusPhoto": "./Assets/Primordial/Photos/ΠΟΝΤΟΣ.png",
+    "photos": [
+      "./Assets/Primordial/Photos/ΠΟΝΤΟΣ.png"
+    ]
   },
   {
     "id": "PRIM_TARTARUS_001",
@@ -3771,7 +4035,12 @@
     "theme": "void-light",
     "sprite": "energy-neutral",
     "ring": false,
-    "glow": 1.0
+    "glow": 1.0,
+    "photo": "./Assets/Primordial/Photos/ΤΑΡΤΑΡΟΣ.png",
+    "focusPhoto": "./Assets/Primordial/Photos/ΤΑΡΤΑΡΟΣ.png",
+    "photos": [
+      "./Assets/Primordial/Photos/ΤΑΡΤΑΡΟΣ.png"
+    ]
   },
   {
     "id": "PRIM_URANUS_001",
@@ -3794,7 +4063,12 @@
     "theme": "void-light",
     "sprite": "energy-neutral",
     "ring": false,
-    "glow": 1.0
+    "glow": 1.0,
+    "photo": "./Assets/Primordial/Photos/ΟΥΡΑΝΟΣ.png",
+    "focusPhoto": "./Assets/Primordial/Photos/ΟΥΡΑΝΟΣ.png",
+    "photos": [
+      "./Assets/Primordial/Photos/ΟΥΡΑΝΟΣ.png"
+    ]
   },
   {
     "id": "RIVER_ACHELOUS_001",
@@ -3909,7 +4183,12 @@
     "theme": "sky-light",
     "sprite": "god",
     "ring": true,
-    "glow": 0.65
+    "glow": 0.65,
+    "photo": "./Assets/Other_Beings/Other_Beings_Photos/ΣΤΥΞ.png",
+    "focusPhoto": "./Assets/Other_Beings/Other_Beings_Photos/ΣΤΥΞ.png",
+    "photos": [
+      "./Assets/Other_Beings/Other_Beings_Photos/ΣΤΥΞ.png"
+    ]
   },
   {
     "id": "SEA_CETO_001",
@@ -4049,7 +4328,11 @@
     "ring": true,
     "glow": 0.45,
     "photo": "./Assets/Titans/Titan_Photos/ΑΤΛΑΣ.png",
-    "video": "./Assets/Titans/Titan_Videos/ΑΤΛΑΣ.mp4"
+    "video": "./Assets/Titans/Titan_Videos/ΑΤΛΑΣ.mp4",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΑΤΛΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΑΤΛΑΣ.png"
   },
   {
     "id": "TITAN_COEUS_001",
@@ -4074,7 +4357,11 @@
     "ring": true,
     "glow": 0.45,
     "photo": "./Assets/Titans/Titan_Photos/ΚΟΙΟΣ.png",
-    "video": "./Assets/Titans/Titan_Videos/ΚΟΙΟΣ.mp4"
+    "video": "./Assets/Titans/Titan_Videos/ΚΟΙΟΣ.mp4",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΚΟΙΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΚΟΙΟΣ.png"
   },
   {
     "id": "TITAN_CRIUS_001",
@@ -4099,7 +4386,11 @@
     "ring": true,
     "glow": 0.45,
     "photo": "./Assets/Titans/Titan_Photos/ΚΡΙΟΣ.png",
-    "video": "./Assets/Titans/Titan_Videos/ΚΡΙΟΣ.mp4"
+    "video": "./Assets/Titans/Titan_Videos/ΚΡΙΟΣ.mp4",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΚΡΙΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΚΡΙΟΣ.png"
   },
   {
     "id": "TITAN_CRONUS_001",
@@ -4124,7 +4415,11 @@
     "ring": true,
     "glow": 0.45,
     "photo": "./Assets/Titans/Titan_Photos/ΚΡΟΝΟΣ.png",
-    "video": "./Assets/Titans/Titan_Videos/ΚΡΟΝΟΣ.mp4"
+    "video": "./Assets/Titans/Titan_Videos/ΚΡΟΝΟΣ.mp4",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΚΡΟΝΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΚΡΟΝΟΣ.png"
   },
   {
     "id": "TITAN_EPIMETHEUS_001",
@@ -4173,7 +4468,11 @@
     "ring": true,
     "glow": 0.45,
     "photo": "./Assets/Titans/Titan_Photos/ΥΠΕΡΙΩΝ.png",
-    "video": "./Assets/Titans/Titan_Videos/ΥΠΕΡΙΩΝΑΣ.mp4"
+    "video": "./Assets/Titans/Titan_Videos/ΥΠΕΡΙΩΝΑΣ.mp4",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΥΠΕΡΙΩΝ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΥΠΕΡΙΩΝ.png"
   },
   {
     "id": "TITAN_IAPETUS_001",
@@ -4198,7 +4497,11 @@
     "ring": true,
     "glow": 0.45,
     "photo": "./Assets/Titans/Titan_Photos/ΙΑΠΕΤΟΣ.png",
-    "video": "./Assets/Titans/Titan_Videos/ΙΑΠΕΤΟΣ.mp4"
+    "video": "./Assets/Titans/Titan_Videos/ΙΑΠΕΤΟΣ.mp4",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΙΑΠΕΤΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΙΑΠΕΤΟΣ.png"
   },
   {
     "id": "TITAN_MENOETIUS_001",
@@ -4246,7 +4549,11 @@
     "sprite": "titan-female",
     "ring": true,
     "glow": 0.45,
-    "photo": "./Assets/Titans/Titan_Photos/ΜΝΗΜΟΣΥΝΗ.png"
+    "photo": "./Assets/Titans/Titan_Photos/ΜΝΗΜΟΣΥΝΗ.png",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΜΝΗΜΟΣΥΝΗ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΜΝΗΜΟΣΥΝΗ.png"
   },
   {
     "id": "TITAN_OCEANUS_001",
@@ -4271,7 +4578,11 @@
     "ring": true,
     "glow": 0.45,
     "photo": "./Assets/Titans/Titan_Photos/ΩΚΕΑΝΟΣ.png",
-    "video": "./Assets/Titans/Titan_Videos/ΩΚΕΑΝΟΣ.mp4"
+    "video": "./Assets/Titans/Titan_Videos/ΩΚΕΑΝΟΣ.mp4",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΩΚΕΑΝΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΩΚΕΑΝΟΣ.png"
   },
   {
     "id": "TITAN_PHOEBE_001",
@@ -4295,7 +4606,11 @@
     "sprite": "titan-female",
     "ring": true,
     "glow": 0.45,
-    "photo": "./Assets/Titans/Titan_Photos/ΦΟΙΒΗ.png"
+    "photo": "./Assets/Titans/Titan_Photos/ΦΟΙΒΗ.png",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΦΟΙΒΗ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΦΟΙΒΗ.png"
   },
   {
     "id": "TITAN_PROMETHEUS_001",
@@ -4320,7 +4635,12 @@
     "ring": true,
     "glow": 0.45,
     "photo": "./Assets/Titans/Titan_Photos/ΑΤΛΑΣ.png",
-    "video": "./Assets/Heros/Videos/ΠΡΟΜΗΘΕΑΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΠΡΟΜΗΘΕΑΣ.mp4",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΑΤΛΑΣ.png",
+      "./Assets/Heros/Photos/ΠΡΟΜΗΘΕΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΠΡΟΜΗΘΕΑΣ.png"
   },
   {
     "id": "TITAN_RHEA_001",
@@ -4345,7 +4665,11 @@
     "ring": true,
     "glow": 0.45,
     "photo": "./Assets/Titans/Titan_Photos/ΡΕΑ.png",
-    "video": "./Assets/Titans/Titan_Videos/ΡΕΑ.mp4"
+    "video": "./Assets/Titans/Titan_Videos/ΡΕΑ.mp4",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΡΕΑ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΡΕΑ.png"
   },
   {
     "id": "TITAN_TETHYS_001",
@@ -4370,7 +4694,11 @@
     "ring": true,
     "glow": 0.45,
     "photo": "./Assets/Titans/Titan_Photos/ΤΥΘΗΣ.png",
-    "video": "./Assets/Titans/Titan_Videos/ΤΗΘΥΣ.mp4"
+    "video": "./Assets/Titans/Titan_Videos/ΤΗΘΥΣ.mp4",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΤΥΘΗΣ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΤΥΘΗΣ.png"
   },
   {
     "id": "TITAN_THEIA_001",
@@ -4419,7 +4747,11 @@
     "ring": true,
     "glow": 0.45,
     "photo": "./Assets/Titans/Titan_Photos/ΘΕΜΙΣ.png",
-    "video": "./Assets/Titans/Titan_Videos/ΘΕΜΙΣ.mp4"
+    "video": "./Assets/Titans/Titan_Videos/ΘΕΜΙΣ.mp4",
+    "photos": [
+      "./Assets/Titans/Titan_Photos/ΘΕΜΙΣ.png"
+    ],
+    "focusPhoto": "./Assets/Titans/Titan_Photos/ΘΕΜΙΣ.png"
   },
   {
     "id": "TROY_AENEAS_001",
@@ -4443,7 +4775,11 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "./Assets/Heros/Photos/ΑΙΝΕΙΑΣ.png"
+    "photo": "./Assets/Heros/Photos/ΑΙΝΕΙΑΣ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΑΙΝΕΙΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΑΙΝΕΙΑΣ.png"
   },
   {
     "id": "TROY_ANDROMACHE_001",
@@ -4512,7 +4848,14 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00078-ΑΙΑΚΟΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00004-ΑΙΑΚΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00004-ΑΙΑΚΟΣ.png",
+      "./Assets/Auto_Ai/00049-ΑΙΑΚΟΣ.png",
+      "./Assets/Auto_Ai/00078-ΑΙΑΚΟΣ.png"
+    ]
   },
   {
     "id": "UNDERWORLD_CHARON_001",
@@ -4535,7 +4878,12 @@
     "theme": "sky-light",
     "sprite": "god",
     "ring": true,
-    "glow": 0.65
+    "glow": 0.65,
+    "photo": "./Assets/Other_Beings/Other_Beings_Photos/ΧΑΡΩΝ.png",
+    "focusPhoto": "./Assets/Other_Beings/Other_Beings_Photos/ΧΑΡΩΝ.png",
+    "photos": [
+      "./Assets/Other_Beings/Other_Beings_Photos/ΧΑΡΩΝ.png"
+    ]
   },
   {
     "id": "UNDERWORLD_RHADAMANTHYS_001",
@@ -4558,7 +4906,15 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00003-ΡΑΔΑΜΑΝΘΥΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00077-ΡΑΔΑΜΑΝΘΥΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00003-ΡΑΔΑΜΑΝΘΥΣ.png",
+      "./Assets/Auto_Ai/00042-ΡΑΔΑΜΑΝΘΥΣ.png",
+      "./Assets/Auto_Ai/00048-ΡΑΔΑΜΑΝΘΥΣ.png",
+      "./Assets/Auto_Ai/00077-ΡΑΔΑΜΑΝΘΥΣ.png"
+    ]
   },
   {
     "id": "WIND_BOREAS_001",
@@ -4697,7 +5053,15 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "video": "./Assets/Heros/Videos/ΜΙΝΟΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΜΙΝΟΣ.mp4",
+    "photo": "./Assets/Auto_Ai/00041-ΜΙΝΩΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00002-ΜΙΝΩΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00002-ΜΙΝΩΣ.png",
+      "./Assets/Auto_Ai/00041-ΜΙΝΩΣ.png",
+      "./Assets/Auto_Ai/00047-ΜΙΝΩΣ.png",
+      "./Assets/Auto_Ai/00076-ΜΙΝΩΣ.png"
+    ]
   },
   {
     "id": "ZEUS_SARPEDON_001",
@@ -4973,7 +5337,14 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00007-ΟΡΕΣΤΗΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00052-ΟΡΕΣΤΗΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00007-ΟΡΕΣΤΗΣ.png",
+      "./Assets/Auto_Ai/00052-ΟΡΕΣΤΗΣ.png",
+      "./Assets/Auto_Ai/00081-ΟΡΕΣΤΗΣ.png"
+    ]
   },
   {
     "id": "HERO_IPHIGENIA_001",
@@ -5019,7 +5390,15 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00091-ΤΕΛΑΜΩΝ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00038-ΤΕΛΑΜΩΝ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00017-ΤΕΛΑΜΩΝ.png",
+      "./Assets/Auto_Ai/00038-ΤΕΛΑΜΩΝ.png",
+      "./Assets/Auto_Ai/00062-ΤΕΛΑΜΩΝ.png",
+      "./Assets/Auto_Ai/00091-ΤΕΛΑΜΩΝ.png"
+    ]
   },
   {
     "id": "HERO_CASTOR_001",
@@ -5043,7 +5422,12 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "video": "./Assets/Heros/Videos/ΚΑΣΤΟΡΑΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΚΑΣΤΟΡΑΣ.mp4",
+    "photo": "./Assets/Heros/Photos/ΚΑΣΤΟΡΑΣ.png",
+    "focusPhoto": "./Assets/Heros/Photos/ΚΑΣΤΟΡΑΣ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΚΑΣΤΟΡΑΣ.png"
+    ]
   },
   {
     "id": "HERO_POLYDEUCES_001",
@@ -5067,7 +5451,12 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "video": "./Assets/Heros/Videos/ΠΟΛΥΔΕΥΚΗΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΠΟΛΥΔΕΥΚΗΣ.mp4",
+    "photo": "./Assets/Heros/Photos/ΠΟΛΥΔΕΥΚΗΣ.png",
+    "focusPhoto": "./Assets/Heros/Photos/ΠΟΛΥΔΕΥΚΗΣ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΠΟΛΥΔΕΥΚΗΣ.png"
+    ]
   },
   {
     "id": "HERO_TELEMACHUS_001",
@@ -5091,7 +5480,11 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "./Assets/Heros/Photos/ΤΗΛΕΜΑΧΟΣ.png"
+    "photo": "./Assets/Heros/Photos/ΤΗΛΕΜΑΧΟΣ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΤΗΛΕΜΑΧΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΤΗΛΕΜΑΧΟΣ.png"
   },
   {
     "id": "MONSTER_CHIRON_001",
@@ -5185,7 +5578,11 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Heros/Photos/ΜΕΛΕΑΓΡΟΣ.png",
-    "video": "./Assets/Heros/Videos/ΜΕΛΕΑΓΡΟΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΜΕΛΕΑΓΡΟΣ.mp4",
+    "photos": [
+      "./Assets/Heros/Photos/ΜΕΛΕΑΓΡΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΜΕΛΕΑΓΡΟΣ.png"
   },
   {
     "id": "KING_AGENOR_001",
@@ -5277,7 +5674,14 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00085-ΤΥΔΕΑΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00056-ΤΥΔΕΑΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00004-ΤΥΔΕΑΣ.png",
+      "./Assets/Auto_Ai/00056-ΤΥΔΕΑΣ.png",
+      "./Assets/Auto_Ai/00085-ΤΥΔΕΑΣ.png"
+    ]
   },
   {
     "id": "HERO_CHRYSAOR_001",
@@ -5440,7 +5844,12 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Heros/Photos/ΤΡΙΠΤΟΛΕΜΟΣ.png",
+    "focusPhoto": "./Assets/Heros/Photos/ΤΡΙΠΤΟΛΕΜΟΣ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΤΡΙΠΤΟΛΕΜΟΣ.png"
+    ]
   },
   {
     "id": "GOD_PLUTUS_001",
@@ -5578,7 +5987,14 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00083-ΑΤΡΕΑΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00054-ΑΤΡΕΑΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00009-ΑΤΡΕΑΣ.png",
+      "./Assets/Auto_Ai/00054-ΑΤΡΕΑΣ.png",
+      "./Assets/Auto_Ai/00083-ΑΤΡΕΑΣ.png"
+    ]
   },
   {
     "id": "KING_THYESTES_001",
@@ -5601,7 +6017,14 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Auto_Ai/00010-ΘΥΕΣΤΗΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00084-ΘΥΕΣΤΗΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00010-ΘΥΕΣΤΗΣ.png",
+      "./Assets/Auto_Ai/00055-ΘΥΕΣΤΗΣ.png",
+      "./Assets/Auto_Ai/00084-ΘΥΕΣΤΗΣ.png"
+    ]
   },
   {
     "id": "MORTAL_LEDA_001",
@@ -5717,7 +6140,11 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "./Assets/Heros/Photos/ΑΙΓΕΑΣ.png"
+    "photo": "./Assets/Heros/Photos/ΑΙΓΕΑΣ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΑΙΓΕΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΑΙΓΕΑΣ.png"
   },
   {
     "id": "HERO_MEDEA_001",
@@ -5833,7 +6260,12 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "video": "./Assets/Heros/Videos/ΓΑΝΥΜΗΔΗΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΓΑΝΥΜΗΔΗΣ.mp4",
+    "photo": "./Assets/Heros/Photos/ΓΑΝΥΜΗΔΗΣ.png",
+    "focusPhoto": "./Assets/Heros/Photos/ΓΑΝΥΜΗΔΗΣ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΓΑΝΥΜΗΔΗΣ.png"
+    ]
   },
   {
     "id": "HERO_ENDYMION_001",
@@ -5857,7 +6289,12 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "video": "./Assets/Heros/Videos/ΕΝΔΥΜΙΩΝ.mp4"
+    "video": "./Assets/Heros/Videos/ΕΝΔΥΜΙΩΝ.mp4",
+    "photo": "./Assets/Heros/Photos/ΕΝΔΥΜΙΩΝ.png",
+    "focusPhoto": "./Assets/Heros/Photos/ΕΝΔΥΜΙΩΝ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΕΝΔΥΜΙΩΝ.png"
+    ]
   },
   {
     "id": "HERO_TIRESIAS_001",
@@ -5927,7 +6364,14 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "video": "./Assets/Heros/Videos/ΙΠΠΟΛΥΤΟΣ.mp4"
+    "video": "./Assets/Heros/Videos/ΙΠΠΟΛΥΤΟΣ.mp4",
+    "photo": "./Assets/Auto_Ai/00005-ΙΠΠΟΛΥΤΟΣ.png",
+    "focusPhoto": "./Assets/Auto_Ai/00059-ΙΠΠΟΛΥΤΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00005-ΙΠΠΟΛΥΤΟΣ.png",
+      "./Assets/Auto_Ai/00059-ΙΠΠΟΛΥΤΟΣ.png",
+      "./Assets/Auto_Ai/00088-ΙΠΠΟΛΥΤΟΣ.png"
+    ]
   },
   {
     "id": "MORTAL_ALCESTIS_001",
@@ -6022,5 +6466,628 @@
     "glow": 0.45,
     "photo": "./Assets/Heros/Photos/ΠΕΡΣΕΑΣ.png",
     "video": "./Assets/Heros/Videos/ΠΕΡΣΕΑΣ.mp4"
+  },
+  {
+    "id": "HERO_NEOPTOLEMUS_001",
+    "Name": "Νεοπτόλεμος (Neoptolemus)",
+    "Name_EN": "Neoptolemus",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "HERO_ACHILLES_001; NYMPH_THETIS_001",
+    "Partners": "",
+    "Children": "",
+    "Generation": "4",
+    "Level": "4",
+    "FullText": "Ο Νεοπτόλεμος ήταν ο γιος του Αχιλλέα και της Δηιδάμειας. Πολέμησε στην Τροία μετά τον θάνατο του πατέρα του, σκοτώνοντας τον βασιλιά Πρίαμο.",
+    "FullText_EN": "Neoptolemus was the son of Achilles and Deidamia. He fought at Troy after his father's death, slaying King Priam.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00016-ΝΕΟΠΤΟΛΕΜΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00016-ΝΕΟΠΤΟΛΕΜΟΣ.png",
+      "./Assets/Auto_Ai/00037-ΝΕΟΠΤΟΛΕΜΟΣ.png",
+      "./Assets/Auto_Ai/00061-ΝΕΟΠΤΟΛΕΜΟΣ.png",
+      "./Assets/Auto_Ai/00090-ΝΕΟΠΤΟΛΕΜΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00037-ΝΕΟΠΤΟΛΕΜΟΣ.png"
+  },
+  {
+    "id": "HERO_LAERTES_001",
+    "Name": "Λαέρτης (Laertes)",
+    "Name_EN": "Laertes",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "HERO_ARCESIUS_001",
+    "Partners": "MORTAL_ANTICLEA_001",
+    "Children": "HERO_ODYSSEUS_001",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Λαέρτης ήταν ο πατέρας του Οδυσσέα, βασιλιάς της Ιθάκης. Συμμετείχε στην Αργοναυτική εκστρατεία και στο κυνήγι του Καλυδωνίου κάπρου.",
+    "FullText_EN": "Laertes was the father of Odysseus, king of Ithaca. He participated in the Argonaut expedition and the Calydonian Boar hunt.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00018-ΛΑΕΡΤΗΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00018-ΛΑΕΡΤΗΣ.png",
+      "./Assets/Auto_Ai/00063-ΛΑΕΡΤΗΣ.png",
+      "./Assets/Auto_Ai/00092-ΛΑΕΡΤΗΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00063-ΛΑΕΡΤΗΣ.png"
+  },
+  {
+    "id": "HERO_CEPHALUS_001",
+    "Name": "Κέφαλος (Cephalus)",
+    "Name_EN": "Cephalus",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "",
+    "Partners": "GOD_EOS_001",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Κέφαλος ήταν ένας όμορφος κυνηγός που αγαπήθηκε από την Ηώ. Ήταν γνωστός για την τραγική ιστορία του με τη γυναίκα του Πρόκρι.",
+    "FullText_EN": "Cephalus was a handsome hunter loved by Eos (Dawn). Known for the tragic story with his wife Procris.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00019-ΚΕΦΑΛΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00019-ΚΕΦΑΛΟΣ.png",
+      "./Assets/Auto_Ai/00064-ΚΕΦΑΛΟΣ.png",
+      "./Assets/Auto_Ai/00093-ΚΕΦΑΛΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00064-ΚΕΦΑΛΟΣ.png"
+  },
+  {
+    "id": "HERO_BIAS_001",
+    "Name": "Βίας (Bias)",
+    "Name_EN": "Bias",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "",
+    "Partners": "",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Βίας ήταν Αργείος ήρωας, αδελφός του μάντη Μελάμποδα. Βοήθησε τον αδελφό του να αποκτήσει τα βόδια του Φύλακου.",
+    "FullText_EN": "Bias was an Argive hero, brother of the seer Melampus. He helped his brother obtain the cattle of Phylacus.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00021-ΒΙΑΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00021-ΒΙΑΣ.png",
+      "./Assets/Auto_Ai/00066-ΒΙΑΣ.png",
+      "./Assets/Auto_Ai/00095-ΒΙΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00066-ΒΙΑΣ.png"
+  },
+  {
+    "id": "HERO_MELAMPUS_001",
+    "Name": "Μελάμπους (Melampus)",
+    "Name_EN": "Melampus",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "",
+    "Partners": "",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Μελάμπους ήταν ο πρώτος θνητός μάντης, γιος του Αμυθάονα. Μπορούσε να καταλαβαίνει τη γλώσσα των ζώων.",
+    "FullText_EN": "Melampus was the first mortal seer, son of Amythaon. He could understand the language of animals.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00022-ΜΕΛΑΜΠΟΥΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00022-ΜΕΛΑΜΠΟΥΣ.png",
+      "./Assets/Auto_Ai/00067-ΜΕΛΑΜΠΟΥΣ.png",
+      "./Assets/Auto_Ai/00096-ΜΕΛΑΜΠΟΥΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00067-ΜΕΛΑΜΠΟΥΣ.png"
+  },
+  {
+    "id": "HERO_ADMETUS_001",
+    "Name": "Άδμητος (Admetus)",
+    "Name_EN": "Admetus",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "",
+    "Partners": "MORTAL_ALCESTIS_001",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Άδμητος ήταν βασιλιάς των Φερών. Ο Απόλλων υπηρέτησε ως βοσκός του. Η γυναίκα του Άλκηστη θυσιάστηκε για να ζήσει αυτός.",
+    "FullText_EN": "Admetus was king of Pherae. Apollo served as his herdsman. His wife Alcestis sacrificed herself so he could live.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00023-ΑΔΜΗΤΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00023-ΑΔΜΗΤΟΣ.png",
+      "./Assets/Auto_Ai/00068-ΑΔΜΗΤΟΣ.png",
+      "./Assets/Auto_Ai/00097-ΑΔΜΗΤΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00068-ΑΔΜΗΤΟΣ.png"
+  },
+  {
+    "id": "HERO_STHENELUS_001",
+    "Name": "Σθένελος (Sthenelus)",
+    "Name_EN": "Sthenelus",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "",
+    "Partners": "",
+    "Children": "",
+    "Generation": "4",
+    "Level": "4",
+    "FullText": "Ο Σθένελος ήταν γιος του Κάπανα, ένας από τους Επιγόνους που εκστράτευσαν κατά της Θήβας. Πολέμησε επίσης στην Τροία ως σύντροφος του Διομήδη.",
+    "FullText_EN": "Sthenelus was the son of Capaneus, one of the Epigoni who campaigned against Thebes. He also fought at Troy as a companion of Diomedes.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00025-ΣΘΕΝΕΛΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00025-ΣΘΕΝΕΛΟΣ.png",
+      "./Assets/Auto_Ai/00070-ΣΘΕΝΕΛΟΣ.png",
+      "./Assets/Auto_Ai/00099-ΣΘΕΝΕΛΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00070-ΣΘΕΝΕΛΟΣ.png"
+  },
+  {
+    "id": "HERO_EURYSTHEUS_001",
+    "Name": "Ευρυσθέας (Eurystheus)",
+    "Name_EN": "Eurystheus",
+    "Category": "Hero",
+    "Type": "King",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "",
+    "Partners": "",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Ευρυσθέας ήταν βασιλιάς των Μυκηνών που ανέθεσε στον Ηρακλή τους 12 άθλους. Ήταν εχθρός του Ηρακλή καθ' όλη τη ζωή του.",
+    "FullText_EN": "Eurystheus was the king of Mycenae who imposed the Twelve Labors on Heracles. He was Heracles' adversary throughout his life.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00026-ΕΥΡΥΣΘΕΑΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00026-ΕΥΡΥΣΘΕΑΣ.png",
+      "./Assets/Auto_Ai/00100-ΕΥΡΥΣΘΕΑΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00100-ΕΥΡΥΣΘΕΑΣ.png"
+  },
+  {
+    "id": "HERO_ZETHUS_001",
+    "Name": "Ζήθος (Zethus)",
+    "Name_EN": "Zethus",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "OLYMP_ZEUS_001; MORTAL_ANTIOPE_001",
+    "Partners": "",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Ζήθος ήταν δίδυμος αδελφός του Αμφίωνα, γιος του Δία και της Αντιόπης. Ενώ ο Αμφίων ήταν μουσικός, ο Ζήθος ήταν γεωργός και κυνηγός.",
+    "FullText_EN": "Zethus was the twin brother of Amphion, son of Zeus and Antiope. While Amphion was a musician, Zethus was a farmer and hunter.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00028-ΖΗΘΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00028-ΖΗΘΟΣ.png",
+      "./Assets/Auto_Ai/00102-ΖΗΘΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00102-ΖΗΘΟΣ.png"
+  },
+  {
+    "id": "HERO_ARION_001",
+    "Name": "Αρίων (Arion)",
+    "Name_EN": "Arion",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "",
+    "Partners": "",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Αρίων ήταν θρυλικός αοιδός από τη Λέσβο. Κατά την επιστροφή του από τη Σικελία, ναύτες προσπάθησαν να τον σκοτώσουν, αλλά τον έσωσε ένα δελφίνι.",
+    "FullText_EN": "Arion was a legendary lyric poet from Lesbos. Returning from Sicily, sailors tried to kill him, but a dolphin rescued him.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00029-ΑΡΙΩΝ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00029-ΑΡΙΩΝ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00029-ΑΡΙΩΝ.png"
+  },
+  {
+    "id": "HERO_LINUS_001",
+    "Name": "Λίνος (Linus)",
+    "Name_EN": "Linus",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "OLYMP_APOLLO_001",
+    "Partners": "",
+    "Children": "",
+    "Generation": "2",
+    "Level": "2",
+    "FullText": "Ο Λίνος ήταν μυθικός μουσικός, γιος του Απόλλωνα. Θεωρείται ο εφευρέτης του θρήνου στην ελληνική μουσική. Δίδαξε τον Ηρακλή τη μουσική.",
+    "FullText_EN": "Linus was a mythical musician, son of Apollo. He is considered the inventor of lamentation in Greek music. He taught Heracles music.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00030-ΛΙΝΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00030-ΛΙΝΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00030-ΛΙΝΟΣ.png"
+  },
+  {
+    "id": "HERO_THAMYRIS_001",
+    "Name": "Θάμυρις (Thamyris)",
+    "Name_EN": "Thamyris",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "",
+    "Partners": "",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Θάμυρις ήταν θρακικός αοιδός που τόλμησε να αμφισβητήσει τις Μούσες σε μουσικό διαγωνισμό. Οι Μούσες τον τύφλωσαν και αφαίρεσαν το ταλέντο του.",
+    "FullText_EN": "Thamyris was a Thracian bard who dared to challenge the Muses to a singing contest. The Muses blinded him and took away his talent.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00031-ΘΑΜΥΡΙΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00031-ΘΑΜΥΡΙΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00031-ΘΑΜΥΡΙΣ.png"
+  },
+  {
+    "id": "HERO_IOLAUS_001",
+    "Name": "Ιόλαος (Iolaus)",
+    "Name_EN": "Iolaus",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "HERO_IPHICLES_001",
+    "Partners": "",
+    "Children": "",
+    "Generation": "4",
+    "Level": "4",
+    "FullText": "Ο Ιόλαος ήταν ανιψιός και πιστός σύντροφος του Ηρακλή. Τον βοήθησε στη δεύτερη άθλο — τη Λερναία Ύδρα — καίγοντας τα κομμένα κεφάλια.",
+    "FullText_EN": "Iolaus was the nephew and faithful companion of Heracles. He helped with the second labor — the Lernaean Hydra — by cauterizing the severed necks.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00032-ΙΟΛΑΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00032-ΙΟΛΑΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00032-ΙΟΛΑΟΣ.png"
+  },
+  {
+    "id": "HERO_ANTILOCHUS_001",
+    "Name": "Αντίλοχος (Antilochus)",
+    "Name_EN": "Antilochus",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "HERO_NESTOR_001",
+    "Partners": "",
+    "Children": "",
+    "Generation": "4",
+    "Level": "4",
+    "FullText": "Ο Αντίλοχος ήταν γιος του Νέστορα και από τους νεότερους ήρωες του Τρωικού πολέμου. Σκοτώθηκε από τον Μέμνονα προστατεύοντας τον πατέρα του.",
+    "FullText_EN": "Antilochus was the son of Nestor, one of the youngest heroes at Troy. He was killed by Memnon while protecting his father.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00033-ΑΝΤΙΛΟΧΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00033-ΑΝΤΙΛΟΧΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00033-ΑΝΤΙΛΟΧΟΣ.png"
+  },
+  {
+    "id": "HERO_ETEOCLES_001",
+    "Name": "Ετεοκλής (Eteocles)",
+    "Name_EN": "Eteocles",
+    "Category": "Hero",
+    "Type": "King",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "HERO_OEDIPUS_001",
+    "Partners": "",
+    "Children": "",
+    "Generation": "5",
+    "Level": "5",
+    "FullText": "Ο Ετεοκλής ήταν γιος του Οιδίποδα και βασιλιάς της Θήβας. Σκοτώθηκε μονομαχώντας με τον αδελφό του Πολυνείκη για τον θρόνο.",
+    "FullText_EN": "Eteocles was the son of Oedipus and king of Thebes. He died fighting his brother Polynices in single combat for the throne.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00012-ΕΤΕΟΚΛΗΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00012-ΕΤΕΟΚΛΗΣ.png",
+      "./Assets/Auto_Ai/00057-ΕΤΕΟΚΛΗΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00057-ΕΤΕΟΚΛΗΣ.png"
+  },
+  {
+    "id": "HERO_POLYNICES_001",
+    "Name": "Πολυνείκης (Polynices)",
+    "Name_EN": "Polynices",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "HERO_OEDIPUS_001",
+    "Partners": "",
+    "Children": "",
+    "Generation": "5",
+    "Level": "5",
+    "FullText": "Ο Πολυνείκης ήταν γιος του Οιδίποδα. Εκδιωγμένος από τη Θήβα, οδήγησε τους Επτά επί Θήβας. Σκοτώθηκε μονομαχώντας με τον αδελφό Ετεοκλή.",
+    "FullText_EN": "Polynices was the son of Oedipus. Exiled from Thebes, he led the Seven Against Thebes. He died fighting his brother Eteocles.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00013-ΠΟΛΥΝΕΙΚΗΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00013-ΠΟΛΥΝΕΙΚΗΣ.png",
+      "./Assets/Auto_Ai/00058-ΠΟΛΥΝΕΙΚΗΣ.png",
+      "./Assets/Auto_Ai/00087-ΠΟΛΥΝΕΙΚΗΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00058-ΠΟΛΥΝΕΙΚΗΣ.png"
+  },
+  {
+    "id": "HERO_AMPHIARAUS_001",
+    "Name": "Αμφιάραος (Amphiaraus)",
+    "Name_EN": "Amphiaraus",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "",
+    "Partners": "",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Αμφιάραος ήταν Αργείος ήρωας και μάντης. Ήξερε ότι η εκστρατεία κατά της Θήβας θα αποτύγχανε, αλλά αναγκάστηκε να συμμετάσχει.",
+    "FullText_EN": "Amphiaraus was an Argive hero and seer. He knew the expedition against Thebes would fail but was forced to participate.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Heros/Photos/ΑΜΦΙΑΡΑΟΣ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΑΜΦΙΑΡΑΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΑΜΦΙΑΡΑΟΣ.png"
+  },
+  {
+    "id": "HERO_LEANDER_001",
+    "Name": "Λέανδρος (Leander)",
+    "Name_EN": "Leander",
+    "Category": "Hero",
+    "Type": "Hero",
+    "Gender": "Male",
+    "ModelType": "human",
+    "Parents": "",
+    "Partners": "",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Λέανδρος ήταν νέος από την Άβυδο που κολυμπούσε κάθε βράδυ τον Ελλήσποντο για να δει την ιέρεια Ηρώ. Πνίγηκε σε θύελλα.",
+    "FullText_EN": "Leander was a youth from Abydos who swam the Hellespont every night to visit the priestess Hero. He drowned in a storm.",
+    "sprite": "hero",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Heros/Photos/ΛΕΑΝΔΡΟΣ.png",
+    "photos": [
+      "./Assets/Heros/Photos/ΛΕΑΝΔΡΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Heros/Photos/ΛΕΑΝΔΡΟΣ.png"
+  },
+  {
+    "id": "PRIM_AION_001",
+    "Name": "Αιών (Aion)",
+    "Name_EN": "Aion",
+    "Category": "Primordial",
+    "Type": "Primordial",
+    "Gender": "Male",
+    "ModelType": "energy",
+    "Parents": "",
+    "Partners": "",
+    "Children": "",
+    "Generation": "0",
+    "Level": "0",
+    "FullText": "Ο Αιών ήταν ορφικός θεός του αιώνιου χρόνου και της ζωτικής δύναμης. Αντιπροσώπευε τον κυκλικό αέναο χρόνο, σε αντίθεση με τον Χρόνο που εκπροσωπούσε το χρόνο της ζωής.",
+    "FullText_EN": "Aion was an Orphic deity of eternal time and vital energy. He represented cyclical eternal time, in contrast to Chronos who represented mortal lifespan.",
+    "sprite": "energy-neutral",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Orfikes_dynameis/Protogeneis/Photos/ΑΙΩΝ.png",
+    "photos": [
+      "./Assets/Orfikes_dynameis/Protogeneis/Photos/ΑΙΩΝ.png"
+    ],
+    "focusPhoto": "./Assets/Orfikes_dynameis/Protogeneis/Photos/ΑΙΩΝ.png"
+  },
+  {
+    "id": "PRIM_ANANKE_001",
+    "Name": "Ανάγκη (Ananke)",
+    "Name_EN": "Ananke",
+    "Category": "Primordial",
+    "Type": "Primordial",
+    "Gender": "Female",
+    "ModelType": "energy",
+    "Parents": "",
+    "Partners": "PRIM_CHRONOS_001",
+    "Children": "",
+    "Generation": "0",
+    "Level": "0",
+    "FullText": "Η Ανάγκη ήταν η ορφική θεά της αναγκαιότητας και της αναπόφευκτης μοίρας. Μαζί με τον Χρόνο συνέλαβε το Κοσμικό Αυγό από το οποίο γεννήθηκε ο Φάνης.",
+    "FullText_EN": "Ananke was the Orphic goddess of necessity and inevitability. Together with Chronos she coiled around the Cosmic Egg from which Phanes was born.",
+    "sprite": "energy-female",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Orfikes_dynameis/Protogeneis/Photos/ΑΝΑΓΚΗ.png",
+    "photos": [
+      "./Assets/Orfikes_dynameis/Protogeneis/Photos/ΑΝΑΓΚΗ.png"
+    ],
+    "focusPhoto": "./Assets/Orfikes_dynameis/Protogeneis/Photos/ΑΝΑΓΚΗ.png"
+  },
+  {
+    "id": "PRIM_CHRONOS_001",
+    "Name": "Χρόνος (Chronos)",
+    "Name_EN": "Chronos",
+    "Category": "Primordial",
+    "Type": "Primordial",
+    "Gender": "Male",
+    "ModelType": "energy",
+    "Parents": "",
+    "Partners": "PRIM_ANANKE_001",
+    "Children": "",
+    "Generation": "0",
+    "Level": "0",
+    "FullText": "Ο Χρόνος (Ορφικός) ήταν ο αρχέγονος θεός του χρόνου, διαφορετικός από τον Τιτάνα Κρόνο. Μαζί με την Ανάγκη δημιούργησε το Κοσμικό Αυγό.",
+    "FullText_EN": "Chronos (Orphic) was the primordial god of time, distinct from the Titan Cronus. Together with Ananke he created the Cosmic Egg.",
+    "sprite": "energy-neutral",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Orfikes_dynameis/Protogeneis/Photos/ΧΡΟΝΟΣ.png",
+    "photos": [
+      "./Assets/Orfikes_dynameis/Protogeneis/Photos/ΧΡΟΝΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Orfikes_dynameis/Protogeneis/Photos/ΧΡΟΝΟΣ.png"
+  },
+  {
+    "id": "MONSTER_PHOBOS_001",
+    "Name": "Φόβος (Phobos)",
+    "Name_EN": "Phobos",
+    "Category": "Spirit",
+    "Type": "Spirit",
+    "Gender": "Male",
+    "ModelType": "spirit",
+    "Parents": "OLYMP_ARES_001; OLYMP_APHRODITE_001",
+    "Partners": "",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Φόβος ήταν η προσωποποίηση του τρόμου και του φόβου στη μάχη. Γιος του Άρη και της Αφροδίτης, συνόδευε τον πατέρα του στον πόλεμο.",
+    "FullText_EN": "Phobos was the personification of terror and fear in battle. Son of Ares and Aphrodite, he accompanied his father to war.",
+    "sprite": "spirit",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00123-ΦΟΒΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00123-ΦΟΒΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00123-ΦΟΒΟΣ.png"
+  },
+  {
+    "id": "MONSTER_DEIMOS_001",
+    "Name": "Δείμος (Deimos)",
+    "Name_EN": "Deimos",
+    "Category": "Spirit",
+    "Type": "Spirit",
+    "Gender": "Male",
+    "ModelType": "spirit",
+    "Parents": "OLYMP_ARES_001; OLYMP_APHRODITE_001",
+    "Partners": "",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Δείμος ήταν η προσωποποίηση της δέους και του τρόμου. Αδελφός του Φόβου, γιος Άρη και Αφροδίτης.",
+    "FullText_EN": "Deimos was the personification of dread and terror. Brother of Phobos, son of Ares and Aphrodite.",
+    "sprite": "spirit",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00124-ΔΕΙΜΟΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00124-ΔΕΙΜΟΣ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00124-ΔΕΙΜΟΣ.png"
+  },
+  {
+    "id": "NYX_MORPHEUS_001",
+    "Name": "Μορφέας (Morpheus)",
+    "Name_EN": "Morpheus",
+    "Category": "Spirit",
+    "Type": "Spirit",
+    "Gender": "Male",
+    "ModelType": "spirit",
+    "Parents": "NYX_HYPNOS_001",
+    "Partners": "",
+    "Children": "",
+    "Generation": "3",
+    "Level": "3",
+    "FullText": "Ο Μορφέας ήταν ο θεός των ονείρων, γιος του Ύπνου. Μπορούσε να παίρνει ανθρώπινη μορφή μέσα στα όνειρα.",
+    "FullText_EN": "Morpheus was the god of dreams, son of Hypnos. He could take human form within dreams.",
+    "sprite": "spirit",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00125-ΜΟΡΦΕΑΣ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00125-ΜΟΡΦΕΑΣ.png",
+      "./Assets/Auto_Ai/00126-ΦΑΝΤΑΣΟΣ.png",
+      "./Assets/Auto_Ai/00127-ΦΟΒΗΤΩΡ.png",
+      "./Assets/Auto_Ai/00128-ΟΝΕΙΡΟΙ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00126-ΦΑΝΤΑΣΟΣ.png"
+  },
+  {
+    "id": "NYX_KAKODAIMON_001",
+    "Name": "Κακοδαίμων (Kakodaimon)",
+    "Name_EN": "Kakodaimon",
+    "Category": "Spirit",
+    "Type": "Spirit",
+    "Gender": "Male",
+    "ModelType": "spirit",
+    "Parents": "PRIM_NYX_001",
+    "Partners": "",
+    "Children": "",
+    "Generation": "2",
+    "Level": "2",
+    "FullText": "Ο Κακοδαίμων ήταν το κακό πνεύμα που φέρνει δυστυχία. Αντίθετος του Αγαθοδαίμονα, ήταν υπεύθυνος για τα κακά που συμβαίνουν στους θνητούς.",
+    "FullText_EN": "Kakodaimon was the evil spirit that brings misfortune. Opposite of Agathodaimon, responsible for the misfortunes of mortals.",
+    "sprite": "spirit",
+    "ring": "",
+    "glow": "",
+    "photo": "./Assets/Auto_Ai/00130-ΚΑΚΟΔΑΙΜΩΝ.png",
+    "photos": [
+      "./Assets/Auto_Ai/00130-ΚΑΚΟΔΑΙΜΩΝ.png"
+    ],
+    "focusPhoto": "./Assets/Auto_Ai/00130-ΚΑΚΟΔΑΙΜΩΝ.png"
   }
 ]

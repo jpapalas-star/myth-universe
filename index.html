@@ -984,6 +984,31 @@ function createNode(d,x,y,z,familyRingColor){
 
   var sm=new BABYLON.StandardMaterial('sm_'+d.id,scene);
 
+  // CHAOS: special glowing sun with chaosPhoto texture
+  if(d.id==='PRIM_CHAOS_001' && d.chaosPhoto){
+    var chaosSize=size*2.2;
+    sphere.scaling.setAll(2.2);
+    var chaosTex=new BABYLON.Texture(d.chaosPhoto,scene,true,false);
+    sm.diffuseTexture=chaosTex;
+    sm.emissiveTexture=chaosTex;
+    sm.emissiveColor=new BABYLON.Color3(1.2,1.0,0.7);
+    sm.specularColor=BABYLON.Color3.Black();
+    sm.disableLighting=true;
+    sm.backFaceCulling=false;
+    sphere.material=sm;
+    sphere.metadata=Object.assign({},d,{isChaos:true,hasPhoto:true,rotSpeed:0.0008});
+    // Glow rings for sun effect
+    var cr=groupRingColor(d);
+    var cRings=[];
+    cRings.push(addRing(sphere,cr,size*2.2*1.1,0.18));
+    cRings.push(addRing(sphere,cr,size*2.2*1.35,0.10));
+    cRings.push(addRing(sphere,new BABYLON.Color3(1,0.9,0.4),size*2.2*1.6,0.05));
+    var cLabel=createLabel(d.Name||d.id,sphere,size*2.2,groupLabelColor(d));
+    nodes[d.id]={id:d.id,data:d,sphere:sphere,rings:cRings,label:cLabel,size:size*2.2,familyRingColor:null};
+    placed.add(d.id);
+    return;
+  }
+
   // Custom photo: sphere invisible, image shown on a disc that spins outward
   if(d.photo){
     // Transparent glowing sphere around the disc — like a planet atmosphere
@@ -997,8 +1022,6 @@ function createNode(d,x,y,z,familyRingColor){
     sphere.material = sm;
     sphere.isPickable   = true; // still pickable for tap
     sphere.renderingGroupId = 1;
-
-    // No inner sphere — causes grey artefacts on mobile
 
     var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
     photoTex.hasAlpha=false;
@@ -1023,7 +1046,7 @@ function createNode(d,x,y,z,familyRingColor){
     disc.rotation.y=outAng+Math.PI/2;
 
     sphere.metadata=Object.assign({},d,{
-      isChaos: String(d.id)==='PRIM_CHAOS_001',
+      isChaos: false,
       hasPhoto: true,
       disc: disc,
       rotSpeed: 0.004 + Math.random()*0.002
@@ -1165,9 +1188,17 @@ function showInfo(d){
   var fulltext = isEN ? (d.FullText_EN||d.FullText||'-') : (d.FullText||d.FullText_EN||'-');
   var lbl      = isEN ? {par:'Parents',prt:'Partners',txt:'Description'} :
                         {par:'Γονείς',prt:'Σύντροφοι',txt:'Περιγραφή'};
+  var focusImg = d.focusPhoto||d.photo||'';
+  var photoHtml = '';
+  if(focusImg){
+    photoHtml = `<div style="position:relative;width:100%;overflow:hidden;border-radius:10px;margin-bottom:10px;max-height:200px;">
+      <div style="position:absolute;bottom:0;left:0;right:0;z-index:2;background:linear-gradient(transparent,rgba(0,0,0,0.75));padding:6px 10px;font-size:14px;font-weight:bold;color:#ffe040;text-shadow:0 1px 4px #000;">${name}</div>
+      <img id="focusImg" src="${focusImg}" style="width:100%;object-fit:cover;border-radius:10px;display:block;transform:scale(1);transition:transform 8s ease-out;" onerror="this.style.display='none'">
+    </div>`;
+  }
   infoEl.innerHTML=
     `<h2>${name}</h2>`+
-    
+    photoHtml+
     `<div class="sec">${lbl.par}</div><div class="txt">${listInfoLinks(d.Parents)}</div>`+
     `<div class="sec">${lbl.prt}</div><div class="txt">${listInfoLinks(d.Partners)}</div>`+
     `<div class="sec">${lbl.txt}</div><div class="txt" id="infoFullText">${fulltext}</div>`+
@@ -1177,6 +1208,13 @@ function showInfo(d){
     </div>`+
 "";
   bindInfoLinks();
+  // Zoom animation on focus image
+  if(focusImg){
+    setTimeout(function(){
+      var img=document.getElementById('focusImg');
+      if(img) img.style.transform='scale(1.12)';
+    },50);
+  }
 }
 
 function toggleSettings(e){
