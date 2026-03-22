@@ -1054,6 +1054,7 @@ function createNode(d,x,y,z,familyRingColor){
       chaosDisc.position=BABYLON.Vector3.Zero();
       chaosDisc.renderingGroupId=1;
       chaosDisc.material=cdMat;
+      chaosDisc.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
       sphere.metadata.disc=chaosDisc;
     }
     var redC=new BABYLON.Color3(0.9,0.15,0.15);
@@ -1098,10 +1099,8 @@ function createNode(d,x,y,z,familyRingColor){
     disc.position=BABYLON.Vector3.Zero();
     disc.renderingGroupId=1;
     disc.material=discMat;
-
-    // Orient disc to face outward from Chaos
-    var outAng=Math.atan2(z,x);
-    disc.rotation.y=outAng+Math.PI/2;
+    // Always face the camera (billboard)
+    disc.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
 
     sphere.metadata=Object.assign({},d,{
       isChaos: false,
@@ -2252,13 +2251,14 @@ fetch('app-data.json',{cache:'default'})
     allData=all;
     all.forEach(d=>dataMap[d.id]=d);
 
-    // Preload all photos immediately in background
+    // Preload all photos using fetch for proper HTTP cache
     var _preloadSet=new Set();
     all.forEach(function(d){
       [d.photo, d.focusPhoto, d.chaosPhoto].forEach(function(src){
         if(src && !_preloadSet.has(src)){
           _preloadSet.add(src);
-          var img=new Image(); img.src=src;
+          // fetch with cache:force-cache fills browser cache efficiently
+          if(window.fetch) fetch(src,{mode:'no-cors',cache:'force-cache'}).catch(function(){});
         }
       });
     });
