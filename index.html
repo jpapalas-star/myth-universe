@@ -230,8 +230,19 @@ html,body{
 <button id="indexBtn" type="button">Index</button>
 <button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:10px;left:255px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
 <button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:10px;left:76px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
-<button id="langBtn" onclick="toggleLang()" style="position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">GR / EN</button>
-<button id="invertBtn" onclick="toggleInvert()" style="display:none;position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(100,220,100,0.5);border-radius:16px;color:#64dc64;font-size:11px;font-weight:bold;padding:6px 10px;cursor:pointer;letter-spacing:0.5px;">Invert X/Y</button>
+<button id="langBtn" onclick="toggleLang()" style="display:none;">GR / EN</button>
+<button id="invertBtn" onclick="toggleInvert()" style="display:none;">Invert X/Y</button>
+<!-- Gear button -->
+<button id="gearBtn" onclick="toggleSettingsPanel(event)" style="position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:50%;color:#ffe040;font-size:16px;font-weight:bold;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">⚙️</button>
+<!-- Settings panel -->
+<div id="settingsPanelMain" style="display:none;position:fixed;top:52px;right:10px;z-index:300;background:rgba(10,5,25,0.95);border:1px solid rgba(255,220,60,0.3);border-radius:14px;padding:12px 14px;min-width:160px;backdrop-filter:blur(8px);">
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <button onclick="toggleLang();updateLangBtnLabel();" style="background:rgba(255,220,60,0.12);border:1px solid rgba(255,220,60,0.4);border-radius:12px;color:#ffe040;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;" id="langBtnInner">GR / EN</button>
+    <button onclick="cycleVoice();" style="background:rgba(100,200,255,0.12);border:1px solid rgba(100,200,255,0.4);border-radius:12px;color:#8fd3ff;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🔊 Voice</button>    <div id="driveInvertRow" style="display:none;">
+      <button onclick="toggleInvert()" id="invertBtnInner" style="width:100%;background:rgba(100,220,100,0.12);border:1px solid rgba(100,220,100,0.4);border-radius:12px;color:#64dc64;font-size:12px;font-weight:bold;padding:7px 14px;cursor:pointer;">Invert X/Y</button>
+    </div>
+  </div>
+</div>
 <button id="homeBtn" type="button">Μυθολογία</button>
 
 <input id="searchBox" type="text" placeholder="Search name, id, category..." autocomplete="off">
@@ -261,7 +272,6 @@ html,body{
   </div>
 </div>
 
-<button onclick="cycleVoice()" title="Αλλαγή φωνής" style="position:fixed;bottom:12px;right:10px;z-index:25;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);border-radius:20px;color:#fff;font-size:13px;padding:5px 10px;cursor:pointer;backdrop-filter:blur(4px);">🔊↔</button>
 <canvas id="renderCanvas"></canvas>
 
 <script>
@@ -1273,15 +1283,32 @@ document.addEventListener('click', function(e){
   }
 });
 
+function toggleSettingsPanel(e){
+  if(e) e.stopPropagation();
+  var p=document.getElementById('settingsPanelMain');
+  if(p) p.style.display=(p.style.display==='none'?'block':'none');
+}
+document.addEventListener('click',function(e){
+  var p=document.getElementById('settingsPanelMain');
+  var g=document.getElementById('gearBtn');
+  if(p&&g&&p.style.display!=='none'&&!p.contains(e.target)&&!g.contains(e.target))
+    p.style.display='none';
+});
+function updateLangBtnLabel(){
+  var b=document.getElementById('langBtnInner');
+  if(b) b.textContent=appLang==='gr'?'GR / EN':'EN / GR';
+}
+
 function toggleInvert(){
-  // Cycle: both → X only → Y only → none → both
   if(_lookInvertX && _lookInvertY){ _lookInvertX=true;  _lookInvertY=false; }
   else if(_lookInvertX && !_lookInvertY){ _lookInvertX=false; _lookInvertY=true; }
   else if(!_lookInvertX && _lookInvertY){ _lookInvertX=false; _lookInvertY=false; }
   else { _lookInvertX=true; _lookInvertY=true; }
   var lbl=(_lookInvertX?'X':'') + (_lookInvertX&&_lookInvertY?'/':'') + (_lookInvertY?'Y':'') || 'OFF';
-  var btn=document.getElementById('invertBtn');
-  if(btn) btn.textContent='Invert '+lbl;
+  var b1=document.getElementById('invertBtn');
+  var b2=document.getElementById('invertBtnInner');
+  if(b1) b1.textContent='Invert '+lbl;
+  if(b2) b2.textContent='Invert '+lbl;
 }
 
 function toggleLang(){
@@ -1384,9 +1411,9 @@ function cycleVoice(){
   _selectedVoice = voices[_voiceIndex];
   var name = _selectedVoice.name + ' (' + _selectedVoice.lang + ')';
   showToast('🔊 ' + name);
-  // Play a sample
   window.speechSynthesis.cancel();
-  var utt = new SpeechSynthesisUtterance('Γεια σου');
+  var word = _selectedVoice.lang.indexOf('el')===0 ? 'εντάξει' : 'hello';
+  var utt = new SpeechSynthesisUtterance(word);
   utt.voice = _selectedVoice;
   utt.lang = _selectedVoice.lang;
   utt.pitch = 1; utt.rate = 0.9;
@@ -2214,27 +2241,24 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
 function toggleDriveMode(){
   driveMode=!driveMode;
   var btn=document.getElementById('driveModeBtn'),ov=document.getElementById('driveOverlay');
-  var langBtn=document.getElementById('langBtn');
-  var invertBtn=document.getElementById('invertBtn');
+  var invertRow=document.getElementById('driveInvertRow');
   if(driveMode){
     btn.style.color='#ff8866';btn.style.borderColor='rgba(255,80,80,0.7)';
     if(ov)ov.style.display='block';
-    if(langBtn) langBtn.style.display='none';
-    if(invertBtn) invertBtn.style.display='block';
+    if(invertRow) invertRow.style.display='block';
     var slowBtn=document.getElementById('navSpeedBtn');
     if(slowBtn) slowBtn.style.display='none';
-    btn.style.left='76px'; btn.style.right=''; // move Drive to Slow's position
+    btn.style.left='76px'; btn.style.right='';
     driveSpeed=0; _gasActive=false; _gasTurbo=false;
     _lookId=null; _lookAlphaDelta=0; _lookBetaDelta=0;
     animatePlanetsY(true);
   } else {
     btn.style.color='#ffe040';btn.style.borderColor='rgba(255,220,60,0.4)';
     if(ov)ov.style.display='none';
-    if(langBtn) langBtn.style.display='block';
-    if(invertBtn) invertBtn.style.display='none';
+    if(invertRow) invertRow.style.display='none';
     var slowBtn=document.getElementById('navSpeedBtn');
     if(slowBtn) slowBtn.style.display='block';
-    btn.style.left='255px'; btn.style.right=''; // restore Drive position
+    btn.style.left='255px'; btn.style.right='';
     driveSpeed=0; _gasActive=false; _gasTurbo=false; _warpLevel=0;
     // Exit: keep XZ position, go top-down view
     var tgt=camera.target.clone();
@@ -2409,16 +2433,30 @@ engine.runRenderLoop(()=>{
     // Capture move direction BEFORE steering (prevents drift)
     var _moveAlpha = camera.alpha;
 
-    // Look / steer: delta per frame, no drift
-    if(Math.abs(_lookAlphaDelta)>0.5){
-      var dirX = _lookInvertX ? 1 : -1;
-      camera.alpha += dirX * (_lookAlphaDelta / (window.innerWidth||400)) * 2.2;
+    // FPS-style pivot: camera position fixed, target moves
+    // BabylonJS: camPos = target + r*(cos(a)*sin(b), cos(b), sin(a)*sin(b))
+    if(Math.abs(_lookAlphaDelta)>0.5 || Math.abs(_lookBetaDelta)>0.5){
+      var r=camera.radius, a=camera.alpha, b=camera.beta;
+      // Compute current camera world position
+      var cpx = camera.target.x + r * Math.cos(a) * Math.sin(b);
+      var cpy = camera.target.y + r * Math.cos(b);
+      var cpz = camera.target.z + r * Math.sin(a) * Math.sin(b);
+
+      if(Math.abs(_lookAlphaDelta)>0.5){
+        var dirX = _lookInvertX ? 1 : -1;
+        a += dirX * (_lookAlphaDelta / (window.innerWidth||400)) * 2.2;
+        camera.alpha = a;
+      }
+      if(Math.abs(_lookBetaDelta)>0.5){
+        var dirY = _lookInvertY ? 1 : -1;
+        b = _cb(b + dirY * (_lookBetaDelta / (window.innerHeight||800)) * 2.0);
+        camera.beta = b;
+      }
+      // Move target so camera position stays fixed
+      camera.target.x = cpx - r * Math.cos(a) * Math.sin(b);
+      camera.target.y = cpy - r * Math.cos(b);
+      camera.target.z = cpz - r * Math.sin(a) * Math.sin(b);
     }
-    if(Math.abs(_lookBetaDelta)>0.5){
-      var dirY = _lookInvertY ? 1 : -1;
-      camera.beta = _cb(camera.beta + dirY * (_lookBetaDelta / (window.innerHeight||800)) * 2.0);
-    }
-    // Reset deltas each frame
     _lookAlphaDelta=0; _lookBetaDelta=0;
 
     // Move forward using pre-steer direction
