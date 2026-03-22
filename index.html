@@ -899,10 +899,12 @@ function addRing(parentMesh,color,diameter,thickness){
   ring.position=BABYLON.Vector3.Zero();
 
   const rm=new BABYLON.StandardMaterial('rm_'+Math.random(),scene);
-  rm.emissiveColor=color.scale(2.2);
-  rm.diffuseColor=color.scale(0.8);
+  rm.emissiveColor=color.scale(1.0);
+  rm.diffuseColor=color.scale(0.6);
+  rm.disableLighting=true;
   rm.alpha=0.92;
   ring.material=rm;
+  glow.addExcludedMesh(ring); // don't bloom rings
   return ring;
 }
 
@@ -2053,7 +2055,7 @@ engine.runRenderLoop(()=>{
     }
 
     var speed2=Math.sqrt(_vel2x*_vel2x+_vel2y*_vel2y);
-    _warpLevel=Math.min(1, speed2*0.15 + Math.abs(_velZoom-1)*60);
+    _warpLevel=Math.min(1, speed2*0.25 + Math.abs(_velZoom-1)*80);
 
     if(Math.abs(_vel2x)<0.1 && Math.abs(_vel2y)<0.1 && Math.abs(_velZoom-1)<0.0001){
       _inertia2=false; _vel2x=0; _vel2y=0; _velZoom=1; _warpLevel=0;
