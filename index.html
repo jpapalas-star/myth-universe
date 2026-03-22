@@ -317,8 +317,8 @@ const camera = new BABYLON.ArcRotateCamera(
 camera.detachControl();
 camera.lowerRadiusLimit = 40;
 camera.upperRadiusLimit = 12000;
-camera.lowerBetaLimit   = 0.05;
-camera.upperBetaLimit   = Math.PI * 0.95;
+camera.lowerBetaLimit   = 0.08;
+camera.upperBetaLimit   = Math.PI / 2.02;
 
 // ── FULLY CUSTOM TOUCH + MOUSE CAMERA CONTROL ────────────────────────────────
 // camera.detachControl() stops ALL Babylon pointer processing including:
@@ -2483,6 +2483,7 @@ function toggleDriveMode(){
     _velAlpha=0;_velBeta=0;_velRadius=0;_velTx=0;_velTy=0;_velTz=0;
     _prevAlpha=camera.alpha;_prevBeta=camera.beta;_prevRadius=camera.radius;
     _prevTx=camera.target.x;_prevTy=camera.target.y;_prevTz=camera.target.z;
+    camera.lowerBetaLimit=0.05; camera.upperBetaLimit=Math.PI*0.95;
     driveSpeed=0; _gasActive=false; _gasTurbo=false;
     _lookId=null; _lookAlphaDelta=0; _lookBetaDelta=0;
     animatePlanetsY(true);
@@ -2496,6 +2497,7 @@ function toggleDriveMode(){
     driveSpeed=0; _gasActive=false; _gasTurbo=false; _warpLevel=0;
     _inertiaActive=false;
     _velAlpha=0;_velBeta=0;_velRadius=0;_velTx=0;_velTy=0;_velTz=0;
+    camera.lowerBetaLimit=0.08; camera.upperBetaLimit=Math.PI/2.02;
     // Exit: keep XZ position, go top-down view
     var tgt=camera.target.clone();
     var frames4=0,maxF4=40;

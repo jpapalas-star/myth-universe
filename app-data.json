@@ -1921,7 +1921,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00119-ΚΑΜΠΗ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00119-ΚΑΜΠΗ.png",
+    "photos": [
+      "./Assets/Photos/Auto_Ai_Photos/00119-ΚΑΜΠΗ.png"
+    ]
   },
   {
     "id": "MONSTER_CHARIBDIS_001",
@@ -3184,7 +3189,12 @@
     "theme": "shadow-crimson",
     "sprite": "monster",
     "ring": false,
-    "glow": 0.35
+    "glow": 0.35,
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00128-ΟΝΕΙΡΟΙ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00128-ΟΝΕΙΡΟΙ.png",
+    "photos": [
+      "./Assets/Photos/Auto_Ai_Photos/00128-ΟΝΕΙΡΟΙ.png"
+    ]
   },
   {
     "id": "NYX_PHILOTES_001",
@@ -4211,7 +4221,12 @@
     "theme": "sky-light",
     "sprite": "goddess",
     "ring": true,
-    "glow": 0.65
+    "glow": 0.65,
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00116-ΚΗΤΟΣ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00116-ΚΗΤΟΣ.png",
+    "photos": [
+      "./Assets/Photos/Auto_Ai_Photos/00116-ΚΗΤΟΣ.png"
+    ]
   },
   {
     "id": "SEA_EURYBIA_001",
@@ -5964,7 +5979,13 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00094-ΠΕΛΟΨ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00065-ΠΕΛΟΨ.png",
+    "photos": [
+      "./Assets/Photos/Auto_Ai_Photos/00065-ΠΕΛΟΨ.png",
+      "./Assets/Photos/Auto_Ai_Photos/00094-ΠΕΛΟΨ.png"
+    ]
   },
   {
     "id": "KING_ATREUS_001",
@@ -6236,7 +6257,12 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00101-ΑΜΦΙΟΝ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00101-ΑΜΦΙΟΝ.png",
+    "photos": [
+      "./Assets/Photos/Auto_Ai_Photos/00101-ΑΜΦΙΟΝ.png"
+    ]
   },
   {
     "id": "HERO_GANYMEDE_001",
@@ -6440,7 +6466,12 @@
     "theme": "bronze-light",
     "sprite": "hero",
     "ring": false,
-    "glow": 0.4
+    "glow": 0.4,
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00069-ΠΡΩΤΕΣΙΛΑΟΣ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00069-ΠΡΩΤΕΣΙΛΑΟΣ.png",
+    "photos": [
+      "./Assets/Photos/Auto_Ai_Photos/00069-ΠΡΩΤΕΣΙΛΑΟΣ.png"
+    ]
   },
   {
     "id": "TITAN_PERSES_001",
