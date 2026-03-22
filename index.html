@@ -984,27 +984,43 @@ function createNode(d,x,y,z,familyRingColor){
 
   var sm=new BABYLON.StandardMaterial('sm_'+d.id,scene);
 
-  // CHAOS: special glowing sun with chaosPhoto texture
-  if(d.id==='PRIM_CHAOS_001' && d.chaosPhoto){
-    var chaosSize=size*2.2;
-    sphere.scaling.setAll(2.2);
-    var chaosTex=new BABYLON.Texture(d.chaosPhoto,scene,true,false);
-    sm.diffuseTexture=chaosTex;
-    sm.emissiveTexture=chaosTex;
-    sm.emissiveColor=new BABYLON.Color3(1.2,1.0,0.7);
-    sm.specularColor=BABYLON.Color3.Black();
-    sm.disableLighting=true;
-    sm.backFaceCulling=false;
+  // CHAOS: normal size, photo disc, red glow rings
+  if(d.id==='PRIM_CHAOS_001'){
+    var chaosTex = d.chaosPhoto ? new BABYLON.Texture(d.chaosPhoto,scene,true,false) : null;
+    if(chaosTex){
+      sm.diffuseTexture=chaosTex;
+      sm.emissiveTexture=chaosTex;
+      sm.emissiveColor=new BABYLON.Color3(0.9,0.5,0.5);
+      sm.disableLighting=true;
+      sm.backFaceCulling=false;
+      sm.alpha=0.0;
+    } else {
+      sm.emissiveColor=new BABYLON.Color3(0.9,0.2,0.2);
+    }
     sphere.material=sm;
-    sphere.metadata=Object.assign({},d,{isChaos:true,hasPhoto:true,rotSpeed:0.0008});
-    // Glow rings for sun effect
-    var cr=groupRingColor(d);
+    sphere.metadata=Object.assign({},d,{isChaos:true,hasPhoto:!!chaosTex,rotSpeed:0.0008});
+    if(chaosTex){
+      var chaosDisc=BABYLON.MeshBuilder.CreateDisc('disc_'+d.id,{radius:size/2,tessellation:48},scene);
+      var cdMat=new BABYLON.StandardMaterial('cdmat_'+d.id,scene);
+      cdMat.diffuseTexture=chaosTex;
+      cdMat.emissiveTexture=chaosTex;
+      cdMat.emissiveColor=new BABYLON.Color3(0.8,0.8,0.8);
+      cdMat.specularColor=BABYLON.Color3.Black();
+      cdMat.backFaceCulling=false;
+      cdMat.disableLighting=true;
+      chaosDisc.parent=sphere;
+      chaosDisc.position=BABYLON.Vector3.Zero();
+      chaosDisc.renderingGroupId=1;
+      chaosDisc.material=cdMat;
+      sphere.metadata.disc=chaosDisc;
+    }
+    var redC=new BABYLON.Color3(0.9,0.15,0.15);
     var cRings=[];
-    cRings.push(addRing(sphere,cr,size*2.2*1.1,0.18));
-    cRings.push(addRing(sphere,cr,size*2.2*1.35,0.10));
-    cRings.push(addRing(sphere,new BABYLON.Color3(1,0.9,0.4),size*2.2*1.6,0.05));
-    var cLabel=createLabel(d.Name||d.id,sphere,size*2.2,groupLabelColor(d));
-    nodes[d.id]={id:d.id,data:d,sphere:sphere,rings:cRings,label:cLabel,size:size*2.2,familyRingColor:null};
+    cRings.push(addRing(sphere,redC,size*1.25,0.18));
+    cRings.push(addRing(sphere,redC,size*1.55,0.10));
+    cRings.push(addRing(sphere,new BABYLON.Color3(1.0,0.4,0.3),size*1.85,0.05));
+    var cLabel=createLabel(d.Name||d.id,sphere,size,groupLabelColor(d));
+    nodes[d.id]={id:d.id,data:d,sphere:sphere,rings:cRings,label:cLabel,size:size,familyRingColor:null};
     placed.add(d.id);
     return;
   }
@@ -1191,9 +1207,9 @@ function showInfo(d){
   var focusImg = d.focusPhoto||d.photo||'';
   var photoHtml = '';
   if(focusImg){
-    photoHtml = `<div style="position:relative;width:100%;overflow:hidden;border-radius:10px;margin-bottom:10px;max-height:200px;">
+    photoHtml = `<div style="position:relative;width:110%;margin-left:-5%;overflow:hidden;border-radius:10px;margin-bottom:10px;max-height:160px;">
       <div style="position:absolute;bottom:0;left:0;right:0;z-index:2;background:linear-gradient(transparent,rgba(0,0,0,0.75));padding:6px 10px;font-size:14px;font-weight:bold;color:#ffe040;text-shadow:0 1px 4px #000;">${name}</div>
-      <img id="focusImg" src="${focusImg}" style="width:100%;object-fit:cover;border-radius:10px;display:block;transform:scale(1);transition:transform 8s ease-out;" onerror="this.style.display='none'">
+      <img id="focusImg" src="${focusImg}" style="width:100%;height:160px;object-fit:cover;object-position:center;border-radius:10px;display:block;transform:scale(1.0);transition:transform 8s ease-out;" onerror="this.style.display='none'">
     </div>`;
   }
   infoEl.innerHTML=
@@ -1646,18 +1662,15 @@ function enterFocus(id){
     var disc = n.sphere.metadata && n.sphere.metadata.disc;
 
     if(rel){
+      n.sphere.setEnabled(true);
       n.sphere.renderingGroupId = 1;
       if(hasPhoto){
-        // Photo entity: hide atmosphere spheres, show only the disc
-        n.sphere.material.alpha = 0.0;
-        // Also hide inner atmosphere sphere if present
-        var inner = n.sphere.getChildMeshes(true).find(function(m){ return m.name && m.name.indexOf('inner_')===0; });
-        if(inner) inner.setEnabled(false);
+        n.sphere.material.alpha = 0.0; // invisible sphere, disc does the work
+        if(disc){ disc.setEnabled(true); disc.renderingGroupId = 1; }
       } else {
         n.sphere.material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
         n.sphere.material.alpha = 1.0;
       }
-      if(disc){ disc.setEnabled(true); disc.renderingGroupId = 1; }
     } else {
       // Non-relatives: hide completely
       n.sphere.setEnabled(false);
@@ -2090,19 +2103,14 @@ function toggleDriveMode(){
   if(driveMode){
     btn.style.color='#ff8866';btn.style.borderColor='rgba(255,80,80,0.7)';
     if(ov)ov.style.display='block';
-    driveSpeed=0;driveThrottle=0;
-    _gyroCalibrated=false; _gyroAlpha=0; _gyroBeta=0;
-    animatePlanetsY(true); // spread to 3D
-    if(typeof DeviceOrientationEvent!=='undefined'){
-      if(DeviceOrientationEvent.requestPermission){DeviceOrientationEvent.requestPermission().then(function(r){if(r==='granted')window.addEventListener('deviceorientation',_gyroCb);});}
-      else{window.addEventListener('deviceorientation',_gyroCb);}
-    }
+    driveSpeed=0; _gasActive=false; _gasTurbo=false;
+    _lookId=null; _lookAlphaDelta=0; _lookBetaDelta=0;
+    animatePlanetsY(true);
   } else {
     btn.style.color='#ffe040';btn.style.borderColor='rgba(255,220,60,0.4)';
     if(ov)ov.style.display='none';
-    driveSpeed=0;driveThrottle=0;_warpLevel=0;
-    animatePlanetsY(false); // return to flat
-    window.removeEventListener('deviceorientation',_gyroCb);
+    driveSpeed=0; _gasActive=false; _gasTurbo=false; _warpLevel=0;
+    animatePlanetsY(false);
   }
 }
 var _gyroBaseAlpha=0,_gyroBaseBeta=0,_gyroCalibrated=false;
@@ -2234,7 +2242,7 @@ engine.runRenderLoop(()=>{
 
   // Drive mode movement
   if(driveMode){
-    // Find distance to nearest planet
+    // Find distance to nearest planet for speed scaling
     var _nearDist=9999;
     var _cx=camera.target.x,_cy=camera.target.y,_cz=camera.target.z;
     var _nodeKeys=Object.keys(nodes);
@@ -2245,46 +2253,43 @@ engine.runRenderLoop(()=>{
       var _dd=Math.sqrt(_dx*_dx+_dy*_dy+_dz*_dz);
       if(_dd<_nearDist) _nearDist=_dd;
     }
-    // Speed multiplier: far away=fast, close=slow (smooth curve)
     var _FAR=150,_CLOSE=40;
-    var _prox=Math.max(0,Math.min(1,(_nearDist-_CLOSE)/(_FAR-_CLOSE))); // 0=close,1=far
-    var _speedMult = 0.15 + _prox * (navFast?4.5:2.5); // 0.15x close → 2.5x/4.5x far
+    var _prox=Math.max(0,Math.min(1,(_nearDist-_CLOSE)/(_FAR-_CLOSE)));
 
-    var throttleOn=Math.abs(driveThrottle)>0.05;
-    driveSpeed=throttleOn?driveThrottle*_speedMult:0;
+    // Gas: steady speed or turbo
+    var _baseSpeed = _gasActive ? (navFast?1.8:0.9) * (0.15 + _prox*2.2) : 0;
+    var _turboMult = _gasTurbo ? 3.5 : 1.0;
+    driveSpeed = _baseSpeed * _turboMult;
 
-    // Gyro steers ONLY when throttle is pressed
-    if(throttleOn){
-      // Finger left/right = yaw: use per-frame delta (no drift)
-      var fingerDX = (_thrXCur - _thrXPrev) / (window.innerWidth || 400);
-      if(Math.abs(fingerDX)>0.0005) camera.alpha -= fingerDX * 2.2;
-
-      // Gyro = only up/down (beta/pitch)
-      var DZ=0.2;
-      var rawB=_gyroBeta;
-      if(Math.abs(rawB)>DZ) camera.beta=_cb(camera.beta+(rawB>0?rawB-DZ:rawB+DZ)*0.016);
+    // Look / steer: delta per frame, no drift
+    if(Math.abs(_lookAlphaDelta)>0.5){
+      camera.alpha -= (_lookAlphaDelta / (window.innerWidth||400)) * 2.2;
     }
-    // Always reset prev so delta is clean next frame
-    _thrXPrev = _thrXCur;
+    if(Math.abs(_lookBetaDelta)>0.5){
+      camera.beta = _cb(camera.beta + (_lookBetaDelta / (window.innerHeight||800)) * 2.0);
+    }
+    // Reset deltas each frame
+    _lookAlphaDelta=0; _lookBetaDelta=0;
 
-    // Move forward: negate so positive throttle = fly toward where camera looks
-    if(Math.abs(driveSpeed)>0.01){
+    // Move forward in direction camera looks
+    if(driveSpeed>0.01){
       camera.target.x -= Math.cos(camera.alpha)*driveSpeed;
       camera.target.z -= Math.sin(camera.alpha)*driveSpeed;
       camera.target.y -= Math.sin(camera.beta-Math.PI/2)*driveSpeed*0.4;
-      // Boundary: wrap-around at r=620
+      // Wrap-around
       var tx=camera.target.x,tz2=camera.target.z;
       var tD=Math.sqrt(tx*tx+tz2*tz2);
       if(tD>620){camera.target.x=-tx*0.95;camera.target.z=-tz2*0.95;}
-      // Y: soft bounce (don't clamp to 0)
       if(camera.target.y>250){camera.target.y=-200;}
       if(camera.target.y<-250){camera.target.y=200;}
     }
-    // Warp: full when far+fast throttle, off when close
-    if(driveThrottle>0.25 && _prox>0.4){
-      var _warpTarget=_prox*driveThrottle;
-      _warpLevel=Math.min(1,_warpLevel+0.06*_warpTarget);
+
+    // Warp: turbo + far = full warp
+    if(_gasTurbo && _prox>0.3){
+      _warpLevel=Math.min(1,_warpLevel+0.07);
       if(window._warpInit&&_warpLevel<0.08)window._warpInit();
+    } else if(_gasActive && _prox>0.6){
+      _warpLevel=Math.min(0.4,_warpLevel+0.03);
     } else {
       _warpLevel=Math.max(0,_warpLevel-0.05);
     }
@@ -2419,6 +2424,8 @@ function playEntityVideo(d){
   tgr.textContent=d.Name||'';
   ten.textContent=d.Name_EN||'';
   vid.src=d.video;
+  vid.volume=1;
+  ov.style.opacity='1';
   ov.style.display='flex';
   vid.play();
   vid.onended=function(){ closeVideo(); };
@@ -2426,47 +2433,164 @@ function playEntityVideo(d){
 function closeVideo(){
   var ov=document.getElementById('videoOverlay');
   var vid=document.getElementById('videoEl');
-  ov.style.display='none';
-  vid.pause();
-  vid.src='';
+  // Fade out audio + image over 0.3s
+  var start=null;
+  function fadeStep(ts){
+    if(!start) start=ts;
+    var p=Math.min(1,(ts-start)/300);
+    vid.volume=1-p;
+    ov.style.opacity=''+(1-p);
+    if(p<1){requestAnimationFrame(fadeStep);}
+    else{
+      vid.pause(); vid.src='';
+      ov.style.display='none';
+      ov.style.opacity='1';
+      vid.volume=1;
+    }
+  }
+  requestAnimationFrame(fadeStep);
 }
 </script>
 
 
-<!-- Warp speed overlay — subtle radial streak effect -->
-<div id="warpOverlay" style="
-  pointer-events:none;
-  position:fixed;inset:0;
-  opacity:0;
-  transition:opacity 0.1s;
-  background:radial-gradient(ellipse at center,
-    rgba(255,255,255,0.55) 0%,
-    rgba(200,220,255,0.25) 18%,
-    rgba(150,180,255,0.08) 40%,
-    transparent 70%);
-  z-index:50;
-"></div>
-
+<!-- Warp speed overlay -->
+<div id="warpOverlay" style="pointer-events:none;position:fixed;inset:0;opacity:0;transition:opacity 0.1s;background:radial-gradient(ellipse at center,rgba(255,255,255,0.55) 0%,rgba(200,220,255,0.25) 18%,rgba(150,180,255,0.08) 40%,transparent 70%);z-index:50;"></div>
 <canvas id="warpCanvas" style="pointer-events:none;position:fixed;inset:0;z-index:50;opacity:0;"></canvas>
+
 <div id="driveOverlay" style="display:none;position:fixed;inset:0;z-index:100;pointer-events:none;">
-  <div id="throttleArea" style="pointer-events:all;position:absolute;inset:0;"></div>
-  <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);width:12px;height:160px;background:rgba(255,255,255,0.1);border-radius:6px;border:1px solid rgba(255,220,60,0.3);pointer-events:none;">
-    <div id="throttleBar" style="position:absolute;bottom:50%;left:0;width:100%;height:0%;background:linear-gradient(to top,#ffe040,#ffaa00);border-radius:6px 6px 0 0;transition:height 0.05s;"></div>
-    <div id="brakeBar" style="position:absolute;top:50%;left:0;width:100%;height:0%;background:linear-gradient(to bottom,#ff5544,#cc2200);border-radius:0 0 6px 6px;transition:height 0.05s;"></div>
-    <div style="position:absolute;top:50%;left:0;width:100%;height:1px;background:rgba(255,220,60,0.5);"></div>
-  </div>
-  <div id="driveSpeedLbl" style="position:absolute;left:8px;top:calc(50% - 110px);color:#ffe040;font-size:11px;font-family:Arial;font-weight:bold;pointer-events:none;">🚀</div>
+  <!-- Right side: look/steer touch zone (full screen except gas button) -->
+  <div id="lookArea" style="pointer-events:all;position:absolute;inset:0;"></div>
+
+  <!-- Crosshair -->
   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;pointer-events:none;">
-    <!-- Horizontal left -->
     <div style="position:absolute;top:50%;left:0;width:18px;height:2px;background:#ffe040;margin-top:-1px;opacity:0.7;"></div>
-    <!-- Horizontal right -->
     <div style="position:absolute;top:50%;right:0;width:18px;height:2px;background:#ffe040;margin-top:-1px;opacity:0.7;"></div>
-    <!-- Vertical top -->
     <div style="position:absolute;left:50%;top:0;height:18px;width:2px;background:#ffe040;margin-left:-1px;opacity:0.7;"></div>
-    <!-- Vertical bottom -->
     <div style="position:absolute;left:50%;bottom:0;height:18px;width:2px;background:#ffe040;margin-left:-1px;opacity:0.7;"></div>
   </div>
+
+  <!-- Gas button: bottom-left round green -->
+  <div id="gasBtn" style="
+    pointer-events:all;
+    position:absolute;
+    bottom:40px;
+    left:40px;
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, #2a5c2a, #0d2e0d);
+    border:2px solid rgba(80,180,80,0.5);
+    box-shadow:0 0 18px rgba(60,180,60,0.3);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:rgba(100,220,100,0.85);
+    font-size:28px;
+    user-select:none;
+    -webkit-user-select:none;
+  ">🚀</div>
+
+  <!-- Turbo indicator -->
+  <div id="turboLbl" style="position:absolute;bottom:130px;left:40px;width:80px;text-align:center;color:rgba(100,220,100,0.7);font-size:11px;font-family:Arial;font-weight:bold;pointer-events:none;opacity:0;transition:opacity 0.2s;">TURBO</div>
+
+  <!-- Exit button -->
   <button type="button" onclick="toggleDriveMode()" style="pointer-events:all;position:absolute;bottom:20px;right:20px;background:rgba(180,30,30,0.85);border:1px solid rgba(255,80,80,0.4);border-radius:20px;color:#fff;font-size:12px;padding:8px 16px;cursor:pointer;">✖ Exit Drive</button>
 </div>
+
+<script>
+// ── NEW DRIVE CONTROLS ────────────────────────────────────────────────
+var _gasActive=false, _gasTurbo=false;
+var _lookId=null, _lookX0=0, _lookY0=0, _lookXPrev=0, _lookYPrev=0;
+var _lookAlphaDelta=0, _lookBetaDelta=0;
+
+document.addEventListener('DOMContentLoaded',function(){
+  var gasBtn=document.getElementById('gasBtn');
+  var lookArea=document.getElementById('lookArea');
+
+  // GAS BUTTON
+  gasBtn.addEventListener('touchstart',function(e){
+    e.stopPropagation(); e.preventDefault();
+    _gasActive=true;
+    var t=e.changedTouches[0];
+    var rect=gasBtn.getBoundingClientRect();
+    var cy=rect.top+rect.height/2;
+    // Turbo if touch is in top half of button
+    _gasTurbo=(t.clientY<cy);
+    _updateGasVisual();
+  },{passive:false});
+
+  gasBtn.addEventListener('touchmove',function(e){
+    e.stopPropagation(); e.preventDefault();
+    var t=e.changedTouches[0];
+    var rect=gasBtn.getBoundingClientRect();
+    var cy=rect.top+rect.height/2;
+    _gasTurbo=(t.clientY<cy-10);
+    _updateGasVisual();
+  },{passive:false});
+
+  gasBtn.addEventListener('touchend',function(e){
+    e.stopPropagation(); e.preventDefault();
+    _gasActive=false; _gasTurbo=false;
+    _updateGasVisual();
+  },{passive:false});
+
+  // LOOK/STEER — right area (not on gas button)
+  lookArea.addEventListener('touchstart',function(e){
+    e.preventDefault();
+    for(var i=0;i<e.changedTouches.length;i++){
+      var t=e.changedTouches[i];
+      // Skip if on gas button area
+      var gasRect=gasBtn.getBoundingClientRect();
+      if(t.clientX>=gasRect.left&&t.clientX<=gasRect.right&&
+         t.clientY>=gasRect.top&&t.clientY<=gasRect.bottom) continue;
+      if(_lookId===null){
+        _lookId=t.identifier;
+        _lookX0=t.clientX; _lookY0=t.clientY;
+        _lookXPrev=t.clientX; _lookYPrev=t.clientY;
+        _lookAlphaDelta=0; _lookBetaDelta=0;
+      }
+    }
+  },{passive:false});
+
+  lookArea.addEventListener('touchmove',function(e){
+    e.preventDefault();
+    for(var i=0;i<e.changedTouches.length;i++){
+      var t=e.changedTouches[i];
+      if(t.identifier===_lookId){
+        _lookAlphaDelta=t.clientX-_lookXPrev;
+        _lookBetaDelta =t.clientY-_lookYPrev;
+        _lookXPrev=t.clientX; _lookYPrev=t.clientY;
+      }
+    }
+  },{passive:false});
+
+  lookArea.addEventListener('touchend',function(e){
+    e.preventDefault();
+    for(var i=0;i<e.changedTouches.length;i++){
+      if(e.changedTouches[i].identifier===_lookId){
+        _lookId=null; _lookAlphaDelta=0; _lookBetaDelta=0;
+      }
+    }
+  },{passive:false});
+});
+
+function _updateGasVisual(){
+  var btn=document.getElementById('gasBtn');
+  var turboLbl=document.getElementById('turboLbl');
+  if(_gasActive){
+    btn.style.boxShadow=_gasTurbo
+      ?'0 0 32px rgba(60,220,60,0.9), 0 0 60px rgba(60,220,60,0.4)'
+      :'0 0 20px rgba(60,180,60,0.6)';
+    btn.style.background=_gasTurbo
+      ?'radial-gradient(circle at 40% 35%, #3a8c3a, #1a4c1a)'
+      :'radial-gradient(circle at 40% 35%, #1f4c1f, #0a220a)';
+    if(turboLbl) turboLbl.style.opacity=_gasTurbo?'1':'0';
+  } else {
+    btn.style.boxShadow='0 0 18px rgba(60,180,60,0.3)';
+    btn.style.background='radial-gradient(circle at 40% 35%, #2a5c2a, #0d2e0d)';
+    if(turboLbl) turboLbl.style.opacity='0';
+  }
+}
+</script>
 </body>
 </html>
