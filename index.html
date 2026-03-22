@@ -63,29 +63,29 @@ html,body{
 
 #searchBox{
   position:fixed;
-  right:105px;
+  right:10px;
   top:58px;
   z-index:40;
   color:#fff;
   background:rgba(0,0,0,.62);
   border:1px solid rgba(255,255,255,.16);
-  border-radius:12px;
-  padding:8px 11px;
-  font-size:13px;
+  border-radius:10px;
+  padding:6px 10px;
+  font-size:12px;
   outline:none;
   backdrop-filter:blur(6px);
-  width:min(240px,calc(100vw - 20px));
+  width:min(180px,calc(100vw - 20px));
   box-sizing:border-box;
-  height:42px
+  height:34px
 }
 #searchBox::placeholder{color:rgba(255,255,255,.6)}
 
 #searchResults{
   position:fixed;
   right:10px;
-  top:104px;
+  top:96px;
   z-index:39;
-  width:min(240px,calc(100vw - 20px));
+  width:min(180px,calc(100vw - 20px));
   max-height:220px;
   overflow:auto;
   color:#fff;
@@ -207,7 +207,7 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:58px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🚀 Drive</button>
+<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:10px;right:214px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 10px;cursor:pointer;letter-spacing:0.5px;">🚀</button>
 <button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:12px;left:88px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="position:fixed;top:12px;right:130px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;letter-spacing:1px;">GR / EN</button>
 <button id="homeBtn" type="button">Μυθολογία</button>
@@ -2028,14 +2028,15 @@ function toggleDriveMode(){
 }
 function _gyroCb(e){_gyroAlpha=(e.gamma||0)/45;_gyroBeta=(e.beta||0)/45;}
 
-var _thrId=null,_thrY0=0;
+var _thrId=null,_thrY0=0,_thrX0=0,_thrXCur=0;
 document.addEventListener('DOMContentLoaded',function(){
   var ta=document.getElementById('throttleArea');if(!ta)return;
-  ta.addEventListener('touchstart',function(e){if(!driveMode)return;_thrId=e.changedTouches[0].identifier;_thrY0=e.changedTouches[0].clientY;driveThrottle=0;e.preventDefault();},{passive:false});
+  ta.addEventListener('touchstart',function(e){if(!driveMode)return;_thrId=e.changedTouches[0].identifier;_thrY0=e.changedTouches[0].clientY;_thrX0=e.changedTouches[0].clientX;_thrXCur=_thrX0;driveThrottle=0;e.preventDefault();},{passive:false});
   ta.addEventListener('touchmove',function(e){
     if(!driveMode||_thrId===null)return;
     for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];if(t.identifier===_thrId){
-      driveThrottle=Math.max(-1,Math.min(1,(t.clientY-_thrY0)/100));
+      driveThrottle=Math.max(-1,Math.min(1,(_thrY0-t.clientY)/100));
+      _thrXCur=t.clientX;
       var tb=document.getElementById('throttleBar'),bb=document.getElementById('brakeBar');
       if(driveThrottle>0){if(tb)tb.style.height=(driveThrottle*50)+'%';if(bb)bb.style.height='0%';}
       else{if(tb)tb.style.height='0%';if(bb)bb.style.height=((-driveThrottle)*50)+'%';}
@@ -2044,7 +2045,7 @@ document.addEventListener('DOMContentLoaded',function(){
   },{passive:false});
   ta.addEventListener('touchend',function(e){
     for(var i=0;i<e.changedTouches.length;i++){if(e.changedTouches[i].identifier===_thrId){
-      _thrId=null;driveThrottle=0;
+      _thrId=null;driveThrottle=0;_thrXCur=_thrX0;
       var tb=document.getElementById('throttleBar'),bb=document.getElementById('brakeBar');
       if(tb)tb.style.height='0%';if(bb)bb.style.height='0%';
     }}
@@ -2153,10 +2154,13 @@ engine.runRenderLoop(()=>{
 
     // Gyro steers ONLY when throttle is pressed
     if(throttleOn){
+      // Finger left/right = yaw (alpha)
+      var fingerDX = (_thrXCur - _thrX0) / (window.innerWidth || 400);
+      if(Math.abs(fingerDX)>0.01) camera.alpha += fingerDX * 0.06;
+
+      // Gyro = only up/down (beta/pitch)
       var DZ=0.2;
-      var rawG=_gyroAlpha; // left/right = yaw
-      var rawB=_gyroBeta;  // forward/back = pitch
-      if(Math.abs(rawG)>DZ) camera.alpha+=(rawG>0?rawG-DZ:rawG+DZ)*0.006;
+      var rawB=_gyroBeta;
       if(Math.abs(rawB)>DZ) camera.beta=_cb(camera.beta+(rawB>0?rawB-DZ:rawB+DZ)*0.004);
     }
 
@@ -2336,8 +2340,9 @@ function closeVideo(){
 <div id="driveOverlay" style="display:none;position:fixed;inset:0;z-index:100;pointer-events:none;">
   <div id="throttleArea" style="pointer-events:all;position:absolute;inset:0;"></div>
   <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);width:12px;height:160px;background:rgba(255,255,255,0.1);border-radius:6px;border:1px solid rgba(255,220,60,0.3);pointer-events:none;">
-    <div id="throttleBar" style="position:absolute;bottom:50%;left:0;width:100%;height:0%;background:#ffe040;border-radius:6px;transition:height 0.05s;"></div>
-    <div id="brakeBar" style="position:absolute;top:50%;left:0;width:100%;height:0%;background:#ff5544;border-radius:6px;transition:height 0.05s;"></div>
+    <div id="throttleBar" style="position:absolute;bottom:50%;left:0;width:100%;height:0%;background:linear-gradient(to top,#ffe040,#ffaa00);border-radius:6px 6px 0 0;transition:height 0.05s;"></div>
+    <div id="brakeBar" style="position:absolute;top:50%;left:0;width:100%;height:0%;background:linear-gradient(to bottom,#ff5544,#cc2200);border-radius:0 0 6px 6px;transition:height 0.05s;"></div>
+    <div style="position:absolute;top:50%;left:0;width:100%;height:1px;background:rgba(255,220,60,0.5);"></div>
   </div>
   <div id="driveSpeedLbl" style="position:absolute;left:8px;top:calc(50% - 110px);color:#ffe040;font-size:11px;font-family:Arial;font-weight:bold;pointer-events:none;">🚀</div>
   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;pointer-events:none;opacity:0.18;">
