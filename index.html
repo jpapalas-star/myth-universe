@@ -59,7 +59,7 @@ html,body{
   backdrop-filter:blur(6px)
 }
 #indexBtn{left:10px}
-#homeBtn{right:80px}
+#homeBtn{right:85px}
 
 #searchBox{
   position:fixed;
@@ -207,7 +207,7 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:10px;left:170px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
+<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:10px;left:255px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
 <button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:10px;left:76px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">GR / EN</button>
 <button id="homeBtn" type="button">Μυθολογία</button>
@@ -735,6 +735,8 @@ const familyColorByKey=new Map();
 const familyByMemberId=new Map();
 const placed=new Set();
 const originalPositions=new Map();
+const flatPositions=new Map();   // normal mode: small Y
+const drivePositions=new Map();  // drive mode: big Y 3D
 const connectionRecords=[];
 const lineMaterials=[];
 const connectionMeshes=[];
@@ -1255,11 +1257,45 @@ function resetInfo(){
 }
 
 function getNodePos(id){return nodes[id]&&nodes[id].sphere?nodes[id].sphere.position:null;}
-function saveOriginalPositions(){Object.values(nodes).forEach(n=>originalPositions.set(n.id,n.sphere.position.clone()));}
+function saveOriginalPositions(){
+  Object.values(nodes).forEach(n=>{
+    originalPositions.set(n.id,n.sphere.position.clone());
+    // flat = same XZ, small Y variation
+    var p=n.sphere.position;
+    var flatY = p.y * (30/220); // compress Y to flat range
+    flatPositions.set(n.id, new BABYLON.Vector3(p.x, flatY, p.z));
+    // drive = same XZ, big Y variation
+    drivePositions.set(n.id, new BABYLON.Vector3(p.x, p.y, p.z));
+  });
+  // Apply flat positions by default (normal mode)
+  Object.values(nodes).forEach(n=>{
+    var fp=flatPositions.get(n.id);
+    if(fp) n.sphere.position.copyFrom(fp);
+  });
+}
 function restoreOriginalPositions(){Object.values(nodes).forEach(n=>{const p=originalPositions.get(n.id);if(p)n.sphere.position.copyFrom(p);});}
-function coupleKey(a,b){return [a,b].sort().join('|');}
 
-function buildFamilies(all){
+var _yTransAnim=null;
+function animatePlanetsY(toDrive){
+  if(_yTransAnim) clearInterval(_yTransAnim);
+  var steps=0, maxSteps=40;
+  _yTransAnim=setInterval(function(){
+    steps++;
+    var t=steps/maxSteps;
+    t=t<0.5?2*t*t:1-2*(1-t)*(1-t); // ease
+    Object.values(nodes).forEach(function(n){
+      var from=toDrive?flatPositions.get(n.id):drivePositions.get(n.id);
+      var to  =toDrive?drivePositions.get(n.id):flatPositions.get(n.id);
+      if(!from||!to)return;
+      n.sphere.position.x=from.x+(to.x-from.x)*t;
+      n.sphere.position.y=from.y+(to.y-from.y)*t;
+      n.sphere.position.z=from.z+(to.z-from.z)*t;
+    });
+    if(steps>=maxSteps) clearInterval(_yTransAnim);
+  },16);
+}
+
+function coupleKey(a,b){return [a,b].sort().join('|');}
   const families=[];
   const inFamilyChild=new Set();
 
@@ -2015,6 +2051,7 @@ function toggleDriveMode(){
     btn.style.color='#ff8866';btn.style.borderColor='rgba(255,80,80,0.7)';
     if(ov)ov.style.display='block';
     driveSpeed=0;driveThrottle=0;
+    animatePlanetsY(true); // spread to 3D
     if(typeof DeviceOrientationEvent!=='undefined'){
       if(DeviceOrientationEvent.requestPermission){DeviceOrientationEvent.requestPermission().then(function(r){if(r==='granted')window.addEventListener('deviceorientation',_gyroCb);});}
       else{window.addEventListener('deviceorientation',_gyroCb);}
@@ -2023,6 +2060,7 @@ function toggleDriveMode(){
     btn.style.color='#ffe040';btn.style.borderColor='rgba(255,220,60,0.4)';
     if(ov)ov.style.display='none';
     driveSpeed=0;driveThrottle=0;_warpLevel=0;
+    animatePlanetsY(false); // return to flat
     window.removeEventListener('deviceorientation',_gyroCb);
   }
 }
@@ -2189,7 +2227,9 @@ engine.runRenderLoop(()=>{
       var tx=camera.target.x,tz2=camera.target.z;
       var tD=Math.sqrt(tx*tx+tz2*tz2);
       if(tD>620){camera.target.x=-tx*0.95;camera.target.z=-tz2*0.95;}
-      if(Math.abs(camera.target.y)>200){camera.target.y=-camera.target.y*0.95;}
+      // Y: soft bounce (don't clamp to 0)
+      if(camera.target.y>250){camera.target.y=-200;}
+      if(camera.target.y<-250){camera.target.y=200;}
     }
     // Warp: full when far+fast throttle, off when close
     if(driveThrottle>0.25 && _prox>0.4){
