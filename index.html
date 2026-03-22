@@ -530,8 +530,9 @@ canvas.addEventListener('touchend', function(e) {
     return;
   }
   // All fingers up — start 2-finger inertia if _tf had velocity
-  if(_tf && (Math.abs(_vel2x)>0.01 || Math.abs(_vel2y)>0.01 || Math.abs(_velZoom-1)>0.0001 || _didZoom)){
+  if(_tf){
     _inertia2=true;
+    if(window._warpInit) window._warpInit();
   }
   _tf = null;
   if (!_multi && _t1) {
@@ -2066,17 +2067,14 @@ engine.runRenderLoop(()=>{
     }
   }
 
-  // Warp: subtle glow boost + warp overlay
+  // Warp: glow + streak canvas
   if(_warpLevel>0.01){
-    glow.intensity = 0.8 + _warpLevel * 1.5;
+    glow.intensity = 0.8 + _warpLevel * 1.8;
     sky.rotation.y += _warpLevel * 0.002;
-    // Drive CSS warp overlay
-    var wo=document.getElementById('warpOverlay');
-    if(wo) wo.style.opacity=(_warpLevel*0.35).toFixed(3);
+    if(window._warpDraw) window._warpDraw(_warpLevel);
   } else {
     glow.intensity=0.8;
-    var wo2=document.getElementById('warpOverlay');
-    if(wo2) wo2.style.opacity='0';
+    if(window._warpDraw) window._warpDraw(0);
   }
 
   sky.rotation.y += 0.00004;
@@ -2203,18 +2201,64 @@ function closeVideo(){
 </script>
 
 
-<!-- Warp speed overlay — subtle radial streak effect -->
-<div id="warpOverlay" style="
-  pointer-events:none;
-  position:fixed;inset:0;
-  opacity:0;
-  transition:opacity 0.1s;
-  background:radial-gradient(ellipse at center,
-    rgba(255,255,255,0.55) 0%,
-    rgba(200,220,255,0.25) 18%,
-    rgba(150,180,255,0.08) 40%,
-    transparent 70%);
-  z-index:50;
-"></div>
+<!-- Warp canvas overlay -->
+<canvas id="warpCanvas" style="pointer-events:none;position:fixed;inset:0;z-index:50;opacity:0;transition:opacity 0.08s;"></canvas>
+<script>
+(function(){
+  var wc=document.getElementById('warpCanvas');
+  var wctx=wc.getContext('2d');
+  var wStreaks=[];
+  var wActive=false;
+  var wLevel=0;
+
+  function resizeWarp(){
+    wc.width=window.innerWidth;
+    wc.height=window.innerHeight;
+  }
+  resizeWarp();
+  window.addEventListener('resize', resizeWarp);
+
+  // Generate streaks from center
+  function initStreaks(){
+    wStreaks=[];
+    var n=28;
+    for(var i=0;i<n;i++){
+      var ang=Math.random()*Math.PI*2;
+      var spd=0.4+Math.random()*0.6;
+      var len=0.08+Math.random()*0.18;
+      wStreaks.push({ang:ang, r:Math.random()*0.1, spd:spd, len:len,
+                     bright:0.4+Math.random()*0.6});
+    }
+  }
+
+  function drawWarp(level){
+    if(level<0.01){wc.style.opacity='0';return;}
+    wc.style.opacity=Math.min(1,level*1.2).toFixed(2);
+    wctx.clearRect(0,0,wc.width,wc.height);
+    var cx=wc.width/2, cy=wc.height/2;
+    var maxR=Math.sqrt(cx*cx+cy*cy);
+    for(var i=0;i<wStreaks.length;i++){
+      var s=wStreaks[i];
+      s.r+=s.spd*level*0.018;
+      if(s.r>1) s.r=0.02+Math.random()*0.05;
+      var r1=s.r*maxR, r2=Math.min((s.r+s.len*level)*maxR, maxR);
+      var x1=cx+Math.cos(s.ang)*r1, y1=cy+Math.sin(s.ang)*r1;
+      var x2=cx+Math.cos(s.ang)*r2, y2=cy+Math.sin(s.ang)*r2;
+      var alpha=s.bright*level*0.55;
+      wctx.strokeStyle='rgba(180,210,255,'+alpha.toFixed(2)+')';
+      wctx.lineWidth=0.8+level*1.2;
+      wctx.beginPath();
+      wctx.moveTo(x1,y1);
+      wctx.lineTo(x2,y2);
+      wctx.stroke();
+    }
+  }
+
+  // Expose to main script
+  window._warpDraw=drawWarp;
+  window._warpInit=initStreaks;
+  initStreaks();
+})();
+</script>
 </body>
 </html>
