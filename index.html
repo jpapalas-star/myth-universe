@@ -207,8 +207,8 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:10px;right:214px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 10px;cursor:pointer;letter-spacing:0.5px;">🚀</button>
-<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:12px;left:88px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🐢 Slow</button>
+<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:10px;right:214px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
+<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:10px;left:76px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="position:fixed;top:12px;right:130px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;letter-spacing:1px;">GR / EN</button>
 <button id="homeBtn" type="button">Μυθολογία</button>
 
@@ -1931,7 +1931,7 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
         // Hub of this family system
         var hx = Math.cos(ang)*r;
         var hz = Math.sin(ang)*r;
-        var hy = (Math.sin(ang * 7.3 + i * 2.1) * 0.5 + Math.sin(ang * 3.7) * 0.5) * 80;
+        var hy = (Math.sin(ang * 7.3 + i * 2.1) * 0.5 + Math.sin(ang * 3.7) * 0.5) * 220;
 
         // Orbit radius for children — minimum 28 so circle is clearly visible
         var nc      = cl.children.length;
@@ -1951,7 +1951,7 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
           var ca = (2*Math.PI*ci/nc) - Math.PI/2;
           createNode(child,
             hx + Math.cos(ca)*orbitR,
-            hy + Math.sin(ca * 3.7 + ci * 1.3) * 25,
+            hy + Math.sin(ca * 3.7 + ci * 1.3) * 60,
             hz + Math.sin(ca)*orbitR,
             null
           );
@@ -1967,7 +1967,7 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
       var z2   = ZONES[tier]||[370,460];
       var r2   = z2[1] + 20 + soloIdx*6;
       var a2   = soloIdx * GOLDEN;
-      createNode(d, Math.cos(a2)*r2, (Math.sin(a2*7.3+soloIdx*2.1)*0.5+Math.sin(a2*3.7)*0.5)*80, Math.sin(a2)*r2, null);
+      createNode(d, Math.cos(a2)*r2, (Math.sin(a2*7.3+soloIdx*2.1)*0.5+Math.sin(a2*3.7)*0.5)*220, Math.sin(a2)*r2, null);
       soloIdx++;
     });
 
@@ -2035,7 +2035,7 @@ document.addEventListener('DOMContentLoaded',function(){
   ta.addEventListener('touchmove',function(e){
     if(!driveMode||_thrId===null)return;
     for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];if(t.identifier===_thrId){
-      driveThrottle=Math.max(-1,Math.min(1,(_thrY0-t.clientY)/100));
+      driveThrottle=Math.max(-1,Math.min(1,(t.clientY-_thrY0)/100));
       _thrXCur=t.clientX;
       var tb=document.getElementById('throttleBar'),bb=document.getElementById('brakeBar');
       if(driveThrottle>0){if(tb)tb.style.height=(driveThrottle*50)+'%';if(bb)bb.style.height='0%';}
@@ -2156,7 +2156,7 @@ engine.runRenderLoop(()=>{
     if(throttleOn){
       // Finger left/right = yaw (alpha)
       var fingerDX = (_thrXCur - _thrX0) / (window.innerWidth || 400);
-      if(Math.abs(fingerDX)>0.01) camera.alpha += fingerDX * 0.06;
+      if(Math.abs(fingerDX)>0.01) camera.alpha -= fingerDX * 0.06;
 
       // Gyro = only up/down (beta/pitch)
       var DZ=0.2;
@@ -2169,11 +2169,11 @@ engine.runRenderLoop(()=>{
       camera.target.x+=Math.cos(camera.alpha)*driveSpeed;
       camera.target.z+=Math.sin(camera.alpha)*driveSpeed;
       camera.target.y+=Math.cos(camera.beta)*driveSpeed*0.4;
-      // Boundary: soft push-back at r=620
+      // Boundary: wrap-around at r=620 (teleport to opposite side)
       var tx=camera.target.x,tz2=camera.target.z;
       var tD=Math.sqrt(tx*tx+tz2*tz2);
-      if(tD>620){var ov=(tD-620)*0.12;camera.target.x-=(tx/tD)*ov;camera.target.z-=(tz2/tD)*ov;driveSpeed=0;}
-      if(Math.abs(camera.target.y)>200){camera.target.y*=0.9;driveSpeed=0;}
+      if(tD>620){camera.target.x=-tx*0.95;camera.target.z=-tz2*0.95;}
+      if(Math.abs(camera.target.y)>200){camera.target.y=-camera.target.y*0.95;}
     }
     if(driveThrottle>0.25){_warpLevel=Math.min(1,_warpLevel+0.05);if(window._warpInit&&_warpLevel<0.08)window._warpInit();}
     else{_warpLevel=Math.max(0,_warpLevel-0.04);}
