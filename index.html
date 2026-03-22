@@ -207,8 +207,8 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:12px;left:174px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🚀 Drive</button>
-<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:12px;left:82px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🐢 Slow</button>
+<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:56px;left:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🚀 Drive</button>
+<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:12px;left:88px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="position:fixed;top:12px;right:130px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;letter-spacing:1px;">GR / EN</button>
 <button id="homeBtn" type="button">Μυθολογία</button>
 
@@ -2147,15 +2147,29 @@ engine.runRenderLoop(()=>{
 
   // Drive mode movement
   if(driveMode){
-    var mxS=navFast?5:2.5;
-    driveSpeed=driveSpeed*0.88+(driveThrottle*mxS)*0.12;
-    camera.alpha+=_gyroAlpha*0.025;
-    camera.beta=_cb(camera.beta+_gyroBeta*0.018);
-    if(Math.abs(driveSpeed)>0.05){
+    var mxS=navFast?1.8:0.9; // max speed (world units/frame) — much slower
+    // Throttle directly controls speed, no coasting (stop immediately on release)
+    if(Math.abs(driveThrottle)>0.05){
+      driveSpeed=driveThrottle*mxS;
+    } else {
+      driveSpeed=0; // instant stop when finger releases
+    }
+    // Gyro steering — dead zone to avoid drift from phone lying flat
+    var gA=Math.abs(_gyroAlpha)>0.08?_gyroAlpha:0;
+    var gB=Math.abs(_gyroBeta)>0.08?_gyroBeta:0;
+    camera.alpha+=gA*0.02;
+    camera.beta=_cb(camera.beta+gB*0.015);
+    if(Math.abs(driveSpeed)>0.01){
       camera.target.x+=Math.cos(camera.alpha)*Math.sin(camera.beta)*driveSpeed;
       camera.target.z+=Math.sin(camera.alpha)*Math.sin(camera.beta)*driveSpeed;
+      // Hard boundary — stop completely at universe edge
       var tD2=Math.sqrt(camera.target.x*camera.target.x+camera.target.z*camera.target.z);
-      if(tD2>640){var ov4=(tD2-640)*0.05;camera.target.x-=(camera.target.x/tD2)*ov4;camera.target.z-=(camera.target.z/tD2)*ov4;driveSpeed*=0.7;}
+      if(tD2>640){
+        var ov4=(tD2-640)*0.08;
+        camera.target.x-=(camera.target.x/tD2)*ov4;
+        camera.target.z-=(camera.target.z/tD2)*ov4;
+        driveSpeed=0;
+      }
     }
     if(driveThrottle>0.25){_warpLevel=Math.min(1,_warpLevel+0.06);if(window._warpInit&&_warpLevel<0.08)window._warpInit();}
     else{_warpLevel=Math.max(0,_warpLevel-0.04);}
