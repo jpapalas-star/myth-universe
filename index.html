@@ -2032,29 +2032,29 @@ engine.runRenderLoop(()=>{
 
   // 2-finger inertia: pan + zoom coast after release
   if(_inertia2){
-    var DAMP2=0.88;
+    var DAMP2=0.94; // long float
     _vel2x*=DAMP2; _vel2y*=DAMP2;
     _velZoom=1+(_velZoom-1)*DAMP2;
 
-    if(Math.abs(_vel2x)>0.05 || Math.abs(_vel2y)>0.05){
+    if(Math.abs(_vel2x)>0.1){
       _panDelta(_vel2x*(navFast?6.5:3.5), _vel2y*(navFast?6.5:3.5));
     }
-    if(Math.abs(_velZoom-1)>0.0002){
+    if(Math.abs(_velZoom-1)>0.0001){
       camera.radius=_cr(camera.radius*_velZoom);
     }
 
-    // Warp effect: scale glow intensity during fast movement
     var speed2=Math.sqrt(_vel2x*_vel2x+_vel2y*_vel2y);
-    _warpLevel=Math.min(1, (speed2*0.08 + Math.abs(_velZoom-1)*30));
+    _warpLevel=Math.min(1, speed2*0.15 + Math.abs(_velZoom-1)*60);
 
-    if(Math.abs(_vel2x)<0.05 && Math.abs(_vel2y)<0.05 && Math.abs(_velZoom-1)<0.0003){
+    if(Math.abs(_vel2x)<0.1 && Math.abs(_vel2y)<0.1 && Math.abs(_velZoom-1)<0.0001){
       _inertia2=false; _vel2x=0; _vel2y=0; _velZoom=1; _warpLevel=0;
     }
   }
 
-  // Warp glow effect: boost glow intensity during zoom/pan inertia
-  if(_warpLevel>0){
-    glow.intensity=0.8+_warpLevel*2.5;
+  // Warp: boost glow + starfield speed during inertia
+  if(_warpLevel>0.01){
+    glow.intensity = 0.8 + _warpLevel * 4.0;
+    sky.rotation.y += _warpLevel * 0.003; // stars blur during warp
   } else {
     glow.intensity=0.8;
   }
