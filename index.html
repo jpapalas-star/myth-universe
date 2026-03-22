@@ -1474,33 +1474,23 @@ function _advStep(){
   // Focus on this entity
   enterFocus(id);
 
-  // If has video, play it then continue
+  // If has video, play it alongside speech (don't wait for video end)
   if(d.video){
-    // Preload hint
-    var vid=document.getElementById('videoEl');
-    if(vid){ vid.preload='auto'; }
     playEntityVideo(d);
-    var vid2=document.getElementById('videoEl');
-    if(vid2){
-      var _vidDone=false;
-      function _onVidFinish(){
-        if(_vidDone) return; _vidDone=true;
-        closeVideo();
-        if(_advActive) setTimeout(_advStep, 600);
-      }
-      vid2.onended=_onVidFinish;
-      // Fallback: max 30s then continue
-      setTimeout(function(){ if(!_vidDone) _onVidFinish(); }, 30000);
-      return;
-    }
   }
 
-  // Speak their description
+  // Always speak the description, advance when speech finishes
   var isEN=appLang==='en';
   var name=isEN?(d.Name_EN||d.Name||d.id):(d.Name||d.id);
   var txt=isEN?(d.FullText_EN||d.FullText||''):(d.FullText||d.FullText_EN||'');
   var say=(txt&&txt!=='-') ? txt : name;
-  _advSpeak(say, function(){ setTimeout(_advStep, 500); });
+  _advSpeak(say, function(){
+    // Close video if still playing when speech ends
+    var vid=document.getElementById('videoEl');
+    var ov=document.getElementById('videoOverlay');
+    if(ov && ov.style.display!=='none') closeVideo();
+    setTimeout(_advStep, 500);
+  });
 }
 
 function _advSpeak(text, onDone){
@@ -2050,6 +2040,13 @@ function enterFocus(id){
   }
 
   showInfo(dataMap[id]);
+  // Force background image update (belt & suspenders)
+  var _d=dataMap[id];
+  if(_d){
+    var _bgEl=document.getElementById('infoBgImg');
+    var _bgSrc=(_d.photo||_d.focusPhoto||'');
+    if(_bgEl){ _bgEl.src=_bgSrc; _bgEl.style.display=_bgSrc?'block':'none'; }
+  }
   if(typeof playEntityVideo==='function') playEntityVideo(dataMap[id]);
   // Auto-start TTS after video or immediately if no video
   setTimeout(function(){
