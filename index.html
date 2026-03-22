@@ -231,7 +231,7 @@ html,body{
 <button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:10px;left:255px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
 <button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:10px;left:76px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="display:none;">GR / EN</button>
-<button id="invertBtn" onclick="toggleInvert()" style="display:none;position:fixed;top:10px;left:76px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(100,220,100,0.5);border-radius:16px;color:#64dc64;font-size:11px;font-weight:bold;padding:6px 10px;cursor:pointer;">Invert X/Y</button>
+<button id="invertBtn" onclick="toggleInvert()" style="display:none;position:fixed;top:10px;left:175px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(100,220,100,0.5);border-radius:16px;color:#64dc64;font-size:11px;font-weight:bold;padding:6px 10px;cursor:pointer;">Invert X/Y</button>
 <!-- Gear button -->
 <button id="gearBtn" onclick="toggleSettingsPanel(event)" style="position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:50%;color:#ffe040;font-size:16px;font-weight:bold;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">⚙️</button>
 <!-- Settings panel -->
@@ -1498,13 +1498,25 @@ function _advStep(){
 
 function _advSpeak(text, onDone){
   stopSpeak();
-  if(!window.speechSynthesis||!text){if(onDone)onDone();return;}
+  if(!window.speechSynthesis||!text){if(onDone)setTimeout(onDone,300);return;}
   var utt=new SpeechSynthesisUtterance(text);
   utt.lang=appLang==='en'?'en-US':'el-GR';
   if(_selectedVoice){utt.voice=_selectedVoice;utt.lang=_selectedVoice.lang;}
   utt.rate=0.88; utt.pitch=0.8;
-  utt.onend=function(){ if(_advActive&&onDone) onDone(); };
-  utt.onerror=function(){ if(_advActive&&onDone) onDone(); };
+
+  var _done=false;
+  function finish(){
+    if(_done) return;
+    _done=true;
+    if(_advActive&&onDone) onDone();
+  }
+
+  // Estimate duration: ~80ms per character
+  var estMs = Math.max(1200, text.length * 80);
+  var _timer = setTimeout(finish, estMs);
+
+  utt.onend=function(){ clearTimeout(_timer); finish(); };
+  utt.onerror=function(){ clearTimeout(_timer); finish(); };
   window.speechSynthesis.speak(utt);
 }
 
@@ -2394,25 +2406,34 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
 function toggleDriveMode(){
   driveMode=!driveMode;
   var btn=document.getElementById('driveModeBtn'),ov=document.getElementById('driveOverlay');
-  var invertRow=document.getElementById('driveInvertRow');
+  var invertBtn=document.getElementById('invertBtn');
+  var slowBtn=document.getElementById('navSpeedBtn');
+  var gearBtn=document.getElementById('gearBtn');
   if(driveMode){
     btn.style.color='#ff8866';btn.style.borderColor='rgba(255,80,80,0.7)';
     if(ov)ov.style.display='block';
-    if(invertRow) invertRow.style.display='block';
-    var slowBtn=document.getElementById('navSpeedBtn');
+    if(invertBtn) invertBtn.style.display='block';
     if(slowBtn) slowBtn.style.display='none';
-    btn.style.left='76px'; btn.style.right='';
+    if(gearBtn) gearBtn.style.display='none';
+    btn.style.left='76px';
+    // Kill inertia so no jump-back on enter
+    _inertiaActive=false;
+    _velAlpha=0;_velBeta=0;_velRadius=0;_velTx=0;_velTy=0;_velTz=0;
+    _prevAlpha=camera.alpha;_prevBeta=camera.beta;_prevRadius=camera.radius;
+    _prevTx=camera.target.x;_prevTy=camera.target.y;_prevTz=camera.target.z;
     driveSpeed=0; _gasActive=false; _gasTurbo=false;
     _lookId=null; _lookAlphaDelta=0; _lookBetaDelta=0;
     animatePlanetsY(true);
   } else {
     btn.style.color='#ffe040';btn.style.borderColor='rgba(255,220,60,0.4)';
     if(ov)ov.style.display='none';
-    if(invertRow) invertRow.style.display='none';
-    var slowBtn=document.getElementById('navSpeedBtn');
+    if(invertBtn) invertBtn.style.display='none';
     if(slowBtn) slowBtn.style.display='block';
-    btn.style.left='255px'; btn.style.right='';
+    if(gearBtn) gearBtn.style.display='block';
+    btn.style.left='255px';
     driveSpeed=0; _gasActive=false; _gasTurbo=false; _warpLevel=0;
+    _inertiaActive=false;
+    _velAlpha=0;_velBeta=0;_velRadius=0;_velTx=0;_velTy=0;_velTz=0;
     // Exit: keep XZ position, go top-down view
     var tgt=camera.target.clone();
     var frames4=0,maxF4=40;
