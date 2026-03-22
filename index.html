@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Myth Universe Final Focus</title>
+<link rel="preconnect" href="https://cdn.babylonjs.com">
+<link rel="preconnect" href="https://raw.githubusercontent.com">
+<link rel="preload" href="https://cdn.babylonjs.com/babylon.js" as="script">
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 
 <script>
@@ -663,7 +666,7 @@ glow.intensity=0.8;
 glow.referenceMeshToUseItsOwnMaterial=true;
 
 // ---------- Procedural sky ----------
-const sky=BABYLON.MeshBuilder.CreateSphere("sky",{diameter:6200,segments:32},scene);
+const sky=BABYLON.MeshBuilder.CreateSphere("sky",{diameter:6200,segments:20},scene);
 const skyMat=new BABYLON.StandardMaterial("skyMat",scene);
 skyMat.backFaceCulling=false;
 skyMat.disableLighting=true;
@@ -673,7 +676,7 @@ const skyCtx=skyTexture.getContext();
 skyCtx.fillStyle="#01030a";
 skyCtx.fillRect(0,0,1024,1024);
 
-for(let i=0;i<700;i++){
+for(let i=0;i<300;i++){
   const x=Math.random()*1024;
   const y=Math.random()*1024;
   const s=Math.random()*2.2;
@@ -681,7 +684,7 @@ for(let i=0;i<700;i++){
   skyCtx.fillStyle=`rgba(255,255,255,${a})`;
   skyCtx.fillRect(x,y,s,s);
 }
-for(let i=0;i<55;i++){
+for(let i=0;i<25;i++){
   const x=Math.random()*1024;
   const y=Math.random()*1024;
   const r=80+Math.random()*220;
@@ -703,7 +706,7 @@ sky.material=skyMat;
 
 // ---------- Stars ----------
 const starMeshes=[];
-for(let i=0;i<320;i++){
+for(let i=0;i<150;i++){
   const s=BABYLON.MeshBuilder.CreateSphere("star_"+i,{diameter:1.3+Math.random()*1.2},scene);
   s.position.x=(Math.random()-0.5)*4200;
   s.position.y=(Math.random()-0.5)*4200;
@@ -727,7 +730,7 @@ pctx.fillStyle=pg;
 pctx.fillRect(0,0,64,64);
 pTex.update();
 
-const particleSystem=new BABYLON.ParticleSystem("spaceDust",1800,scene);
+const particleSystem=new BABYLON.ParticleSystem("spaceDust",800,scene);
 particleSystem.particleTexture=pTex;
 particleSystem.emitter=new BABYLON.Vector3(0,0,0);
 particleSystem.minEmitBox=new BABYLON.Vector3(-2000,-2000,-2000);
@@ -940,7 +943,7 @@ function sizeFor(d){
 function addRing(parentMesh,color,diameter,thickness){
   // Thicker rings — Saturn style
   var satThick = (thickness||0.11) * 3.5;
-  const ring=BABYLON.MeshBuilder.CreateTorus('ring_'+Math.random(),{diameter:diameter,thickness:satThick,tessellation:70},scene);
+  const ring=BABYLON.MeshBuilder.CreateTorus('ring_'+Math.random(),{diameter:diameter,thickness:satThick,tessellation:40},scene);
   ring.rotation.x=Math.PI/2;
   ring.parent=parentMesh;
   ring.position=BABYLON.Vector3.Zero();
@@ -1016,7 +1019,7 @@ function createNode(d,x,y,z,familyRingColor){
   const size=sizeFor(d);
   const tint=genderPlanetTint(d);
 
-  const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:18},scene);
+  const sphere=BABYLON.MeshBuilder.CreateSphere('sphere_'+d.id,{diameter:size,segments:10},scene);
   sphere.position=new BABYLON.Vector3(x,y,z);
   sphere.renderingGroupId=1;
 
@@ -1038,7 +1041,7 @@ function createNode(d,x,y,z,familyRingColor){
     sphere.material=sm;
     sphere.metadata=Object.assign({},d,{isChaos:true,hasPhoto:!!chaosTex,rotSpeed:0.0008});
     if(chaosTex){
-      var chaosDisc=BABYLON.MeshBuilder.CreateDisc('disc_'+d.id,{radius:size/2,tessellation:48},scene);
+      var chaosDisc=BABYLON.MeshBuilder.CreateDisc('disc_'+d.id,{radius:size/2,tessellation:28},scene);
       var cdMat=new BABYLON.StandardMaterial('cdmat_'+d.id,scene);
       cdMat.diffuseTexture=chaosTex;
       cdMat.emissiveTexture=chaosTex;
@@ -1089,7 +1092,7 @@ function createNode(d,x,y,z,familyRingColor){
     discMat.disableLighting=true;
 
     // Create a disc the same size as the sphere
-    var disc=BABYLON.MeshBuilder.CreateDisc('disc_'+d.id,{radius:size/2,tessellation:48},scene);
+    var disc=BABYLON.MeshBuilder.CreateDisc('disc_'+d.id,{radius:size/2,tessellation:28},scene);
     disc.parent=sphere;
     disc.position=BABYLON.Vector3.Zero();
     disc.renderingGroupId=1;
@@ -1801,7 +1804,7 @@ function renderConnections(filterSet){
     if(!a||!b) return;
 
     const ctrl=makeControlPoint(a.clone(),b.clone(),rec.type);
-    const curve=BABYLON.Curve3.CreateQuadraticBezier(a.clone(),ctrl,b.clone(),28);
+    const curve=BABYLON.Curve3.CreateQuadraticBezier(a.clone(),ctrl,b.clone(),16);
     const path=curve.getPoints();
 
     const tube=BABYLON.MeshBuilder.CreateTube('conn_'+idx,{path,radius:rec.type==='partner'?0.10:0.055},scene);
@@ -1826,7 +1829,7 @@ function renderConnections(filterSet){
     lineMaterials.push({mat,base:rec.color,type:rec.type,phase:Math.random()*Math.PI*2});
 
     if(rec.type==='parent' && path.length>2){
-      const orb=BABYLON.MeshBuilder.CreateCylinder('flow_'+idx,{height:0.06,diameter:0.025,tessellation:10},scene);
+      const orb=BABYLON.MeshBuilder.CreateCylinder('flow_'+idx,{height:0.06,diameter:0.025,tessellation:6},scene);
       connectionMeshes.push(orb);
 
       const fm=new BABYLON.StandardMaterial('flowMat_'+idx,scene);
@@ -2047,9 +2050,10 @@ function enterFocus(id){
     var _bgSrc=(_d.photo||_d.focusPhoto||'');
     if(_bgEl){ _bgEl.src=_bgSrc; _bgEl.style.display=_bgSrc?'block':'none'; }
   }
-  if(typeof playEntityVideo==='function') playEntityVideo(dataMap[id]);
+  if(typeof playEntityVideo==='function' && !_advActive) playEntityVideo(dataMap[id]);
   // Auto-start TTS after video or immediately if no video
   setTimeout(function(){
+    if(_advActive) return; // adventure handles its own TTS
     if(typeof speakText==='function') speakText();
   }, dataMap[id]&&dataMap[id].video ? 100 : 400);
   if(!suppressPop) history.pushState({focus:id},'');
