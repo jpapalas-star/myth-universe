@@ -239,7 +239,11 @@ html,body{
 
 <script>
 var appLang='gr';
-var navFast=false; // false=slow, true=fast
+var navFast=false;
+var _vel2x=0, _vel2y=0;   // 2-finger pan inertia
+var _velZoom=1;            // zoom inertia (multiplier per frame)
+var _inertia2=false;       // 2-finger inertia active
+var _warpLevel=0;          // 0..1 warp intensity // false=slow, true=fast
 var _lastInfoD=null;
 const canvas=document.getElementById('renderCanvas');
 const infoEl=document.getElementById('info');
@@ -495,6 +499,12 @@ canvas.addEventListener('touchmove', function(e) {
     }
     _tf.angle = curAngle;
 
+    // Record velocity for inertia
+    _vel2x = mx - _tf.mx;
+    _vel2y = my - _tf.my;
+    var distChange2 = dist / (_tf.dist||dist);
+    _velZoom = 1 + (distChange2 - 1) * 0.3; // damped zoom velocity
+
     _tf.mx = mx; _tf.my = my; _tf.dist = dist;
     // p0x/p1y already updated above
   }
@@ -515,7 +525,10 @@ canvas.addEventListener('touchend', function(e) {
     }
     return;
   }
-  // All fingers up
+  // All fingers up — start 2-finger inertia if _tf had velocity
+  if(_tf && (_vel2x!==0 || _vel2y!==0 || _velZoom!==1)){
+    _inertia2=true;
+  }
   _tf = null;
   if (!_multi && _t1) {
     var el = Date.now() - _t1.t;
@@ -2016,6 +2029,35 @@ engine.runRenderLoop(()=>{
       n.sphere.material.albedoColor=new BABYLON.Color3(0.9+Math.sin(t*1.2)*0.1, 0.92, 1);
     }
   });
+
+  // 2-finger inertia: pan + zoom coast after release
+  if(_inertia2){
+    var DAMP2=0.88;
+    _vel2x*=DAMP2; _vel2y*=DAMP2;
+    _velZoom=1+(_velZoom-1)*DAMP2;
+
+    if(Math.abs(_vel2x)>0.05 || Math.abs(_vel2y)>0.05){
+      _panDelta(_vel2x*(navFast?6.5:3.5), _vel2y*(navFast?6.5:3.5));
+    }
+    if(Math.abs(_velZoom-1)>0.0002){
+      camera.radius=_cr(camera.radius*_velZoom);
+    }
+
+    // Warp effect: scale glow intensity during fast movement
+    var speed2=Math.sqrt(_vel2x*_vel2x+_vel2y*_vel2y);
+    _warpLevel=Math.min(1, (speed2*0.08 + Math.abs(_velZoom-1)*30));
+
+    if(Math.abs(_vel2x)<0.05 && Math.abs(_vel2y)<0.05 && Math.abs(_velZoom-1)<0.0003){
+      _inertia2=false; _vel2x=0; _vel2y=0; _velZoom=1; _warpLevel=0;
+    }
+  }
+
+  // Warp glow effect: boost glow intensity during zoom/pan inertia
+  if(_warpLevel>0){
+    glow.intensity=0.8+_warpLevel*2.5;
+  } else {
+    glow.intensity=0.8;
+  }
 
   sky.rotation.y += 0.00004;
   particleSystem.emitter.x=Math.sin(performance.now()*0.00005)*200;
