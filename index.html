@@ -1261,7 +1261,10 @@ function showInfo(d){
       <button onclick="speakText()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:5px 12px;font-size:12px;cursor:pointer;">${appLang==="en"?"🔊 Listen":"🔊 Ακρόαση"}</button>
       <button onclick="stopSpeak()" style="background:rgba(255,100,60,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:16px;color:#ff8866;padding:5px 12px;font-size:12px;cursor:pointer;">⏹ Stop</button>
     </div>`+
-    `<div class="txt" id="infoFullText">${fulltext}</div>`;
+    `<div class="txt" id="infoFullText">${fulltext}</div>`+
+    `<div style="margin-top:12px;">
+      <button onclick="startFamilyAdventure('${d.id}')" style="width:100%;background:linear-gradient(135deg,rgba(255,160,30,0.25),rgba(255,100,30,0.15));border:1px solid rgba(255,160,30,0.5);border-radius:18px;color:#ffb040;padding:9px 14px;font-size:13px;font-weight:bold;cursor:pointer;letter-spacing:1px;">🌟 ${appLang==='en'?'Family Adventure':'Περιπέτεια'}</button>
+    </div>`;
   bindInfoLinks();
 }
 
@@ -1382,7 +1385,150 @@ function stopSpeak(){
   if(ttsBtn) ttsBtn.style.display='none';
 }
 
-// ── VOICE CYCLE ───────────────────────────────────────────────────────
+// ── FAMILY ADVENTURE ─────────────────────────────────────────────────
+var _advActive=false;
+var _advQueue=[];
+var _advIndex=0;
+var _advRootId=null;
+
+function startFamilyAdventure(rootId){
+  if(_advActive) stopFamilyAdventure();
+  _advRootId=rootId;
+  var d=dataMap[rootId];
+  if(!d) return;
+
+  // Build ordered queue: grandparents → parents → partners → self → children → grandchildren
+  var queue=[];
+  var seen=new Set();
+
+  function addId(id){
+    if(!id||seen.has(id)||!dataMap[id]) return;
+    seen.add(id);
+    queue.push(id);
+  }
+
+  // Grandparents
+  idsFromField(d.Parents).forEach(function(pid){
+    var p=dataMap[pid]; if(!p) return;
+    idsFromField(p.Parents).forEach(addId);
+  });
+  // Parents
+  idsFromField(d.Parents).forEach(addId);
+  // Partners
+  idsFromField(d.Partners).forEach(addId);
+  // Self
+  addId(rootId);
+  // Children
+  idsFromField(d.Children).forEach(function(cid){
+    addId(cid);
+    // Grandchildren
+    var c=dataMap[cid]; if(!c) return;
+    idsFromField(c.Children).forEach(addId);
+  });
+
+  if(queue.length===0){ showToast('Δεν βρέθηκαν συγγενείς!'); return; }
+
+  _advActive=true;
+  _advQueue=queue;
+  _advIndex=0;
+
+  // Show adventure overlay
+  _showAdvOverlay();
+
+  // Intro message
+  var isEN=appLang==='en';
+  var intro=isEN?"Let me introduce you to my family!":"Να σου γνωρίσω την οικογένεια μου!";
+  _advSpeak(intro, function(){ _advStep(); });
+}
+
+function _showAdvOverlay(){
+  var ov=document.getElementById('advOverlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='advOverlay';
+    ov.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:500;display:flex;gap:10px;justify-content:center;padding:10px 14px;background:linear-gradient(transparent,rgba(0,0,0,0.85));pointer-events:all;';
+    ov.innerHTML=
+      '<button onclick="advNext()" style="flex:1;max-width:140px;background:rgba(255,200,60,0.2);border:1px solid rgba(255,200,60,0.5);border-radius:18px;color:#ffe040;font-size:13px;font-weight:bold;padding:9px;cursor:pointer;">⏭ Next</button>'+
+      '<button onclick="stopFamilyAdventure()" style="flex:1;max-width:140px;background:rgba(255,60,60,0.15);border:1px solid rgba(255,60,60,0.4);border-radius:18px;color:#ff8866;font-size:13px;font-weight:bold;padding:9px;cursor:pointer;">✖ Skip All</button>';
+    document.body.appendChild(ov);
+  }
+  ov.style.display='flex';
+}
+
+function _hideAdvOverlay(){
+  var ov=document.getElementById('advOverlay');
+  if(ov) ov.style.display='none';
+}
+
+function _advStep(){
+  if(!_advActive) return;
+  if(_advIndex>=_advQueue.length){
+    _advEnd(); return;
+  }
+  var id=_advQueue[_advIndex];
+  _advIndex++;
+  var d=dataMap[id];
+  if(!d){_advStep();return;}
+
+  // Focus on this entity
+  enterFocus(id);
+
+  // If has video, play it then continue
+  if(d.video){
+    playEntityVideo(d);
+    var vid=document.getElementById('videoEl');
+    if(vid){
+      var _origEnd=vid.onended;
+      vid.onended=function(){
+        closeVideo();
+        vid.onended=_origEnd;
+        setTimeout(_advStep,600);
+      };
+      return;
+    }
+  }
+
+  // Speak their description
+  var isEN=appLang==='en';
+  var name=isEN?(d.Name_EN||d.Name||d.id):(d.Name||d.id);
+  var txt=isEN?(d.FullText_EN||d.FullText||''):(d.FullText||d.FullText_EN||'');
+  var say=(txt&&txt!=='-') ? txt : name;
+  _advSpeak(say, function(){ setTimeout(_advStep, 500); });
+}
+
+function _advSpeak(text, onDone){
+  stopSpeak();
+  if(!window.speechSynthesis||!text){if(onDone)onDone();return;}
+  var utt=new SpeechSynthesisUtterance(text);
+  utt.lang=appLang==='en'?'en-US':'el-GR';
+  if(_selectedVoice){utt.voice=_selectedVoice;utt.lang=_selectedVoice.lang;}
+  utt.rate=0.88; utt.pitch=0.8;
+  utt.onend=function(){ if(_advActive&&onDone) onDone(); };
+  utt.onerror=function(){ if(_advActive&&onDone) onDone(); };
+  window.speechSynthesis.speak(utt);
+}
+
+function advNext(){
+  stopSpeak();
+  _advStep();
+}
+
+function _advEnd(){
+  _advActive=false;
+  _hideAdvOverlay();
+  stopSpeak();
+  var isEN=appLang==='en';
+  var msg=isEN?"That was my family. Nice to meet you!":"Αυτή ήταν η οικογένειά μου. Χάρηκα που γνωριστήκαμε!";
+  showToast('🌟 '+msg);
+  _advSpeak(msg, null);
+}
+
+function stopFamilyAdventure(){
+  _advActive=false;
+  _hideAdvOverlay();
+  stopSpeak();
+}
+
 var _voiceIndex = 0;
 var _allVoices = [];
 var _selectedVoice = null;
