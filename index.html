@@ -207,7 +207,7 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:12px;right:232px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🚀 Drive</button>
+<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:56px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🚀 Drive</button>
 <button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:12px;left:88px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="position:fixed;top:12px;right:130px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;letter-spacing:1px;">GR / EN</button>
 <button id="homeBtn" type="button">Μυθολογία</button>
@@ -2150,25 +2150,32 @@ engine.runRenderLoop(()=>{
     var mxS=navFast?1.5:0.7;
     driveSpeed=Math.abs(driveThrottle)>0.05?driveThrottle*mxS:0;
 
-    // Gyro steers camera direction (dead zone ±0.1)
-    var gA=Math.abs(_gyroAlpha)>0.1?(_gyroAlpha-Math.sign(_gyroAlpha)*0.1)*0.025:0;
-    camera.alpha+=gA;
-    // Keep beta near PI/3 (nice angle) — gyro only tilts slightly up/down
-    var targetBeta=Math.PI/3 + (Math.abs(_gyroBeta)>0.1?(_gyroBeta*0.3):0);
-    camera.beta=_cb(camera.beta*0.92+targetBeta*0.08);
+    var DZ=0.15; // dead zone
+    // gamma = left/right tilt → steer alpha (yaw)
+    var rawG=_gyroAlpha;
+    var steerA=Math.abs(rawG)>DZ?(rawG-Math.sign(rawG)*DZ)*0.03:0;
+    camera.alpha+=steerA;
+    // beta (device pitch, front/back tilt) → steer camera.beta (look up/down)
+    var rawB=_gyroBeta; // _gyroBeta = e.beta/45
+    var steerB=Math.abs(rawB)>DZ?(rawB-Math.sign(rawB)*DZ)*0.025:0;
+    camera.beta=_cb(camera.beta+steerB);
 
-    // Move FORWARD along camera direction (XZ plane only — no vertical drift)
+    // Move in full 3D direction camera is looking
     if(Math.abs(driveSpeed)>0.01){
-      var fwdX=Math.cos(camera.alpha)*driveSpeed;
-      var fwdZ=Math.sin(camera.alpha)*driveSpeed;
-      camera.target.x+=fwdX;
-      camera.target.z+=fwdZ;
-      var tD2=Math.sqrt(camera.target.x*camera.target.x+camera.target.z*camera.target.z);
-      if(tD2>640){
-        var ov4=(tD2-640)*0.1;
-        camera.target.x-=(camera.target.x/tD2)*ov4;
-        camera.target.z-=(camera.target.z/tD2)*ov4;
-        driveSpeed=0;
+      var cb=camera.beta, ca=camera.alpha;
+      camera.target.x+=Math.cos(ca)*Math.sin(cb)*driveSpeed;
+      camera.target.z+=Math.sin(ca)*Math.sin(cb)*driveSpeed;
+      camera.target.y+=Math.cos(cb)*driveSpeed; // up/down from pitch
+
+      // 3D boundary sphere r=640 — push back gently from all directions
+      var tx=camera.target.x, ty=camera.target.y, tz=camera.target.z;
+      var tD3=Math.sqrt(tx*tx+ty*ty+tz*tz);
+      if(tD3>640){
+        var ov5=(tD3-640)*0.1;
+        camera.target.x-=(tx/tD3)*ov5;
+        camera.target.y-=(ty/tD3)*ov5;
+        camera.target.z-=(tz/tD3)*ov5;
+        driveSpeed*=0.5; // slow down at edge
       }
     }
     if(driveThrottle>0.25){_warpLevel=Math.min(1,_warpLevel+0.06);if(window._warpInit&&_warpLevel<0.08)window._warpInit();}
