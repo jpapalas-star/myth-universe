@@ -241,6 +241,7 @@ html,body{
 var appLang='gr';
 var navFast=false;
 var _vel2x=0, _vel2y=0;   // 2-finger pan inertia
+var _didZoom=false;        // was zoom done this gesture
 var _velZoom=1;            // zoom inertia (multiplier per frame)
 var _inertia2=false;       // 2-finger inertia active
 var _warpLevel=0;          // 0..1 warp intensity // false=slow, true=fast
@@ -365,6 +366,7 @@ canvas.addEventListener('touchstart', function(e) {
     var angle = Math.atan2(dy, dx);
     var rect0 = canvas.getBoundingClientRect();
     var initAngle = Math.atan2(t1.clientY - t0.clientY, t1.clientX - t0.clientX);
+    _didZoom=false; _vel2x=0; _vel2y=0; _velZoom=1;
     _tf = { mx: mx, my: my, dist: dist, warmup: 0,
             f0x: t0.clientX - rect0.left, f0y: t0.clientY - rect0.top,
             p0x: t0.clientX, p0y: t0.clientY,
@@ -479,6 +481,7 @@ canvas.addEventListener('touchmove', function(e) {
 
       ratio = 1 + rawChange * damping;
       camera.radius = _cr(camera.radius * ratio);
+      _didZoom=true;
     }
 
     // 3. TWIST ROTATION — rotate camera.alpha based on finger angle change
@@ -521,12 +524,13 @@ canvas.addEventListener('touchend', function(e) {
       _multi = false;
       var rem = e.touches[0];
       var rect2 = canvas.getBoundingClientRect();
-      _t1 = { x: rem.clientX, y: rem.clientY, t: Date.now(), id: null, firstMove: true };
+      // Use Date.now()-600 so this finger can NEVER trigger a tap (was part of 2-finger)
+      _t1 = { x: rem.clientX, y: rem.clientY, t: Date.now()-600, id: null, firstMove: true };
     }
     return;
   }
   // All fingers up — start 2-finger inertia if _tf had velocity
-  if(_tf && (_vel2x!==0 || _vel2y!==0 || _velZoom!==1)){
+  if(_tf && (Math.abs(_vel2x)>0.01 || Math.abs(_vel2y)>0.01 || Math.abs(_velZoom-1)>0.0001 || _didZoom)){
     _inertia2=true;
   }
   _tf = null;
@@ -2058,7 +2062,7 @@ engine.runRenderLoop(()=>{
     _warpLevel=Math.min(1, speed2*0.25 + Math.abs(_velZoom-1)*80);
 
     if(Math.abs(_vel2x)<0.1 && Math.abs(_vel2y)<0.1 && Math.abs(_velZoom-1)<0.0001){
-      _inertia2=false; _vel2x=0; _vel2y=0; _velZoom=1; _warpLevel=0;
+      _inertia2=false; _vel2x=0; _vel2y=0; _velZoom=1; _warpLevel=0; _didZoom=false;
     }
   }
 
