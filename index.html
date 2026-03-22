@@ -231,16 +231,14 @@ html,body{
 <button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:10px;left:255px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
 <button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:10px;left:76px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="display:none;">GR / EN</button>
-<button id="invertBtn" onclick="toggleInvert()" style="display:none;">Invert X/Y</button>
+<button id="invertBtn" onclick="toggleInvert()" style="display:none;position:fixed;top:10px;left:76px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(100,220,100,0.5);border-radius:16px;color:#64dc64;font-size:11px;font-weight:bold;padding:6px 10px;cursor:pointer;">Invert X/Y</button>
 <!-- Gear button -->
 <button id="gearBtn" onclick="toggleSettingsPanel(event)" style="position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:50%;color:#ffe040;font-size:16px;font-weight:bold;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">⚙️</button>
 <!-- Settings panel -->
 <div id="settingsPanelMain" style="display:none;position:fixed;top:52px;right:10px;z-index:300;background:rgba(10,5,25,0.95);border:1px solid rgba(255,220,60,0.3);border-radius:14px;padding:12px 14px;min-width:160px;backdrop-filter:blur(8px);">
   <div style="display:flex;flex-direction:column;gap:8px;">
     <button onclick="toggleLang();updateLangBtnLabel();" style="background:rgba(255,220,60,0.12);border:1px solid rgba(255,220,60,0.4);border-radius:12px;color:#ffe040;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;" id="langBtnInner">GR / EN</button>
-    <button onclick="cycleVoice();" style="background:rgba(100,200,255,0.12);border:1px solid rgba(100,200,255,0.4);border-radius:12px;color:#8fd3ff;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🔊 Voice</button>    <div id="driveInvertRow" style="display:none;">
-      <button onclick="toggleInvert()" id="invertBtnInner" style="width:100%;background:rgba(100,220,100,0.12);border:1px solid rgba(100,220,100,0.4);border-radius:12px;color:#64dc64;font-size:12px;font-weight:bold;padding:7px 14px;cursor:pointer;">Invert X/Y</button>
-    </div>
+    <button onclick="cycleVoice();" style="background:rgba(100,200,255,0.12);border:1px solid rgba(100,200,255,0.4);border-radius:12px;color:#8fd3ff;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🔊 Voice</button>
   </div>
 </div>
 <button id="homeBtn" type="button">Μυθολογία</button>
@@ -627,13 +625,17 @@ canvas.addEventListener('wheel', function(e) {
 
 
 function _doTap(pickedId) {
+  // Always close menus on any tap
+  var gp=document.getElementById('settingsPanelMain');
+  if(gp) gp.style.display='none';
+  if(panelOpen){ panelEl.style.display='none'; panelOpen=false; }
+
   if (pickedId && nodes[pickedId]) {
     if (focusedId === pickedId) resetFocus(false);
     else enterFocus(pickedId);
   } else {
-    // Tapped blank space
     if (focusedId) {
-      resetFocus(false); // restores pre-focus camera position
+      resetFocus(false);
     } else {
       resetInfo();
     }
@@ -1254,11 +1256,12 @@ function showInfo(d){
     `<h2>${name}</h2>`+
     `<div class="sec">${lbl.par}</div><div class="txt">${listInfoLinks(d.Parents)}</div>`+
     `<div class="sec">${lbl.prt}</div><div class="txt">${listInfoLinks(d.Partners)}</div>`+
-    `<div class="sec">${lbl.txt}</div><div class="txt" id="infoFullText">${fulltext}</div>`+
-    `<div style="margin-top:10px;display:flex;gap:8px;">
-      <button onclick="speakText()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:6px 14px;font-size:12px;cursor:pointer;">${appLang==="en"?"🔊 Listen":"🔊 Ακρόαση"}</button>
-      <button onclick="stopSpeak()" style="background:rgba(255,100,60,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:16px;color:#ff8866;padding:6px 14px;font-size:12px;cursor:pointer;">⏹ Stop</button>
-    </div>`;
+    `<div class="sec">${lbl.txt}</div>`+
+    `<div style="margin-bottom:7px;display:flex;gap:8px;">
+      <button onclick="speakText()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:5px 12px;font-size:12px;cursor:pointer;">${appLang==="en"?"🔊 Listen":"🔊 Ακρόαση"}</button>
+      <button onclick="stopSpeak()" style="background:rgba(255,100,60,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:16px;color:#ff8866;padding:5px 12px;font-size:12px;cursor:pointer;">⏹ Stop</button>
+    </div>`+
+    `<div class="txt" id="infoFullText">${fulltext}</div>`;
   bindInfoLinks();
 }
 
@@ -1398,17 +1401,21 @@ function _loadVoices(){
 
 function cycleVoice(){
   if(!window.speechSynthesis) return;
-  var voices = window.speechSynthesis.getVoices();
-  if(!voices || voices.length===0){
+  var allVoices = window.speechSynthesis.getVoices();
+  if(!allVoices || allVoices.length===0){
     window.speechSynthesis.onvoiceschanged = function(){
       _loadVoices(); cycleVoice();
       window.speechSynthesis.onvoiceschanged=null;
     };
     return;
   }
-  _allVoices = voices;
-  _voiceIndex = (_voiceIndex + 1) % voices.length;
-  _selectedVoice = voices[_voiceIndex];
+  // Filter by current language
+  var langFilter = appLang==='en' ? 'en' : 'el';
+  var filtered = allVoices.filter(function(v){ return v.lang.toLowerCase().indexOf(langFilter)===0; });
+  if(filtered.length===0) filtered = allVoices; // fallback
+  _allVoices = filtered;
+  _voiceIndex = (_voiceIndex + 1) % filtered.length;
+  _selectedVoice = filtered[_voiceIndex];
   var name = _selectedVoice.name + ' (' + _selectedVoice.lang + ')';
   showToast('🔊 ' + name);
   window.speechSynthesis.cancel();
@@ -2430,18 +2437,13 @@ engine.runRenderLoop(()=>{
     var _turboMult = _gasTurbo ? 3.5 : 1.0;
     driveSpeed = _baseSpeed * _turboMult;
 
-    // Capture move direction BEFORE steering (prevents drift)
-    var _moveAlpha = camera.alpha;
-
     // FPS-style pivot: camera position fixed, target moves
     // BabylonJS: camPos = target + r*(cos(a)*sin(b), cos(b), sin(a)*sin(b))
     if(Math.abs(_lookAlphaDelta)>0.5 || Math.abs(_lookBetaDelta)>0.5){
       var r=camera.radius, a=camera.alpha, b=camera.beta;
-      // Compute current camera world position
       var cpx = camera.target.x + r * Math.cos(a) * Math.sin(b);
       var cpy = camera.target.y + r * Math.cos(b);
       var cpz = camera.target.z + r * Math.sin(a) * Math.sin(b);
-
       if(Math.abs(_lookAlphaDelta)>0.5){
         var dirX = _lookInvertX ? 1 : -1;
         a += dirX * (_lookAlphaDelta / (window.innerWidth||400)) * 2.2;
@@ -2452,18 +2454,18 @@ engine.runRenderLoop(()=>{
         b = _cb(b + dirY * (_lookBetaDelta / (window.innerHeight||800)) * 2.0);
         camera.beta = b;
       }
-      // Move target so camera position stays fixed
       camera.target.x = cpx - r * Math.cos(a) * Math.sin(b);
       camera.target.y = cpy - r * Math.cos(b);
       camera.target.z = cpz - r * Math.sin(a) * Math.sin(b);
     }
     _lookAlphaDelta=0; _lookBetaDelta=0;
 
-    // Move forward using pre-steer direction
+    // Move forward using CURRENT camera direction (after steering)
     if(driveSpeed>0.01){
-      camera.target.x -= Math.cos(_moveAlpha)*driveSpeed;
-      camera.target.z -= Math.sin(_moveAlpha)*driveSpeed;
-      camera.target.y -= Math.sin(camera.beta-Math.PI/2)*driveSpeed*0.4;
+      var ma=camera.alpha, mb=camera.beta;
+      camera.target.x -= Math.cos(ma)*Math.sin(mb)*driveSpeed;
+      camera.target.z -= Math.sin(ma)*Math.sin(mb)*driveSpeed;
+      camera.target.y -= Math.cos(mb)*driveSpeed*0.4;
       // Wrap-around
       var tx=camera.target.x,tz2=camera.target.z;
       var tD=Math.sqrt(tx*tx+tz2*tz2);
