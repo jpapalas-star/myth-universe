@@ -475,7 +475,7 @@ canvas.addEventListener('touchmove', function(e) {
       var maxR = camera.upperRadiusLimit || 900;
       var t = Math.max(0, Math.min(1, (camera.radius - minR) / (maxR - minR)));
       var dampMax = navFast ? 1.8 : 1.2;
-      var damping = 0.45 + t * (dampMax - 0.45); // 0.45 close → dampMax far
+      var damping = 0.58 + t * (dampMax - 0.45); // 0.45 close → dampMax far
 
       ratio = 1 + rawChange * damping;
       camera.radius = _cr(camera.radius * ratio);
@@ -846,6 +846,22 @@ function spriteFile(d){
   return 'default.png';
 }
 
+function groupLabelColor(d){
+  var m=String(d.ModelType||'').toLowerCase();
+  var id=String(d.id||'');
+  if(id==='PRIM_CHAOS_001')     return '#ffffff';
+  if(m==='energy')              return '#cc99ff'; // primordials: soft purple
+  if(m==='giant')               return '#44aaff'; // titans: blue
+  if(m==='god'||m==='goddess')  return '#ffe040'; // olympians: bright gold
+  if(m==='wind')                return '#aaddff'; // winds: light blue
+  if(m==='nymph')               return '#66eebb'; // nymphs: teal
+  if(m==='human'||m==='hero')   return '#ff8866'; // heroes: coral
+  if(m==='monster')             return '#88dd55'; // monsters: green
+  if(m==='spirit')              return '#99bbcc'; // spirits: steel
+  if(m==='underworld')          return '#dd6688'; // underworld: rose
+  return '#ffe040';
+}
+
 function groupRingColor(d){
   var m=String(d.ModelType||'').toLowerCase();
   var id=String(d.id||'');
@@ -875,7 +891,9 @@ function sizeFor(d){
 }
 
 function addRing(parentMesh,color,diameter,thickness){
-  const ring=BABYLON.MeshBuilder.CreateTorus('ring_'+Math.random(),{diameter,thickness:thickness||0.11,tessellation:70},scene);
+  // Thicker rings — Saturn style
+  var satThick = (thickness||0.11) * 3.5;
+  const ring=BABYLON.MeshBuilder.CreateTorus('ring_'+Math.random(),{diameter:diameter,thickness:satThick,tessellation:70},scene);
   ring.rotation.x=Math.PI/2;
   ring.parent=parentMesh;
   ring.position=BABYLON.Vector3.Zero();
@@ -905,7 +923,7 @@ function wrapName(text,maxChars){
   return lines.slice(0,2);
 }
 
-function createLabel(text,parentMesh,size){
+function createLabel(text,parentMesh,size,labelColor){
   const lines=wrapName(text,14);
   const dt=new BABYLON.DynamicTexture('dt_'+Math.random(),{width:1024,height:256},scene,true);
   dt.hasAlpha=true;
@@ -915,7 +933,7 @@ function createLabel(text,parentMesh,size){
   // Shadow for readability
   ctx.shadowColor='rgba(0,0,0,0.9)';
   ctx.shadowBlur=18;
-  ctx.fillStyle='#ffe040';  // warm golden yellow
+  ctx.fillStyle=labelColor||'#ffe040';
   ctx.font='bold 72px Arial';
   if(lines.length===1){
     ctx.fillText(lines[0],512,130);
@@ -962,28 +980,14 @@ function createNode(d,x,y,z,familyRingColor){
     sm.emissiveColor = tint.scale(0.18);
     sm.specularColor = tint.scale(0.4);
     sm.specularPower = 12;
-    sm.alpha         = 0.22;  // semi-transparent
+    sm.alpha         = 0.0;  // invisible — rings do the visual work
     sm.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
     sm.backFaceCulling  = false;
     sphere.material = sm;
-    sphere.isPickable   = true;
+    sphere.isPickable   = true; // still pickable for tap
     sphere.renderingGroupId = 1;
-    glow.addIncludedOnlyMesh(sphere);
 
-    // Inner glow sphere slightly smaller — warmer, more opaque near centre
-    var innerSphere = BABYLON.MeshBuilder.CreateSphere('inner_'+d.id,
-      {diameter: size*0.88, segments: 14}, scene);
-    innerSphere.parent = sphere;
-    innerSphere.position = BABYLON.Vector3.Zero();
-    innerSphere.renderingGroupId = 1;
-    var innerMat = new BABYLON.StandardMaterial('innermat_'+d.id, scene);
-    innerMat.diffuseColor  = tint.scale(0.15);
-    innerMat.emissiveColor = tint.scale(0.30);
-    innerMat.specularColor = BABYLON.Color3.Black();
-    innerMat.alpha         = 0.13;
-    innerMat.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
-    innerMat.backFaceCulling  = false;
-    innerSphere.material = innerMat;
+    // No inner sphere — causes grey artefacts on mobile
 
     var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
     photoTex.hasAlpha=false;
@@ -1014,11 +1018,14 @@ function createNode(d,x,y,z,familyRingColor){
       rotSpeed: 0.004 + Math.random()*0.002
     });
 
-    var photoLabel=createLabel(d.Name||d.id,sphere,size);
+    var photoLabel=createLabel(d.Name||d.id,sphere,size,groupLabelColor(d));
     var photoRings=[];
     var grc2=groupRingColor(d);
-    photoRings.push(addRing(sphere, grc2, size*1.28, 0.11));
-    if(familyRingColor) photoRings.push(addRing(sphere, familyRingColor, size*1.14, 0.07));
+    // Inner ring — group color, wide
+    photoRings.push(addRing(sphere, grc2, size*1.22, 0.13));
+    // Outer ring — slightly larger, more transparent
+    photoRings.push(addRing(sphere, grc2, size*1.42, 0.06));
+    if(familyRingColor) photoRings.push(addRing(sphere, familyRingColor, size*1.58, 0.04));
 
     nodes[d.id]={id:d.id,data:d,sphere:sphere,rings:photoRings,label:photoLabel,size:size,familyRingColor:familyRingColor||null};
     placed.add(d.id);
@@ -1097,14 +1104,16 @@ function createNode(d,x,y,z,familyRingColor){
   sm.backFaceCulling=false;
   sphere.material=sm;
 
-  const label=createLabel(d.Name||d.id,sphere,size);
+  const label=createLabel(d.Name||d.id,sphere,size,groupLabelColor(d));
 
   const rings=[];
   var grc=groupRingColor(d);
-  // Outer group-colored ring (always)
-  rings.push(addRing(sphere, grc, size*1.28, 0.10));
-  // Inner family ring if in a family
-  if(familyRingColor) rings.push(addRing(sphere, familyRingColor, size*1.14, 0.07));
+  // Main Saturn ring — group color
+  rings.push(addRing(sphere, grc, size*1.22, 0.13));
+  // Outer thin ring
+  rings.push(addRing(sphere, grc, size*1.45, 0.05));
+  // Family ring if available
+  if(familyRingColor) rings.push(addRing(sphere, familyRingColor, size*1.62, 0.035));
 
   sphere.metadata=Object.assign({},d,{isChaos:String(d.id)==='PRIM_CHAOS_001'});
   nodes[d.id]={id:d.id,data:d,sphere,rings,label,size,familyRingColor:familyRingColor||null};
