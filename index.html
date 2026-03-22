@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://raw.githubusercontent.com">
 <link rel="preload" href="https://cdn.babylonjs.com/babylon.js" as="script">
 <meta http-equiv="Cache-Control" content="max-age=86400">
+<script src="https://code.responsivevoice.org/responsivevoice.js?key=FREE"></script>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 
 <script>
@@ -1346,44 +1347,23 @@ function _getBestVoice(lang, preferMale){
 function speakText(){
   stopSpeak();
   var el=document.getElementById('infoFullText');
-  if(!el||!window.speechSynthesis) return;
+  if(!el) return;
   var txt=el.textContent||'';
   if(!txt||txt==='-') return;
-
-  function doSpeak(){
-    var utt=new SpeechSynthesisUtterance(txt);
-    if(appLang==='en'){ utt.lang='en-US'; } else { utt.lang='el-GR'; }
-    if(_selectedVoice){ utt.voice=_selectedVoice; utt.lang=_selectedVoice.lang; }
-    else {
-      var voice=_getBestVoice(appLang==='en'?'en':'el', true);
-      if(voice) utt.voice=voice;
-    }
-    utt.rate=0.85; utt.pitch=0.75;
-    var ttsBtn=document.getElementById('ttsStop');
-    if(ttsBtn) ttsBtn.style.display='block';
-    utt.onend=function(){ if(ttsBtn) ttsBtn.style.display='none'; };
-    window.speechSynthesis.speak(utt);
-  }
-
-  // Voices may not be loaded yet — wait if needed
-  var voices=window.speechSynthesis.getVoices();
-  if(voices && voices.length>0){
-    doSpeak();
-  } else {
-    window.speechSynthesis.onvoiceschanged=function(){ doSpeak(); window.speechSynthesis.onvoiceschanged=null; };
-    // Also try directly after short delay as fallback
-    setTimeout(doSpeak, 300);
-  }
-}
-
-function stopSpeak(){
-  if(window.speechSynthesis) window.speechSynthesis.cancel();
   var ttsBtn=document.getElementById('ttsStop');
-  if(ttsBtn) ttsBtn.style.display='none';
+  if(ttsBtn) ttsBtn.style.display='block';
+  function onEnd(){ if(ttsBtn) ttsBtn.style.display='none'; }
+  if(window.responsiveVoice && responsiveVoice.voiceSupport()){
+    var voice = (appLang==='en') ? 'UK English Male' : _rvVoice;
+    responsiveVoice.speak(txt, voice, {rate:0.9, pitch:1, onend:onEnd, onerror:onEnd});
+  } else {
+    _wbSpeak(txt, onEnd);
+  }
 }
 
 function stopSpeak(){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
+  if(window.responsiveVoice) responsiveVoice.cancel();
   var ttsBtn=document.getElementById('ttsStop');
   if(ttsBtn) ttsBtn.style.display='none';
 }
@@ -1394,40 +1374,61 @@ var _advQueue=[];
 var _advIndex=0;
 var _advRootId=null;
 
+function _getRelationLabel(relType, gender, isEN){
+  // relType: 'grandparent','parent','partner','self','child','grandchild'
+  var g=String(gender||'').toLowerCase();
+  var isFem=(g==='female'||g==='f');
+  if(isEN){
+    if(relType==='grandparent') return isFem?'My grandmother,':'My grandfather,';
+    if(relType==='parent')      return isFem?'My mother,':'My father,';
+    if(relType==='partner')     return 'My partner,';
+    if(relType==='self')        return 'And that\'s me,';
+    if(relType==='child')       return isFem?'My daughter,':'My son,';
+    if(relType==='grandchild')  return isFem?'My granddaughter,':'My grandson,';
+  } else {
+    if(relType==='grandparent') return isFem?'Η γιαγιά μου,':'Ο παππούς μου,';
+    if(relType==='parent')      return isFem?'Η μαμά μου,':'Ο μπαμπάς μου,';
+    if(relType==='partner')     return 'Ο σύντροφός μου,';
+    if(relType==='self')        return 'Κι αυτός/αυτή είμαι εγώ,';
+    if(relType==='child')       return isFem?'Η κόρη μου,':'Ο γιος μου,';
+    if(relType==='grandchild')  return isFem?'Η εγγονή μου,':'Ο εγγονός μου,';
+  }
+  return '';
+}
+
 function startFamilyAdventure(rootId, btn){
   if(_advActive) stopFamilyAdventure();
-  if(btn) btn.style.display='none'; // hide button after click
+  if(btn) btn.style.display='none';
   _advRootId=rootId;
   var d=dataMap[rootId];
   if(!d) return;
 
-  // Build ordered queue: grandparents → parents → partners → self → children → grandchildren
+  // Build ordered queue with relation info: {id, relType}
   var queue=[];
   var seen=new Set();
 
-  function addId(id){
+  function addId(id, relType){
     if(!id||seen.has(id)||!dataMap[id]) return;
     seen.add(id);
-    queue.push(id);
+    queue.push({id:id, relType:relType});
   }
 
   // Grandparents
   idsFromField(d.Parents).forEach(function(pid){
     var p=dataMap[pid]; if(!p) return;
-    idsFromField(p.Parents).forEach(addId);
+    idsFromField(p.Parents).forEach(function(gid){ addId(gid,'grandparent'); });
   });
   // Parents
-  idsFromField(d.Parents).forEach(addId);
+  idsFromField(d.Parents).forEach(function(pid){ addId(pid,'parent'); });
   // Partners
-  idsFromField(d.Partners).forEach(addId);
+  idsFromField(d.Partners).forEach(function(pid){ addId(pid,'partner'); });
   // Self
-  addId(rootId);
+  addId(rootId,'self');
   // Children
   idsFromField(d.Children).forEach(function(cid){
-    addId(cid);
-    // Grandchildren
+    addId(cid,'child');
     var c=dataMap[cid]; if(!c) return;
-    idsFromField(c.Children).forEach(addId);
+    idsFromField(c.Children).forEach(function(gcid){ addId(gcid,'grandchild'); });
   });
 
   if(queue.length===0){ showToast('Δεν βρέθηκαν συγγενείς!'); return; }
@@ -1436,10 +1437,8 @@ function startFamilyAdventure(rootId, btn){
   _advQueue=queue;
   _advIndex=0;
 
-  // Show adventure overlay
   _showAdvOverlay();
 
-  // Intro message
   var isEN=appLang==='en';
   var intro=isEN?"Let me introduce you to my family!":"Να σου γνωρίσω την οικογένεια μου!";
   _advSpeak(intro, function(){ _advStep(); });
@@ -1469,27 +1468,24 @@ function _advStep(){
   if(_advIndex>=_advQueue.length){
     _advEnd(); return;
   }
-  var id=_advQueue[_advIndex];
+  var item=_advQueue[_advIndex];
   _advIndex++;
+  var id=item.id, relType=item.relType;
   var d=dataMap[id];
   if(!d){_advStep();return;}
 
-  // Focus on this entity
   enterFocus(id);
 
-  // If has video, play it alongside speech (don't wait for video end)
-  if(d.video){
-    playEntityVideo(d);
-  }
+  if(d.video) playEntityVideo(d);
 
-  // Always speak the description, advance when speech finishes
   var isEN=appLang==='en';
   var name=isEN?(d.Name_EN||d.Name||d.id):(d.Name||d.id);
   var txt=isEN?(d.FullText_EN||d.FullText||''):(d.FullText||d.FullText_EN||'');
-  var say=(txt&&txt!=='-') ? txt : name;
+  var relLabel=_getRelationLabel(relType, d.Gender, isEN);
+  var say=relLabel+' '+name+'. '+((txt&&txt!=='-')?txt:'');
+  say=say.trim();
+
   _advSpeak(say, function(){
-    // Close video if still playing when speech ends
-    var vid=document.getElementById('videoEl');
     var ov=document.getElementById('videoOverlay');
     if(ov && ov.style.display!=='none') closeVideo();
     setTimeout(_advStep, 500);
@@ -1497,15 +1493,42 @@ function _advStep(){
 }
 
 var _advTimer=null;
+var _rvVoice='Greek Male'; // ResponsiveVoice voice name
 
-function _advSpeak(text, onDone){
+function _rvSpeak(text, onDone){
+  // Try ResponsiveVoice first (real Greek male voice)
+  if(window.responsiveVoice && responsiveVoice.voiceSupport()){
+    var voice = (appLang==='en') ? 'UK English Male' : _rvVoice;
+    responsiveVoice.speak(text, voice, {
+      rate: 0.9, pitch: 1,
+      onend: function(){ if(onDone) setTimeout(onDone, 300); },
+      onerror: function(){ _wbSpeak(text, onDone); }
+    });
+    return;
+  }
+  _wbSpeak(text, onDone);
+}
+
+function _wbSpeak(text, onDone){
+  // Fallback: Web Speech API
   stopSpeak();
-  if(_advTimer){ clearTimeout(_advTimer); _advTimer=null; }
   if(!window.speechSynthesis||!text){if(onDone)setTimeout(onDone,300);return;}
   var utt=new SpeechSynthesisUtterance(text);
   utt.lang=appLang==='en'?'en-US':'el-GR';
   if(_selectedVoice){utt.voice=_selectedVoice;utt.lang=_selectedVoice.lang;}
-  utt.rate=0.88; utt.pitch=0.8;
+  utt.rate=0.88; utt.pitch=0.75;
+  if(onDone){
+    utt.onend=function(){setTimeout(onDone,200);};
+    utt.onerror=function(){setTimeout(onDone,200);};
+  }
+  window.speechSynthesis.speak(utt);
+}
+
+function _advSpeak(text, onDone){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  if(window.responsiveVoice) responsiveVoice.cancel();
+  if(_advTimer){ clearTimeout(_advTimer); _advTimer=null; }
+  if(!text){if(onDone)setTimeout(onDone,300);return;}
 
   var _done=false;
   function finish(){
@@ -1518,9 +1541,19 @@ function _advSpeak(text, onDone){
   var estMs = Math.max(1500, text.length * 75);
   _advTimer = setTimeout(finish, estMs);
 
-  utt.onend=function(){ finish(); };
-  utt.onerror=function(){ finish(); };
-  window.speechSynthesis.speak(utt);
+  if(window.responsiveVoice && responsiveVoice.voiceSupport()){
+    var voice = (appLang==='en') ? 'UK English Male' : _rvVoice;
+    responsiveVoice.speak(text, voice, {
+      rate: 0.9, pitch: 1,
+      onend: finish,
+      onerror: function(){
+        // fallback to webspeech
+        _wbSpeak(text, function(){ finish(); });
+      }
+    });
+  } else {
+    _wbSpeak(text, function(){ finish(); });
+  }
 }
 
 function advNext(){
@@ -2251,14 +2284,17 @@ fetch('app-data.json',{cache:'default'})
     allData=all;
     all.forEach(d=>dataMap[d.id]=d);
 
-    // Preload all photos using fetch for proper HTTP cache
+    // Preload all photos - Image() is correct for cross-origin assets
     var _preloadSet=new Set();
+    var _preloadImgs=[];
     all.forEach(function(d){
       [d.photo, d.focusPhoto, d.chaosPhoto].forEach(function(src){
         if(src && !_preloadSet.has(src)){
           _preloadSet.add(src);
-          // fetch with cache:force-cache fills browser cache efficiently
-          if(window.fetch) fetch(src,{mode:'no-cors',cache:'force-cache'}).catch(function(){});
+          var img=new Image();
+          img.crossOrigin='anonymous';
+          img.src=src;
+          _preloadImgs.push(img); // keep reference so GC doesn't kill them
         }
       });
     });
