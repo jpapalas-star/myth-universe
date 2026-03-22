@@ -59,7 +59,7 @@ html,body{
   backdrop-filter:blur(6px)
 }
 #indexBtn{left:10px}
-#homeBtn{right:10px}
+#homeBtn{right:80px}
 
 #searchBox{
   position:fixed;
@@ -207,9 +207,9 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:10px;right:214px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
+<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:10px;left:170px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
 <button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:10px;left:76px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
-<button id="langBtn" onclick="toggleLang()" style="position:fixed;top:12px;right:130px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;letter-spacing:1px;">GR / EN</button>
+<button id="langBtn" onclick="toggleLang()" style="position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">GR / EN</button>
 <button id="homeBtn" type="button">Μυθολογία</button>
 
 <input id="searchBox" type="text" placeholder="Search name, id, category..." autocomplete="off">
@@ -1931,7 +1931,7 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
         // Hub of this family system
         var hx = Math.cos(ang)*r;
         var hz = Math.sin(ang)*r;
-        var hy = (Math.sin(ang * 7.3 + i * 2.1) * 0.5 + Math.sin(ang * 3.7) * 0.5) * 220;
+        var hy = (Math.sin(ang * 7.3 + i * 2.1) * 0.5 + Math.sin(ang * 3.7) * 0.5) * 30;
 
         // Orbit radius for children — minimum 28 so circle is clearly visible
         var nc      = cl.children.length;
@@ -1951,7 +1951,7 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
           var ca = (2*Math.PI*ci/nc) - Math.PI/2;
           createNode(child,
             hx + Math.cos(ca)*orbitR,
-            hy + Math.sin(ca * 3.7 + ci * 1.3) * 60,
+            hy + Math.sin(ca * 3.7 + ci * 1.3) * 8,
             hz + Math.sin(ca)*orbitR,
             null
           );
@@ -1967,7 +1967,7 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
       var z2   = ZONES[tier]||[370,460];
       var r2   = z2[1] + 20 + soloIdx*6;
       var a2   = soloIdx * GOLDEN;
-      createNode(d, Math.cos(a2)*r2, (Math.sin(a2*7.3+soloIdx*2.1)*0.5+Math.sin(a2*3.7)*0.5)*220, Math.sin(a2)*r2, null);
+      createNode(d, Math.cos(a2)*r2, (Math.sin(a2*7.3+soloIdx*2.1)*0.5+Math.sin(a2*3.7)*0.5)*30, Math.sin(a2)*r2, null);
       soloIdx++;
     });
 
@@ -2035,7 +2035,7 @@ document.addEventListener('DOMContentLoaded',function(){
   ta.addEventListener('touchmove',function(e){
     if(!driveMode||_thrId===null)return;
     for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];if(t.identifier===_thrId){
-      driveThrottle=Math.max(-1,Math.min(1,(t.clientY-_thrY0)/100));
+      driveThrottle=Math.max(-1,Math.min(1,(_thrY0-t.clientY)/100));
       _thrXPrev=_thrXCur; _thrXCur=t.clientX;
       var tb=document.getElementById('throttleBar'),bb=document.getElementById('brakeBar');
       if(driveThrottle>0){if(tb)tb.style.height=(driveThrottle*50)+'%';if(bb)bb.style.height='0%';}
@@ -2148,22 +2148,36 @@ engine.runRenderLoop(()=>{
 
   // Drive mode movement
   if(driveMode){
-    var mxS=navFast?1.2:0.6;
+    // Find distance to nearest planet
+    var _nearDist=9999;
+    var _cx=camera.target.x,_cy=camera.target.y,_cz=camera.target.z;
+    var _nodeKeys=Object.keys(nodes);
+    for(var _ni=0;_ni<_nodeKeys.length;_ni++){
+      var _ns=nodes[_nodeKeys[_ni]].sphere;
+      if(!_ns) continue;
+      var _dx=_ns.position.x-_cx,_dy=_ns.position.y-_cy,_dz=_ns.position.z-_cz;
+      var _dd=Math.sqrt(_dx*_dx+_dy*_dy+_dz*_dz);
+      if(_dd<_nearDist) _nearDist=_dd;
+    }
+    // Speed multiplier: far away=fast, close=slow (smooth curve)
+    var _FAR=150,_CLOSE=40;
+    var _prox=Math.max(0,Math.min(1,(_nearDist-_CLOSE)/(_FAR-_CLOSE))); // 0=close,1=far
+    var _speedMult = 0.15 + _prox * (navFast?4.5:2.5); // 0.15x close → 2.5x/4.5x far
+
     var throttleOn=Math.abs(driveThrottle)>0.05;
-    driveSpeed=throttleOn?driveThrottle*mxS:0;
+    driveSpeed=throttleOn?driveThrottle*_speedMult:0;
 
     // Gyro steers ONLY when throttle is pressed
     if(throttleOn){
       // Finger left/right = yaw (alpha)
-      // Finger delta per frame = no drift, stops when finger stops
       var fingerDX = (_thrXCur - _thrXPrev) / (window.innerWidth || 400);
-      if(Math.abs(fingerDX)>0.001) camera.alpha -= fingerDX * 1.8;
+      if(Math.abs(fingerDX)>0.001) camera.alpha -= fingerDX * 1.1;
       _thrXPrev = _thrXCur;
 
       // Gyro = only up/down (beta/pitch)
       var DZ=0.2;
       var rawB=_gyroBeta;
-      if(Math.abs(rawB)>DZ) camera.beta=_cb(camera.beta+(rawB>0?rawB-DZ:rawB+DZ)*0.004);
+      if(Math.abs(rawB)>DZ) camera.beta=_cb(camera.beta+(rawB>0?rawB-DZ:rawB+DZ)*0.016);
     }
 
     // Move forward in XZ plane (camera.alpha direction) + Y from beta
@@ -2171,14 +2185,20 @@ engine.runRenderLoop(()=>{
       camera.target.x+=Math.cos(camera.alpha)*driveSpeed;
       camera.target.z+=Math.sin(camera.alpha)*driveSpeed;
       camera.target.y+=Math.cos(camera.beta)*driveSpeed*0.4;
-      // Boundary: wrap-around at r=620 (teleport to opposite side)
+      // Boundary: wrap-around at r=620
       var tx=camera.target.x,tz2=camera.target.z;
       var tD=Math.sqrt(tx*tx+tz2*tz2);
       if(tD>620){camera.target.x=-tx*0.95;camera.target.z=-tz2*0.95;}
       if(Math.abs(camera.target.y)>200){camera.target.y=-camera.target.y*0.95;}
     }
-    if(driveThrottle>0.25){_warpLevel=Math.min(1,_warpLevel+0.05);if(window._warpInit&&_warpLevel<0.08)window._warpInit();}
-    else{_warpLevel=Math.max(0,_warpLevel-0.04);}
+    // Warp: full when far+fast throttle, off when close
+    if(driveThrottle>0.25 && _prox>0.4){
+      var _warpTarget=_prox*driveThrottle;
+      _warpLevel=Math.min(1,_warpLevel+0.06*_warpTarget);
+      if(window._warpInit&&_warpLevel<0.08)window._warpInit();
+    } else {
+      _warpLevel=Math.max(0,_warpLevel-0.05);
+    }
   }
 
   // 2-finger inertia float
@@ -2347,9 +2367,15 @@ function closeVideo(){
     <div style="position:absolute;top:50%;left:0;width:100%;height:1px;background:rgba(255,220,60,0.5);"></div>
   </div>
   <div id="driveSpeedLbl" style="position:absolute;left:8px;top:calc(50% - 110px);color:#ffe040;font-size:11px;font-family:Arial;font-weight:bold;pointer-events:none;">🚀</div>
-  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;pointer-events:none;opacity:0.18;">
-    <div style="position:absolute;top:50%;left:0;width:100%;height:1px;background:#ffe040;"></div>
-    <div style="position:absolute;left:50%;top:0;height:100%;width:1px;background:#ffe040;"></div>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;pointer-events:none;">
+    <!-- Horizontal left -->
+    <div style="position:absolute;top:50%;left:0;width:18px;height:2px;background:#ffe040;margin-top:-1px;opacity:0.7;"></div>
+    <!-- Horizontal right -->
+    <div style="position:absolute;top:50%;right:0;width:18px;height:2px;background:#ffe040;margin-top:-1px;opacity:0.7;"></div>
+    <!-- Vertical top -->
+    <div style="position:absolute;left:50%;top:0;height:18px;width:2px;background:#ffe040;margin-left:-1px;opacity:0.7;"></div>
+    <!-- Vertical bottom -->
+    <div style="position:absolute;left:50%;bottom:0;height:18px;width:2px;background:#ffe040;margin-left:-1px;opacity:0.7;"></div>
   </div>
   <button type="button" onclick="toggleDriveMode()" style="pointer-events:all;position:absolute;bottom:20px;right:20px;background:rgba(180,30,30,0.85);border:1px solid rgba(255,80,80,0.4);border-radius:20px;color:#fff;font-size:12px;padding:8px 16px;cursor:pointer;">✖ Exit Drive</button>
 </div>
