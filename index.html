@@ -2053,6 +2053,7 @@ function toggleDriveMode(){
     btn.style.color='#ff8866';btn.style.borderColor='rgba(255,80,80,0.7)';
     if(ov)ov.style.display='block';
     driveSpeed=0;driveThrottle=0;
+    _gyroCalibrated=false; _gyroAlpha=0; _gyroBeta=0;
     animatePlanetsY(true); // spread to 3D
     if(typeof DeviceOrientationEvent!=='undefined'){
       if(DeviceOrientationEvent.requestPermission){DeviceOrientationEvent.requestPermission().then(function(r){if(r==='granted')window.addEventListener('deviceorientation',_gyroCb);});}
@@ -2066,7 +2067,14 @@ function toggleDriveMode(){
     window.removeEventListener('deviceorientation',_gyroCb);
   }
 }
-function _gyroCb(e){_gyroAlpha=(e.gamma||0)/45;_gyroBeta=(e.beta||0)/45;}
+var _gyroBaseAlpha=0,_gyroBaseBeta=0,_gyroCalibrated=false;
+function _gyroCb(e){
+  var a=(e.gamma||0)/45;
+  var b=(e.beta||0)/45;
+  if(!_gyroCalibrated){_gyroBaseAlpha=a;_gyroBaseBeta=b;_gyroCalibrated=true;}
+  _gyroAlpha=a-_gyroBaseAlpha;
+  _gyroBeta =b-_gyroBaseBeta;
+}
 
 var _thrId=null,_thrY0=0,_thrX0=0,_thrXCur=0,_thrXPrev=0;
 document.addEventListener('DOMContentLoaded',function(){
