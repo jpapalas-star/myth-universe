@@ -207,7 +207,8 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="settingsBtn" type="button" onclick="toggleSettings(event)" style="background:rgba(20,10,40,0.85);border:1px solid rgba(255,255,255,0.2);border-radius:22px;color:#fff;font-size:18px;padding:6px 14px;cursor:pointer;margin-left:6px;">⚙</button>
+<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:12px;left:174px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🚀 Drive</button>
+<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:12px;left:82px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 14px;cursor:pointer;letter-spacing:1px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="position:fixed;top:12px;right:130px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:22px;color:#ffe040;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;letter-spacing:1px;">GR / EN</button>
 <button id="homeBtn" type="button">Μυθολογία</button>
 
@@ -240,15 +241,13 @@ html,body{
 <script>
 var appLang='gr';
 var navFast=false;
-var driveMode=false;
-var driveThrottle=0;
-var driveSpeed=0;
-var _gyroAlpha=0,_gyroBeta=0;
-var _warpLevel=0;
-var _vel2x=0,_vel2y=0;
-var _velZoom=1;
-var _inertia2=false;
-var _didZoom=false; // false=slow, true=fast
+var driveMode=false,driveThrottle=0,driveSpeed=0;
+var _gyroAlpha=0,_gyroBeta=0,_warpLevel=0;
+var _vel2x=0, _vel2y=0;   // 2-finger pan inertia
+var _didZoom=false;        // was zoom done this gesture
+var _velZoom=1;            // zoom inertia (multiplier per frame)
+var _inertia2=false;       // 2-finger inertia active
+var _warpLevel=0;          // 0..1 warp intensity // false=slow, true=fast
 var _lastInfoD=null;
 const canvas=document.getElementById('renderCanvas');
 const infoEl=document.getElementById('info');
@@ -369,10 +368,13 @@ canvas.addEventListener('touchstart', function(e) {
     var dist  = Math.hypot(dx, dy);
     var angle = Math.atan2(dy, dx);
     var rect0 = canvas.getBoundingClientRect();
+    var initAngle = Math.atan2(t1.clientY - t0.clientY, t1.clientX - t0.clientX);
+    _didZoom=false; _vel2x=0; _vel2y=0; _velZoom=1;
     _tf = { mx: mx, my: my, dist: dist, warmup: 0,
             f0x: t0.clientX - rect0.left, f0y: t0.clientY - rect0.top,
             p0x: t0.clientX, p0y: t0.clientY,
-            p1x: t1.clientX, p1y: t1.clientY };
+            p1x: t1.clientX, p1y: t1.clientY,
+            angle: initAngle };
   }
 }, { passive: false });
 
@@ -390,8 +392,9 @@ canvas.addEventListener('touchmove', function(e) {
       var ta0=e.touches[0], tb0=e.touches[1];
       var mxa0=(ta0.clientX+tb0.clientX)*0.5-rect.left;
       var mya0=(ta0.clientY+tb0.clientY)*0.5-rect.top;
+      var midAngle=Math.atan2(tb0.clientY-ta0.clientY, tb0.clientX-ta0.clientX);
       _tf={mx:mxa0,my:mya0,dist:Math.hypot(ta0.clientX-tb0.clientX,ta0.clientY-tb0.clientY),
-           warmup:0, f0x:ta0.clientX-rect.left, f0y:ta0.clientY-rect.top};
+           warmup:0, f0x:ta0.clientX-rect.left, f0y:ta0.clientY-rect.top, angle:midAngle};
       // fall through immediately to 2-finger handler
     } else {
       // _tf exists but may have stale f0 — refresh anchor each time 2 fingers active
@@ -477,15 +480,40 @@ canvas.addEventListener('touchmove', function(e) {
       var maxR = camera.upperRadiusLimit || 900;
       var t = Math.max(0, Math.min(1, (camera.radius - minR) / (maxR - minR)));
       var dampMax = navFast ? 1.8 : 1.2;
-      var damping = 0.45 + t * (dampMax - 0.45); // 0.45 close → dampMax far
+      var damping = 0.58 + t * (dampMax - 0.45); // 0.45 close → dampMax far
 
       ratio = 1 + rawChange * damping;
       camera.radius = _cr(camera.radius * ratio);
+      _didZoom=true;
     }
 
-    _vel2x=mx-_tf.mx; _vel2y=my-_tf.my;
-    var dC=dist/(_tf.dist||dist); _velZoom=1+(dC-1)*0.3;
-    _tf.mx=mx; _tf.my=my; _tf.dist=dist;
+    // 3. TWIST ROTATION — rotate camera.alpha based on finger angle change
+    var curAngle = Math.atan2(t1.clientY - t0.clientY, t1.clientX - t0.clientX);
+    if(_tf.angle !== undefined){
+      var dAngle = curAngle - _tf.angle;
+      // Wrap angle delta to -PI..PI
+      if(dAngle >  Math.PI) dAngle -= Math.PI*2;
+      if(dAngle < -Math.PI) dAngle += Math.PI*2;
+      // Only apply rotation if twist is significant (ignore tiny wobbles)
+      // and NOT during a strong pinch (to avoid fighting zoom)
+      var distChange = Math.abs(dist - _tf.dist);
+      if(Math.abs(dAngle) > 0.008 && distChange < 30){
+        camera.alpha -= dAngle * 0.7;
+        _velAlpha = 0; // prevent inertia from running after twist
+        _multi = true; // ensure tap is not registered after twist
+      }
+    }
+    _tf.angle = curAngle;
+
+    // Record velocity for inertia
+    _vel2x = mx - _tf.mx;
+    _vel2y = my - _tf.my;
+    var distChange2 = dist / (_tf.dist||dist);
+    _velZoom = 1 + (distChange2 - 1) * 0.3; // damped zoom velocity
+
+    _vel2x=mx-_tf.mx;_vel2y=my-_tf.my;
+    var dC2=dist/(_tf.dist||dist);_velZoom=1+(dC2-1)*0.3;
+    _tf.mx=mx;_tf.my=my;_tf.dist=dist;
     // p0x/p1y already updated above
   }
 }, { passive: false });
@@ -501,12 +529,13 @@ canvas.addEventListener('touchend', function(e) {
       _multi = false;
       var rem = e.touches[0];
       var rect2 = canvas.getBoundingClientRect();
+      // Use Date.now()-600 so this finger can NEVER trigger a tap (was part of 2-finger)
       _t1 = { x: rem.clientX, y: rem.clientY, t: Date.now()-600, id: null, firstMove: true };
     }
     return;
   }
-  // All fingers up — start float inertia
-  if(_tf){_inertia2=true;_warpLevel=0.7;if(window._warpInit)window._warpInit();}
+  // All fingers up — always start float + warp
+  if(_tf){_inertia2=true;_warpLevel=0.6;if(window._warpInit)window._warpInit();}
   _tf = null;
   if (!_multi && _t1) {
     var el = Date.now() - _t1.t;
@@ -824,6 +853,22 @@ function spriteFile(d){
   return 'default.png';
 }
 
+function groupLabelColor(d){
+  var m=String(d.ModelType||'').toLowerCase();
+  var id=String(d.id||'');
+  if(id==='PRIM_CHAOS_001')     return '#ffffff';
+  if(m==='energy')              return '#cc99ff'; // primordials: soft purple
+  if(m==='giant')               return '#44aaff'; // titans: blue
+  if(m==='god'||m==='goddess')  return '#ffe040'; // olympians: bright gold
+  if(m==='wind')                return '#aaddff'; // winds: light blue
+  if(m==='nymph')               return '#66eebb'; // nymphs: teal
+  if(m==='human'||m==='hero')   return '#ff8866'; // heroes: coral
+  if(m==='monster')             return '#88dd55'; // monsters: green
+  if(m==='spirit')              return '#99bbcc'; // spirits: steel
+  if(m==='underworld')          return '#dd6688'; // underworld: rose
+  return '#ffe040';
+}
+
 function groupRingColor(d){
   var m=String(d.ModelType||'').toLowerCase();
   var id=String(d.id||'');
@@ -853,16 +898,20 @@ function sizeFor(d){
 }
 
 function addRing(parentMesh,color,diameter,thickness){
-  const ring=BABYLON.MeshBuilder.CreateTorus('ring_'+Math.random(),{diameter,thickness:thickness||0.11,tessellation:70},scene);
+  // Thicker rings — Saturn style
+  var satThick = (thickness||0.11) * 3.5;
+  const ring=BABYLON.MeshBuilder.CreateTorus('ring_'+Math.random(),{diameter:diameter,thickness:satThick,tessellation:70},scene);
   ring.rotation.x=Math.PI/2;
   ring.parent=parentMesh;
   ring.position=BABYLON.Vector3.Zero();
 
   const rm=new BABYLON.StandardMaterial('rm_'+Math.random(),scene);
-  rm.emissiveColor=color.scale(1.4);
+  rm.emissiveColor=color.scale(1.0);
+  rm.diffuseColor=color.scale(0.6);
+  rm.disableLighting=true;
   rm.alpha=0.92;
   ring.material=rm;
-  glow.addIncludedOnlyMesh(ring);
+  glow.addExcludedMesh(ring); // don't bloom rings
   return ring;
 }
 
@@ -883,7 +932,7 @@ function wrapName(text,maxChars){
   return lines.slice(0,2);
 }
 
-function createLabel(text,parentMesh,size){
+function createLabel(text,parentMesh,size,labelColor){
   const lines=wrapName(text,14);
   const dt=new BABYLON.DynamicTexture('dt_'+Math.random(),{width:1024,height:256},scene,true);
   dt.hasAlpha=true;
@@ -893,7 +942,7 @@ function createLabel(text,parentMesh,size){
   // Shadow for readability
   ctx.shadowColor='rgba(0,0,0,0.9)';
   ctx.shadowBlur=18;
-  ctx.fillStyle='#ffe040';  // warm golden yellow
+  ctx.fillStyle=labelColor||'#ffe040';
   ctx.font='bold 72px Arial';
   if(lines.length===1){
     ctx.fillText(lines[0],512,130);
@@ -940,28 +989,14 @@ function createNode(d,x,y,z,familyRingColor){
     sm.emissiveColor = tint.scale(0.18);
     sm.specularColor = tint.scale(0.4);
     sm.specularPower = 12;
-    sm.alpha         = 0.22;  // semi-transparent
+    sm.alpha         = 0.0;  // invisible — rings do the visual work
     sm.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
     sm.backFaceCulling  = false;
     sphere.material = sm;
-    sphere.isPickable   = true;
+    sphere.isPickable   = true; // still pickable for tap
     sphere.renderingGroupId = 1;
-    glow.addIncludedOnlyMesh(sphere);
 
-    // Inner glow sphere slightly smaller — warmer, more opaque near centre
-    var innerSphere = BABYLON.MeshBuilder.CreateSphere('inner_'+d.id,
-      {diameter: size*0.88, segments: 14}, scene);
-    innerSphere.parent = sphere;
-    innerSphere.position = BABYLON.Vector3.Zero();
-    innerSphere.renderingGroupId = 1;
-    var innerMat = new BABYLON.StandardMaterial('innermat_'+d.id, scene);
-    innerMat.diffuseColor  = tint.scale(0.15);
-    innerMat.emissiveColor = tint.scale(0.30);
-    innerMat.specularColor = BABYLON.Color3.Black();
-    innerMat.alpha         = 0.13;
-    innerMat.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
-    innerMat.backFaceCulling  = false;
-    innerSphere.material = innerMat;
+    // No inner sphere — causes grey artefacts on mobile
 
     var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
     photoTex.hasAlpha=false;
@@ -992,11 +1027,14 @@ function createNode(d,x,y,z,familyRingColor){
       rotSpeed: 0.004 + Math.random()*0.002
     });
 
-    var photoLabel=createLabel(d.Name||d.id,sphere,size);
+    var photoLabel=createLabel(d.Name||d.id,sphere,size,groupLabelColor(d));
     var photoRings=[];
     var grc2=groupRingColor(d);
-    photoRings.push(addRing(sphere, grc2, size*1.28, 0.11));
-    if(familyRingColor) photoRings.push(addRing(sphere, familyRingColor, size*1.14, 0.07));
+    // Inner ring — group color, wide
+    photoRings.push(addRing(sphere, grc2, size*1.22, 0.13));
+    // Outer ring — slightly larger, more transparent
+    photoRings.push(addRing(sphere, grc2, size*1.42, 0.06));
+    if(familyRingColor) photoRings.push(addRing(sphere, familyRingColor, size*1.58, 0.04));
 
     nodes[d.id]={id:d.id,data:d,sphere:sphere,rings:photoRings,label:photoLabel,size:size,familyRingColor:familyRingColor||null};
     placed.add(d.id);
@@ -1075,14 +1113,16 @@ function createNode(d,x,y,z,familyRingColor){
   sm.backFaceCulling=false;
   sphere.material=sm;
 
-  const label=createLabel(d.Name||d.id,sphere,size);
+  const label=createLabel(d.Name||d.id,sphere,size,groupLabelColor(d));
 
   const rings=[];
   var grc=groupRingColor(d);
-  // Outer group-colored ring (always)
-  rings.push(addRing(sphere, grc, size*1.28, 0.10));
-  // Inner family ring if in a family
-  if(familyRingColor) rings.push(addRing(sphere, familyRingColor, size*1.14, 0.07));
+  // Main Saturn ring — group color
+  rings.push(addRing(sphere, grc, size*1.22, 0.13));
+  // Outer thin ring
+  rings.push(addRing(sphere, grc, size*1.45, 0.05));
+  // Family ring if available
+  if(familyRingColor) rings.push(addRing(sphere, familyRingColor, size*1.62, 0.035));
 
   sphere.metadata=Object.assign({},d,{isChaos:String(d.id)==='PRIM_CHAOS_001'});
   nodes[d.id]={id:d.id,data:d,sphere,rings,label,size,familyRingColor:familyRingColor||null};
@@ -1145,22 +1185,8 @@ function toggleSettings(e){
 
 function toggleNavSpeed(){
   navFast=!navFast;
-  var thumb=document.getElementById('navThumb');
-  var toggle=document.getElementById('navToggle');
-  var label=document.getElementById('navLabel');
-  if(navFast){
-    thumb.style.left='25px';
-    thumb.style.background='#ffe040';
-    toggle.style.background='rgba(255,224,64,0.25)';
-    label.textContent='Fast navigation';
-    label.style.color='#ffe040';
-  } else {
-    thumb.style.left='3px';
-    thumb.style.background='#888';
-    toggle.style.background='#333';
-    label.textContent='Normal navigation';
-    label.style.color='#888';
-  }
+  var btn=document.getElementById('navSpeedBtn');
+  if(btn) btn.textContent=navFast?'🚀 Fast':'🐢 Slow';
 }
 
 // Close settings when tapping outside
@@ -1964,99 +1990,66 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
     console.error('JSON ERROR',err);
   });
 
-// Warp canvas
+// Warp canvas init
 (function(){
   var wc=document.getElementById('warpCanvas');
-  if(!wc) return;
-  var wctx=wc.getContext('2d');
-  var wS=[];
-  function resize(){wc.width=window.innerWidth;wc.height=window.innerHeight;}
-  resize(); window.addEventListener('resize',resize);
-  window._warpInit=function(){
-    wS=[];
-    for(var i=0;i<32;i++) wS.push({a:Math.random()*Math.PI*2,r:Math.random()*0.15,sp:0.3+Math.random()*0.7,ln:0.06+Math.random()*0.16,br:0.3+Math.random()*0.7});
-  };
+  if(!wc)return;
+  var wx=wc.getContext('2d'),wS=[];
+  function rsz(){wc.width=window.innerWidth;wc.height=window.innerHeight;}
+  rsz();window.addEventListener('resize',rsz);
+  window._warpInit=function(){wS=[];for(var i=0;i<32;i++)wS.push({a:Math.random()*Math.PI*2,r:Math.random()*0.12,sp:0.3+Math.random()*0.7,ln:0.06+Math.random()*0.16,br:0.3+Math.random()*0.7});};
   window._warpDraw=function(lv){
     if(lv<0.01){wc.style.opacity='0';return;}
-    wc.style.opacity=Math.min(0.9,lv*1.2).toFixed(2);
-    wctx.clearRect(0,0,wc.width,wc.height);
+    wc.style.opacity=Math.min(0.9,lv*1.1).toFixed(2);
+    wx.clearRect(0,0,wc.width,wc.height);
     var cx=wc.width/2,cy=wc.height/2,mx=Math.sqrt(cx*cx+cy*cy);
-    for(var i=0;i<wS.length;i++){
-      var s=wS[i];
-      s.r+=s.sp*lv*0.02; if(s.r>1)s.r=0.01+Math.random()*0.05;
-      var r1=s.r*mx,r2=Math.min((s.r+s.ln*lv)*mx,mx);
-      wctx.strokeStyle='rgba(180,210,255,'+(s.br*lv*0.5).toFixed(2)+')';
-      wctx.lineWidth=0.6+lv*1.4;
-      wctx.beginPath();
-      wctx.moveTo(cx+Math.cos(s.a)*r1,cy+Math.sin(s.a)*r1);
-      wctx.lineTo(cx+Math.cos(s.a)*r2,cy+Math.sin(s.a)*r2);
-      wctx.stroke();
-    }
+    for(var i=0;i<wS.length;i++){var s=wS[i];s.r+=s.sp*lv*0.02;if(s.r>1)s.r=0.01+Math.random()*0.05;var r1=s.r*mx,r2=Math.min((s.r+s.ln*lv)*mx,mx);wx.strokeStyle='rgba(180,210,255,'+(s.br*lv*0.5).toFixed(2)+')';wx.lineWidth=0.6+lv*1.4;wx.beginPath();wx.moveTo(cx+Math.cos(s.a)*r1,cy+Math.sin(s.a)*r1);wx.lineTo(cx+Math.cos(s.a)*r2,cy+Math.sin(s.a)*r2);wx.stroke();}
   };
   window._warpInit();
 })();
 
 function toggleDriveMode(){
   driveMode=!driveMode;
-  var btn=document.getElementById('driveModeBtn');
-  var ov=document.getElementById('driveOverlay');
+  var btn=document.getElementById('driveModeBtn'),ov=document.getElementById('driveOverlay');
   if(driveMode){
-    btn.style.color='#ff8866'; btn.style.borderColor='rgba(255,80,80,0.7)';
-    if(ov) ov.style.display='block';
-    driveSpeed=0; driveThrottle=0;
+    btn.style.color='#ff8866';btn.style.borderColor='rgba(255,80,80,0.7)';
+    if(ov)ov.style.display='block';
+    driveSpeed=0;driveThrottle=0;
     if(typeof DeviceOrientationEvent!=='undefined'){
-      if(DeviceOrientationEvent.requestPermission){
-        DeviceOrientationEvent.requestPermission().then(function(r){if(r==='granted')window.addEventListener('deviceorientation',_gyroCb);});
-      } else {
-        window.addEventListener('deviceorientation',_gyroCb);
-      }
+      if(DeviceOrientationEvent.requestPermission){DeviceOrientationEvent.requestPermission().then(function(r){if(r==='granted')window.addEventListener('deviceorientation',_gyroCb);});}
+      else{window.addEventListener('deviceorientation',_gyroCb);}
     }
   } else {
-    btn.style.color='#ffe040'; btn.style.borderColor='rgba(255,220,60,0.4)';
-    if(ov) ov.style.display='none';
-    driveSpeed=0; driveThrottle=0; _warpLevel=0;
+    btn.style.color='#ffe040';btn.style.borderColor='rgba(255,220,60,0.4)';
+    if(ov)ov.style.display='none';
+    driveSpeed=0;driveThrottle=0;_warpLevel=0;
     window.removeEventListener('deviceorientation',_gyroCb);
   }
 }
-function _gyroCb(e){ _gyroAlpha=(e.gamma||0)/45; _gyroBeta=(e.beta||0)/45; }
+function _gyroCb(e){_gyroAlpha=(e.gamma||0)/45;_gyroBeta=(e.beta||0)/45;}
 
-// Throttle touch
 var _thrId=null,_thrY0=0;
 document.addEventListener('DOMContentLoaded',function(){
-  var ta=document.getElementById('throttleArea');
-  if(!ta) return;
-  function onTs(e){
-    if(!driveMode) return;
-    _thrId=e.changedTouches[0].identifier;
-    _thrY0=e.changedTouches[0].clientY;
-    driveThrottle=0; e.preventDefault();
-  }
-  function onTm(e){
-    if(!driveMode||_thrId===null) return;
-    for(var i=0;i<e.changedTouches.length;i++){
-      var t=e.changedTouches[i];
-      if(t.identifier===_thrId){
-        driveThrottle=Math.max(-1,Math.min(1,(_thrY0-t.clientY)/100));
-        var tb=document.getElementById('throttleBar'),bb=document.getElementById('brakeBar');
-        if(driveThrottle>0){if(tb)tb.style.height=(driveThrottle*50)+'%';if(bb)bb.style.height='0%';}
-        else{if(tb)tb.style.height='0%';if(bb)bb.style.height=((-driveThrottle)*50)+'%';}
-      }
-    }
+  var ta=document.getElementById('throttleArea');if(!ta)return;
+  ta.addEventListener('touchstart',function(e){if(!driveMode)return;_thrId=e.changedTouches[0].identifier;_thrY0=e.changedTouches[0].clientY;driveThrottle=0;e.preventDefault();},{passive:false});
+  ta.addEventListener('touchmove',function(e){
+    if(!driveMode||_thrId===null)return;
+    for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];if(t.identifier===_thrId){
+      driveThrottle=Math.max(-1,Math.min(1,(_thrY0-t.clientY)/100));
+      var tb=document.getElementById('throttleBar'),bb=document.getElementById('brakeBar');
+      if(driveThrottle>0){if(tb)tb.style.height=(driveThrottle*50)+'%';if(bb)bb.style.height='0%';}
+      else{if(tb)tb.style.height='0%';if(bb)bb.style.height=((-driveThrottle)*50)+'%';}
+    }}
     e.preventDefault();
-  }
-  function onTe(e){
-    for(var i=0;i<e.changedTouches.length;i++){
-      if(e.changedTouches[i].identifier===_thrId){
-        _thrId=null; driveThrottle=0;
-        var tb=document.getElementById('throttleBar'),bb=document.getElementById('brakeBar');
-        if(tb)tb.style.height='0%'; if(bb)bb.style.height='0%';
-      }
-    }
+  },{passive:false});
+  ta.addEventListener('touchend',function(e){
+    for(var i=0;i<e.changedTouches.length;i++){if(e.changedTouches[i].identifier===_thrId){
+      _thrId=null;driveThrottle=0;
+      var tb=document.getElementById('throttleBar'),bb=document.getElementById('brakeBar');
+      if(tb)tb.style.height='0%';if(bb)bb.style.height='0%';
+    }}
     e.preventDefault();
-  }
-  ta.addEventListener('touchstart',onTs,{passive:false});
-  ta.addEventListener('touchmove',onTm,{passive:false});
-  ta.addEventListener('touchend',onTe,{passive:false});
+  },{passive:false});
 });
 
 engine.runRenderLoop(()=>{
@@ -2117,40 +2110,72 @@ engine.runRenderLoop(()=>{
     }
   });
 
+  // 2-finger inertia: pan + zoom coast after release
+  if(_inertia2){
+    var DAMP2=0.94; // long float
+    _vel2x*=DAMP2; _vel2y*=DAMP2;
+    _velZoom=1+(_velZoom-1)*DAMP2;
 
-  // Drive mode
-  if(driveMode && (Math.abs(driveThrottle)>0.02 || Math.abs(driveSpeed)>0.05)){
-    var maxS=navFast?5:2.5;
-    driveSpeed=driveSpeed*0.88+(driveThrottle*maxS)*0.12;
+    if(Math.abs(_vel2x)>0.1){
+      _panDelta(_vel2x*(navFast?6.5:3.5), _vel2y*(navFast?6.5:3.5));
+    }
+    if(Math.abs(_velZoom-1)>0.0001){
+      camera.radius=_cr(camera.radius*_velZoom);
+    }
+
+    var speed2=Math.sqrt(_vel2x*_vel2x+_vel2y*_vel2y);
+    _warpLevel=Math.min(1, speed2*0.25 + Math.abs(_velZoom-1)*80);
+
+    if(Math.abs(_vel2x)<0.1 && Math.abs(_vel2y)<0.1 && Math.abs(_velZoom-1)<0.0001){
+      _inertia2=false; _vel2x=0; _vel2y=0; _velZoom=1; _warpLevel=0; _didZoom=false;
+    }
+  }
+
+  // Warp: subtle glow boost + warp overlay
+  if(_warpLevel>0.01){
+    glow.intensity = 0.8 + _warpLevel * 1.5;
+    sky.rotation.y += _warpLevel * 0.002;
+    // Drive CSS warp overlay
+    var wo=document.getElementById('warpOverlay');
+    if(wo) wo.style.opacity=(_warpLevel*0.35).toFixed(3);
+  } else {
+    glow.intensity=0.8;
+    var wo2=document.getElementById('warpOverlay');
+    if(wo2) wo2.style.opacity='0';
+  }
+
+
+  // Drive mode movement
+  if(driveMode){
+    var mxS=navFast?5:2.5;
+    driveSpeed=driveSpeed*0.88+(driveThrottle*mxS)*0.12;
     camera.alpha+=_gyroAlpha*0.025;
     camera.beta=_cb(camera.beta+_gyroBeta*0.018);
-    camera.target.x+=Math.cos(camera.alpha)*Math.sin(camera.beta)*driveSpeed;
-    camera.target.z+=Math.sin(camera.alpha)*Math.sin(camera.beta)*driveSpeed;
-    var tDist=Math.sqrt(camera.target.x*camera.target.x+camera.target.z*camera.target.z);
-    if(tDist>640){var ov3=(tDist-640)*0.05;camera.target.x-=(camera.target.x/tDist)*ov3;camera.target.z-=(camera.target.z/tDist)*ov3;driveSpeed*=0.7;}
-    if(driveThrottle>0.25){_warpLevel=Math.min(1,_warpLevel+0.06);if(window._warpInit&&_warpLevel<0.1)window._warpInit();}
-    else{_warpLevel=Math.max(0,_warpLevel-0.03);}
-  } else if(driveMode){
-    driveSpeed*=0.85; _warpLevel=Math.max(0,_warpLevel-0.05);
+    if(Math.abs(driveSpeed)>0.05){
+      camera.target.x+=Math.cos(camera.alpha)*Math.sin(camera.beta)*driveSpeed;
+      camera.target.z+=Math.sin(camera.alpha)*Math.sin(camera.beta)*driveSpeed;
+      var tD2=Math.sqrt(camera.target.x*camera.target.x+camera.target.z*camera.target.z);
+      if(tD2>640){var ov4=(tD2-640)*0.05;camera.target.x-=(camera.target.x/tD2)*ov4;camera.target.z-=(camera.target.z/tD2)*ov4;driveSpeed*=0.7;}
+    }
+    if(driveThrottle>0.25){_warpLevel=Math.min(1,_warpLevel+0.06);if(window._warpInit&&_warpLevel<0.08)window._warpInit();}
+    else{_warpLevel=Math.max(0,_warpLevel-0.04);}
   }
 
   // 2-finger inertia float
   if(_inertia2){
-    var D2=0.94;
-    _vel2x*=D2; _vel2y*=D2; _velZoom=1+(_velZoom-1)*D2;
+    var D2=0.94;_vel2x*=D2;_vel2y*=D2;_velZoom=1+(_velZoom-1)*D2;
     if(Math.abs(_vel2x)>0.1)_panDelta(_vel2x*(navFast?6.5:3.5),_vel2y*(navFast?6.5:3.5));
     if(Math.abs(_velZoom-1)>0.0001)camera.radius=_cr(camera.radius*_velZoom);
     var sp2=Math.sqrt(_vel2x*_vel2x+_vel2y*_vel2y);
-    if(!driveMode) _warpLevel=Math.min(1,_warpLevel*0.95+Math.min(1,sp2*0.3+Math.abs(_velZoom-1)*80)*0.05);
+    if(!driveMode)_warpLevel=Math.min(1,_warpLevel*0.9+(sp2*0.3+Math.abs(_velZoom-1)*80)*0.1);
     if(Math.abs(_vel2x)<0.1&&Math.abs(_vel2y)<0.1&&Math.abs(_velZoom-1)<0.0001){_inertia2=false;_vel2x=0;_vel2y=0;_velZoom=1;}
   }
 
   // Warp visual
   if(_warpLevel>0.01){
     glow.intensity=0.8+_warpLevel*1.8;
-    sky.rotation.y+=_warpLevel*0.002;
     if(window._warpDraw)window._warpDraw(_warpLevel);
-    if(!driveMode&&!_inertia2)_warpLevel=Math.max(0,_warpLevel-0.04);
+    if(!driveMode&&!_inertia2)_warpLevel=Math.max(0,_warpLevel-0.03);
   } else {
     glow.intensity=0.8;
     if(window._warpDraw)window._warpDraw(0);
@@ -2277,31 +2302,35 @@ function closeVideo(){
   vid.src='';
 }
 </script>
-<div id="settingsPanel" style="display:none;position:fixed;top:60px;left:10px;background:rgba(10,5,25,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:16px 20px;z-index:300;min-width:200px;box-shadow:0 4px 24px rgba(0,0,0,0.6);">
-  <div style="color:#ffe040;font-size:14px;font-weight:bold;margin-bottom:12px;letter-spacing:1px;">⚙ Navigation</div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <span style="color:#aaa;font-size:13px;">Slow</span>
-    <div id="navToggle" onclick="toggleNavSpeed()" style="width:48px;height:26px;border-radius:13px;background:#333;cursor:pointer;position:relative;transition:background 0.2s;border:1px solid rgba(255,255,255,0.15);">
-      <div id="navThumb" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#888;transition:left 0.2s,background 0.2s;"></div>
-    </div>
-    <span style="color:#aaa;font-size:13px;">Fast</span>
-  </div>
-  <div id="navLabel" style="color:#888;font-size:11px;margin-top:8px;">Normal navigation</div>
-</div>
 
+
+<!-- Warp speed overlay — subtle radial streak effect -->
+<div id="warpOverlay" style="
+  pointer-events:none;
+  position:fixed;inset:0;
+  opacity:0;
+  transition:opacity 0.1s;
+  background:radial-gradient(ellipse at center,
+    rgba(255,255,255,0.55) 0%,
+    rgba(200,220,255,0.25) 18%,
+    rgba(150,180,255,0.08) 40%,
+    transparent 70%);
+  z-index:50;
+"></div>
+
+<canvas id="warpCanvas" style="pointer-events:none;position:fixed;inset:0;z-index:50;opacity:0;"></canvas>
 <div id="driveOverlay" style="display:none;position:fixed;inset:0;z-index:100;pointer-events:none;">
   <div id="throttleArea" style="pointer-events:all;position:absolute;inset:0;"></div>
-  <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);width:10px;height:160px;background:rgba(255,255,255,0.1);border-radius:5px;border:1px solid rgba(255,220,60,0.3);pointer-events:none;">
-    <div id="throttleBar" style="position:absolute;bottom:50%;left:0;width:100%;height:0%;background:#ffe040;border-radius:5px;"></div>
-    <div id="brakeBar" style="position:absolute;top:50%;left:0;width:100%;height:0%;background:#ff5544;border-radius:5px;"></div>
+  <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);width:12px;height:160px;background:rgba(255,255,255,0.1);border-radius:6px;border:1px solid rgba(255,220,60,0.3);pointer-events:none;">
+    <div id="throttleBar" style="position:absolute;bottom:50%;left:0;width:100%;height:0%;background:#ffe040;border-radius:6px;transition:height 0.05s;"></div>
+    <div id="brakeBar" style="position:absolute;top:50%;left:0;width:100%;height:0%;background:#ff5544;border-radius:6px;transition:height 0.05s;"></div>
   </div>
-  <div id="driveSpeedLbl" style="position:absolute;left:10px;top:calc(50% - 110px);color:#ffe040;font-size:12px;font-family:Arial;font-weight:bold;pointer-events:none;">🚀</div>
-  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;pointer-events:none;opacity:0.2;">
+  <div id="driveSpeedLbl" style="position:absolute;left:8px;top:calc(50% - 110px);color:#ffe040;font-size:11px;font-family:Arial;font-weight:bold;pointer-events:none;">🚀</div>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;pointer-events:none;opacity:0.18;">
     <div style="position:absolute;top:50%;left:0;width:100%;height:1px;background:#ffe040;"></div>
     <div style="position:absolute;left:50%;top:0;height:100%;width:1px;background:#ffe040;"></div>
   </div>
-  <button type="button" onclick="toggleDriveMode()" style="pointer-events:all;position:absolute;bottom:20px;right:20px;background:rgba(180,30,30,0.85);border:1px solid rgba(255,80,80,0.4);border-radius:20px;color:#fff;font-size:12px;padding:8px 16px;cursor:pointer;">✖ Exit</button>
+  <button type="button" onclick="toggleDriveMode()" style="pointer-events:all;position:absolute;bottom:20px;right:20px;background:rgba(180,30,30,0.85);border:1px solid rgba(255,80,80,0.4);border-radius:20px;color:#fff;font-size:12px;padding:8px 16px;cursor:pointer;">✖ Exit Drive</button>
 </div>
-<canvas id="warpCanvas" style="pointer-events:none;position:fixed;inset:0;z-index:50;opacity:0;"></canvas>
 </body>
 </html>
