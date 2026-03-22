@@ -1678,13 +1678,18 @@ var _yTransAnim=null;
 function animatePlanetsY(toDrive){
   if(_yTransAnim) clearInterval(_yTransAnim);
   var steps=0, maxSteps=40;
+  // Capture current positions as starting point
+  var startPos={};
+  Object.values(nodes).forEach(function(n){
+    startPos[n.id]=n.sphere.position.clone();
+  });
   _yTransAnim=setInterval(function(){
     steps++;
     var t=steps/maxSteps;
     t=t<0.5?2*t*t:1-2*(1-t)*(1-t); // ease
     Object.values(nodes).forEach(function(n){
-      var from=toDrive?flatPositions.get(n.id):drivePositions.get(n.id);
-      var to  =toDrive?drivePositions.get(n.id):flatPositions.get(n.id);
+      var from=startPos[n.id];
+      var to=toDrive?drivePositions.get(n.id):flatPositions.get(n.id);
       if(!from||!to)return;
       n.sphere.position.x=from.x+(to.x-from.x)*t;
       n.sphere.position.y=from.y+(to.y-from.y)*t;

@@ -1004,16 +1004,11 @@
     "ring": false,
     "glow": 0.4,
     "video": "./Assets/Heros/Videos/ΑΙΑΣ.mp4",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00000-ΑΙΑΣ (1).png",
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00045-ΑΙΑΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00071-ΑΙΑΣ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00074-ΑΙΑΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00000-ΑΙΑΣ (1).png",
-      "./Assets/Photos/Auto_Ai_Photos/00000-ΑΙΑΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00039-ΑΙΑΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00071-ΑΙΑΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00074-ΑΙΑΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00043-ΑΙΑΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00045-ΑΙΑΣ.png"
+      "./Assets/Photos/Auto_Ai_Photos/00074-ΑΙΑΣ.png"
     ]
   },
   {
@@ -1061,10 +1056,9 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00015-ΑΜΦΙΤΡΥΩΝ.png",
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00036-ΑΜΦΙΤΡΥΩΝ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00089-ΑΜΦΙΤΡΥΩΝ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00060-ΑΜΦΙΤΡΥΩΝ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00015-ΑΜΦΙΤΡΥΩΝ.png",
       "./Assets/Photos/Auto_Ai_Photos/00036-ΑΜΦΙΤΡΥΩΝ.png",
       "./Assets/Photos/Auto_Ai_Photos/00060-ΑΜΦΙΤΡΥΩΝ.png",
       "./Assets/Photos/Auto_Ai_Photos/00089-ΑΜΦΙΤΡΥΩΝ.png"
@@ -1225,10 +1219,8 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Photos/Auto_Ai_Photos/00079-ΔΑΙΔΑΛΟΣ.png",
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00050-ΔΑΙΔΑΛΟΣ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00079-ΔΑΙΔΑΛΟΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00005-ΔΑΙΔΑΛΟΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00050-ΔΑΙΔΑΛΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00079-ΔΑΙΔΑΛΟΣ.png"
     ]
   },
@@ -1381,10 +1373,9 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00006-ΙΚΑΡΟΣ.png",
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00051-ΙΚΑΡΟΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00051-ΙΚΑΡΟΣ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00080-ΙΚΑΡΟΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00006-ΙΚΑΡΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00051-ΙΚΑΡΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00080-ΙΚΑΡΟΣ.png"
     ]
@@ -1643,12 +1634,9 @@
     "glow": 0.4,
     "video": "./Assets/Heros/Videos/ΠΑΤΡΟΚΛΟΣ.mp4",
     "photo": "./Assets/Photos/Auto_Ai_Photos/00044-ΠΑΤΡΟΚΛΟΣ.png",
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00040-ΠΑΤΡΟΚΛΟΣ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00075-ΠΑΤΡΟΚΛΟΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00001-ΠΑΤΡΟΚΛΟΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00040-ΠΑΤΡΟΚΛΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00044-ΠΑΤΡΟΚΛΟΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00046-ΠΑΤΡΟΚΛΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00075-ΠΑΤΡΟΚΛΟΣ.png"
     ]
   },
@@ -2693,12 +2681,10 @@
     "sprite": "nymph",
     "ring": false,
     "glow": 0.7,
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00082-ΗΛΕΚΤΡΑ.png",
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00008-ΗΛΕΚΤΡΑ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00053-ΗΛΕΚΤΡΑ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00053-ΗΛΕΚΤΡΑ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00008-ΗΛΕΚΤΡΑ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00053-ΗΛΕΚΤΡΑ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00082-ΗΛΕΚΤΡΑ.png"
+      "./Assets/Photos/Auto_Ai_Photos/00053-ΗΛΕΚΤΡΑ.png"
     ]
   },
   {
@@ -4868,10 +4854,8 @@
     "ring": false,
     "glow": 0.4,
     "photo": "./Assets/Photos/Auto_Ai_Photos/00078-ΑΙΑΚΟΣ.png",
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00004-ΑΙΑΚΟΣ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00078-ΑΙΑΚΟΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00004-ΑΙΑΚΟΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00049-ΑΙΑΚΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00078-ΑΙΑΚΟΣ.png"
     ]
   },
@@ -4925,11 +4909,9 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00003-ΡΑΔΑΜΑΝΘΥΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00048-ΡΑΔΑΜΑΝΘΥΣ.png",
     "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00077-ΡΑΔΑΜΑΝΘΥΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00003-ΡΑΔΑΜΑΝΘΥΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00042-ΡΑΔΑΜΑΝΘΥΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00048-ΡΑΔΑΜΑΝΘΥΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00077-ΡΑΔΑΜΑΝΘΥΣ.png"
     ]
@@ -5072,12 +5054,9 @@
     "ring": false,
     "glow": 0.4,
     "video": "./Assets/Heros/Videos/ΜΙΝΟΣ.mp4",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00041-ΜΙΝΩΣ.png",
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00002-ΜΙΝΩΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00076-ΜΙΝΩΣ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00076-ΜΙΝΩΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00002-ΜΙΝΩΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00041-ΜΙΝΩΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00047-ΜΙΝΩΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00076-ΜΙΝΩΣ.png"
     ]
   },
@@ -5356,10 +5335,9 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00007-ΟΡΕΣΤΗΣ.png",
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00052-ΟΡΕΣΤΗΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00052-ΟΡΕΣΤΗΣ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00081-ΟΡΕΣΤΗΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00007-ΟΡΕΣΤΗΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00052-ΟΡΕΣΤΗΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00081-ΟΡΕΣΤΗΣ.png"
     ]
@@ -6044,10 +6022,9 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00010-ΘΥΕΣΤΗΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00055-ΘΥΕΣΤΗΣ.png",
     "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00084-ΘΥΕΣΤΗΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00010-ΘΥΕΣΤΗΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00055-ΘΥΕΣΤΗΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00084-ΘΥΕΣΤΗΣ.png"
     ]
@@ -6396,10 +6373,9 @@
     "ring": false,
     "glow": 0.4,
     "video": "./Assets/Heros/Videos/ΙΠΠΟΛΥΤΟΣ.mp4",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00005-ΙΠΠΟΛΥΤΟΣ.png",
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00059-ΙΠΠΟΛΥΤΟΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00059-ΙΠΠΟΛΥΤΟΣ.png",
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00088-ΙΠΠΟΛΥΤΟΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00005-ΙΠΠΟΛΥΤΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00059-ΙΠΠΟΛΥΤΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00088-ΙΠΠΟΛΥΤΟΣ.png"
     ]
@@ -6522,14 +6498,12 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00016-ΝΕΟΠΤΟΛΕΜΟΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00061-ΝΕΟΠΤΟΛΕΜΟΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00016-ΝΕΟΠΤΟΛΕΜΟΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00037-ΝΕΟΠΤΟΛΕΜΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00061-ΝΕΟΠΤΟΛΕΜΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00090-ΝΕΟΠΤΟΛΕΜΟΣ.png"
     ],
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00037-ΝΕΟΠΤΟΛΕΜΟΣ.png"
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00090-ΝΕΟΠΤΟΛΕΜΟΣ.png"
   },
   {
     "id": "HERO_LAERTES_001",
@@ -6549,11 +6523,9 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00018-ΛΑΕΡΤΗΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00063-ΛΑΕΡΤΗΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00018-ΛΑΕΡΤΗΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00063-ΛΑΕΡΤΗΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00092-ΛΑΕΡΤΗΣ.png"
+      "./Assets/Photos/Auto_Ai_Photos/00063-ΛΑΕΡΤΗΣ.png"
     ],
     "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00063-ΛΑΕΡΤΗΣ.png"
   },
@@ -6575,13 +6547,12 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00019-ΚΕΦΑΛΟΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00064-ΚΕΦΑΛΟΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00019-ΚΕΦΑΛΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00064-ΚΕΦΑΛΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00093-ΚΕΦΑΛΟΣ.png"
     ],
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00064-ΚΕΦΑΛΟΣ.png"
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00093-ΚΕΦΑΛΟΣ.png"
   },
   {
     "id": "HERO_BIAS_001",
@@ -6601,9 +6572,8 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00021-ΒΙΑΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00095-ΒΙΑΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00021-ΒΙΑΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00066-ΒΙΑΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00095-ΒΙΑΣ.png"
     ],
@@ -6627,13 +6597,11 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00022-ΜΕΛΑΜΠΟΥΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00096-ΜΕΛΑΜΠΟΥΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00022-ΜΕΛΑΜΠΟΥΣ.png",
-      "./Assets/Photos/Auto_Ai_Photos/00067-ΜΕΛΑΜΠΟΥΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00096-ΜΕΛΑΜΠΟΥΣ.png"
     ],
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00067-ΜΕΛΑΜΠΟΥΣ.png"
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00096-ΜΕΛΑΜΠΟΥΣ.png"
   },
   {
     "id": "HERO_ADMETUS_001",
@@ -6653,13 +6621,12 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00023-ΑΔΜΗΤΟΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00068-ΑΔΜΗΤΟΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00023-ΑΔΜΗΤΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00068-ΑΔΜΗΤΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00097-ΑΔΜΗΤΟΣ.png"
     ],
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00068-ΑΔΜΗΤΟΣ.png"
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00097-ΑΔΜΗΤΟΣ.png"
   },
   {
     "id": "HERO_STHENELUS_001",
@@ -6679,9 +6646,8 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00025-ΣΘΕΝΕΛΟΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00099-ΣΘΕΝΕΛΟΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00025-ΣΘΕΝΕΛΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00070-ΣΘΕΝΕΛΟΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00099-ΣΘΕΝΕΛΟΣ.png"
     ],
@@ -6875,9 +6841,8 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00012-ΕΤΕΟΚΛΗΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00057-ΕΤΕΟΚΛΗΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00012-ΕΤΕΟΚΛΗΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00057-ΕΤΕΟΚΛΗΣ.png"
     ],
     "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00057-ΕΤΕΟΚΛΗΣ.png"
@@ -6900,13 +6865,12 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "./Assets/Photos/Auto_Ai_Photos/00013-ΠΟΛΥΝΕΙΚΗΣ.png",
+    "photo": "./Assets/Photos/Auto_Ai_Photos/00058-ΠΟΛΥΝΕΙΚΗΣ.png",
     "photos": [
-      "./Assets/Photos/Auto_Ai_Photos/00013-ΠΟΛΥΝΕΙΚΗΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00058-ΠΟΛΥΝΕΙΚΗΣ.png",
       "./Assets/Photos/Auto_Ai_Photos/00087-ΠΟΛΥΝΕΙΚΗΣ.png"
     ],
-    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00058-ΠΟΛΥΝΕΙΚΗΣ.png"
+    "focusPhoto": "./Assets/Photos/Auto_Ai_Photos/00087-ΠΟΛΥΝΕΙΚΗΣ.png"
   },
   {
     "id": "HERO_AMPHIARAUS_001",
