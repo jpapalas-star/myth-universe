@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://cdn.babylonjs.com">
 <link rel="preconnect" href="https://raw.githubusercontent.com">
 <link rel="preload" href="https://cdn.babylonjs.com/babylon.js" as="script">
+<meta http-equiv="Cache-Control" content="max-age=86400">
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 
 <script>
@@ -1027,7 +1028,7 @@ function createNode(d,x,y,z,familyRingColor){
 
   // CHAOS: normal size, photo disc, red glow rings
   if(d.id==='PRIM_CHAOS_001'){
-    var chaosTex = d.chaosPhoto ? new BABYLON.Texture(d.chaosPhoto,scene,true,false) : null;
+    var chaosTex = d.chaosPhoto ? new BABYLON.Texture(d.chaosPhoto,scene,true,false,null,null,null,BABYLON.Texture.BILINEAR_SAMPLINGMODE) : null;
     if(chaosTex){
       sm.diffuseTexture=chaosTex;
       sm.emissiveTexture=chaosTex;
@@ -1080,7 +1081,7 @@ function createNode(d,x,y,z,familyRingColor){
     sphere.isPickable   = true; // still pickable for tap
     sphere.renderingGroupId = 1;
 
-    var photoTex=new BABYLON.Texture(d.photo,scene,true,false);
+    var photoTex=new BABYLON.Texture(d.photo,scene,true,false,null,null,null,BABYLON.Texture.BILINEAR_SAMPLINGMODE);
     photoTex.hasAlpha=false;
 
     var discMat=new BABYLON.StandardMaterial('discmat_'+d.id,scene);
@@ -2242,7 +2243,7 @@ homeBtn.addEventListener('click',function(){
 window.addEventListener('popstate',()=>{ if(focusedId) resetFocus(true); });
 
 
-fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
+fetch('app-data.json',{cache:'default'})
   .then(r=>{
     if(!r.ok) throw new Error('HTTP '+r.status);
     return r.json();
@@ -2250,6 +2251,17 @@ fetch('app-data.json?nocache='+Date.now(),{cache:'no-store'})
   .then(all=>{
     allData=all;
     all.forEach(d=>dataMap[d.id]=d);
+
+    // Preload all photos immediately in background
+    var _preloadSet=new Set();
+    all.forEach(function(d){
+      [d.photo, d.focusPhoto, d.chaosPhoto].forEach(function(src){
+        if(src && !_preloadSet.has(src)){
+          _preloadSet.add(src);
+          var img=new Image(); img.src=src;
+        }
+      });
+    });
 
     try{
     const chaos=all.find(d=>d.id==='PRIM_CHAOS_001');
