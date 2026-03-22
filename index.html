@@ -1496,8 +1496,11 @@ function _advStep(){
   });
 }
 
+var _advTimer=null;
+
 function _advSpeak(text, onDone){
   stopSpeak();
+  if(_advTimer){ clearTimeout(_advTimer); _advTimer=null; }
   if(!window.speechSynthesis||!text){if(onDone)setTimeout(onDone,300);return;}
   var utt=new SpeechSynthesisUtterance(text);
   utt.lang=appLang==='en'?'en-US':'el-GR';
@@ -1508,25 +1511,27 @@ function _advSpeak(text, onDone){
   function finish(){
     if(_done) return;
     _done=true;
+    if(_advTimer){clearTimeout(_advTimer);_advTimer=null;}
     if(_advActive&&onDone) onDone();
   }
 
-  // Estimate duration: ~80ms per character
-  var estMs = Math.max(1200, text.length * 80);
-  var _timer = setTimeout(finish, estMs);
+  var estMs = Math.max(1500, text.length * 75);
+  _advTimer = setTimeout(finish, estMs);
 
-  utt.onend=function(){ clearTimeout(_timer); finish(); };
-  utt.onerror=function(){ clearTimeout(_timer); finish(); };
+  utt.onend=function(){ finish(); };
+  utt.onerror=function(){ finish(); };
   window.speechSynthesis.speak(utt);
 }
 
 function advNext(){
+  if(_advTimer){clearTimeout(_advTimer);_advTimer=null;}
   stopSpeak();
   _advStep();
 }
 
 function _advEnd(){
   _advActive=false;
+  if(_advTimer){clearTimeout(_advTimer);_advTimer=null;}
   _hideAdvOverlay();
   stopSpeak();
   var isEN=appLang==='en';
@@ -1537,6 +1542,7 @@ function _advEnd(){
 
 function stopFamilyAdventure(){
   _advActive=false;
+  if(_advTimer){clearTimeout(_advTimer);_advTimer=null;}
   _hideAdvOverlay();
   stopSpeak();
 }
