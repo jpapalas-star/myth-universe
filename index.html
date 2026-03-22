@@ -261,6 +261,7 @@ html,body{
   </div>
 </div>
 
+<button onclick="cycleVoice()" title="Αλλαγή φωνής" style="position:fixed;bottom:12px;right:10px;z-index:25;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);border-radius:20px;color:#fff;font-size:13px;padding:5px 10px;cursor:pointer;backdrop-filter:blur(4px);">🔊↔</button>
 <canvas id="renderCanvas"></canvas>
 
 <script>
@@ -1315,15 +1316,13 @@ function speakText(){
 
   function doSpeak(){
     var utt=new SpeechSynthesisUtterance(txt);
-    if(appLang==='en'){
-      utt.lang='en-US';
-    } else {
-      utt.lang='el-GR';
+    if(appLang==='en'){ utt.lang='en-US'; } else { utt.lang='el-GR'; }
+    if(_selectedVoice){ utt.voice=_selectedVoice; utt.lang=_selectedVoice.lang; }
+    else {
+      var voice=_getBestVoice(appLang==='en'?'en':'el', true);
+      if(voice) utt.voice=voice;
     }
-    var voice=_getBestVoice(appLang==='en'?'en':'el', true);
-    if(voice) utt.voice=voice;
-    utt.rate=0.85;
-    utt.pitch=0.75;
+    utt.rate=0.85; utt.pitch=0.75;
     var ttsBtn=document.getElementById('ttsStop');
     if(ttsBtn) ttsBtn.style.display='block';
     utt.onend=function(){ if(ttsBtn) ttsBtn.style.display='none'; };
@@ -1349,7 +1348,69 @@ function stopSpeak(){
 
 function stopSpeak(){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
+  var ttsBtn=document.getElementById('ttsStop');
+  if(ttsBtn) ttsBtn.style.display='none';
 }
+
+// ── VOICE CYCLE ───────────────────────────────────────────────────────
+var _voiceIndex = 0;
+var _allVoices = [];
+var _selectedVoice = null;
+
+function _loadVoices(){
+  var v = window.speechSynthesis.getVoices();
+  if(v && v.length > 0){
+    _allVoices = v;
+    // Default: try first non-female Greek, else first Greek, else first
+    var grMale = v.find(function(x){ return x.lang.indexOf('el')===0 && x.name.toLowerCase().indexOf('female')<0; });
+    var grAny  = v.find(function(x){ return x.lang.indexOf('el')===0; });
+    _selectedVoice = grMale || grAny || v[0];
+    _voiceIndex = _allVoices.indexOf(_selectedVoice);
+  }
+}
+
+function cycleVoice(){
+  if(!window.speechSynthesis) return;
+  var voices = window.speechSynthesis.getVoices();
+  if(!voices || voices.length===0){
+    window.speechSynthesis.onvoiceschanged = function(){
+      _loadVoices(); cycleVoice();
+      window.speechSynthesis.onvoiceschanged=null;
+    };
+    return;
+  }
+  _allVoices = voices;
+  _voiceIndex = (_voiceIndex + 1) % voices.length;
+  _selectedVoice = voices[_voiceIndex];
+  var name = _selectedVoice.name + ' (' + _selectedVoice.lang + ')';
+  showToast('🔊 ' + name);
+  // Play a sample
+  window.speechSynthesis.cancel();
+  var utt = new SpeechSynthesisUtterance('Γεια σου');
+  utt.voice = _selectedVoice;
+  utt.lang = _selectedVoice.lang;
+  utt.pitch = 1; utt.rate = 0.9;
+  window.speechSynthesis.speak(utt);
+}
+
+function showToast(msg){
+  var t = document.getElementById('voiceToast');
+  if(!t){ t=document.createElement('div'); t.id='voiceToast';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.82);color:#ffe040;padding:8px 18px;border-radius:20px;font-size:13px;font-family:Arial;z-index:9999;pointer-events:none;transition:opacity 0.4s;white-space:nowrap;';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._to);
+  t._to=setTimeout(function(){ t.style.opacity='0'; },2800);
+}
+
+// Init voices on load
+if(window.speechSynthesis){
+  var _initV=window.speechSynthesis.getVoices();
+  if(_initV&&_initV.length>0){ _allVoices=_initV; _loadVoices(); }
+  else { window.speechSynthesis.onvoiceschanged=function(){ _loadVoices(); }; }
+}
+
 function resetInfo(){
   var isEN=appLang==='en';
   var sub = isEN ? 'Chaos center · generation rings · family clusters'
