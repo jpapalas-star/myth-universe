@@ -2923,6 +2923,7 @@ function _applyNeuralMode(){
   });
 
   lineMaterials.forEach(function(lm){
+    if(!lm||!lm.mat) return;
     if(lm.type==='partner'){
       lm.mat.emissiveColor = new BABYLON.Color3(0.85, 0.30, 0.60);
       lm.mat.diffuseColor  = new BABYLON.Color3(0.50, 0.10, 0.30);
@@ -3009,6 +3010,7 @@ function _removeNeuralMode(){
 
   // Restore connection colors
   lineMaterials.forEach(function(lm){
+    if(!lm||!lm.mat||!lm.base) return;
     var isPartner = lm.type === 'partner';
     lm.mat.emissiveColor = lm.base.scale(isPartner?0.95:1.05);
     lm.mat.diffuseColor  = lm.base.scale(isPartner?1.2:1.15);
@@ -3182,20 +3184,12 @@ window.startMythJourney = function(){
     lv.addEventListener('loadeddata',function onLD(){ lv.removeEventListener('loadeddata',onLD); tryPlay(); });
     lv.onerror=function(){ skipLaunch(); };
     lv.onended=function(){ skipLaunch(); };
-    setTimeout(function(){ if(!_played) tryPlay(); },2000);
-    setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); },25000);
+    setTimeout(function(){ if(!_played) tryPlay(); },1500);
+    setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); },30000);
   }
 
-  // Try GitHub API first, fallback to known path
-  fetch('https://api.github.com/repos/jpapalas-star/myth-universe/git/trees/HEAD?recursive=1')
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      var videos=(data.tree||[]).filter(function(x){
-        return x.type==='blob' && x.path.indexOf('Assets/Launch_Video/')===0 && /\.(mp4|webm|mov)$/i.test(x.path);
-      });
-      _playLaunchVideo(videos.length?'./'+videos[0].path:_knownPath);
-    })
-    .catch(function(){ _playLaunchVideo(_knownPath); });
+  // Play immediately with known path — no API delay
+  _playLaunchVideo(_knownPath);
 };
 
 window.skipLaunch = function(){
