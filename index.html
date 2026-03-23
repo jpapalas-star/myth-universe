@@ -272,7 +272,7 @@ html,body{
   <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline muted></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
-<button id="homeBtn" type="button">Μυθολογία</button>
+<button id="homeBtn" type="button">Επανεστίαση στο κέντρο</button>
 
 <input id="searchBox" type="text" placeholder="Search name, id, category..." autocomplete="off">
 <div id="searchResults"></div>
@@ -307,7 +307,7 @@ html,body{
     <button onclick="toggleInstructions()" style="background:rgba(255,220,60,0.12);border:1px solid rgba(255,220,60,0.35);border-radius:12px;color:#ffe040;font-size:11px;padding:4px 10px;cursor:pointer;white-space:nowrap;">📖 Οδηγίες</button>
   </div>
   <div class="sub">Ελληνική Μυθολογία</div>
-  <div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>
+  <div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Επανεστίαση» για reset.</div>
   </div>
 </div>
 
@@ -1407,7 +1407,7 @@ function toggleLang(){
   appLang = appLang==='gr' ? 'en' : 'gr';
   document.getElementById('langBtn').textContent = appLang==='gr' ? 'GR / EN' : 'EN / GR';
   var hb = document.getElementById('homeBtn');
-  if(hb) hb.textContent = appLang==='gr' ? 'Μυθολογία' : 'Mythology';
+  if(hb) hb.textContent = appLang==='gr' ? 'Επανεστίαση στο κέντρο' : 'Reset to center';
 
   // Auto-switch voice to match language
   var isEN = appLang==='en';
@@ -1465,6 +1465,23 @@ function stopSpeak(){
   var ttsBtn=document.getElementById('ttsStop');
   if(ttsBtn) ttsBtn.style.display='none';
 }
+
+// ── WAKE LOCK — prevent screen sleep ──────────────────────────────
+var _wakeLock = null;
+async function _requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      _wakeLock = await navigator.wakeLock.request('screen');
+    }
+  }catch(e){}
+}
+function _releaseWakeLock(){
+  if(_wakeLock){ _wakeLock.release().catch(function(){}); _wakeLock=null; }
+}
+// Re-acquire on visibility change
+document.addEventListener('visibilitychange',function(){
+  if(_wakeLock&&document.visibilityState==='visible') _requestWakeLock();
+});
 
 // ── FAMILY ADVENTURE ─────────────────────────────────────────────────
 var _advActive=false;
@@ -1534,6 +1551,7 @@ function startFamilyAdventure(rootId, btn){
   _advActive=true;
   _advQueue=queue;
   _advIndex=0;
+  _requestWakeLock();
 
   _showAdvOverlay();
 
@@ -1636,7 +1654,7 @@ function _advSpeak(text, onDone){
     if(_advActive&&onDone) onDone();
   }
 
-  var estMs = Math.max(1500, text.length * 75);
+  var estMs = Math.max(2500, text.length * 95); // Greek text needs more time
   _advTimer = setTimeout(finish, estMs);
 
   if(window.responsiveVoice && responsiveVoice.voiceSupport()){
@@ -1665,6 +1683,7 @@ function _advEnd(){
   if(_advTimer){clearTimeout(_advTimer);_advTimer=null;}
   _hideAdvOverlay();
   stopSpeak();
+  _releaseWakeLock();
   var isEN=appLang==='en';
   var msg=isEN?"That was my family. Nice to meet you!":"Αυτή ήταν η οικογένειά μου. Χάρηκα που γνωριστήκαμε!";
   showToast('🌟 '+msg);
@@ -1682,10 +1701,10 @@ function stopFamilyAdventure(){
   _advActive=false;
   if(_advTimer){clearTimeout(_advTimer);_advTimer=null;}
   _hideAdvOverlay();
-  // Stop ALL voices
   stopSpeak();
   if(window.responsiveVoice) responsiveVoice.cancel();
   if(window.speechSynthesis) window.speechSynthesis.cancel();
+  _releaseWakeLock();
 }
 
 var _voiceIndex = 0;
@@ -1753,8 +1772,8 @@ if(window.speechSynthesis){
 function resetInfo(){
   var isEN=appLang==='en';
   var sub = isEN ? 'Greek Mythology' : 'Ελληνική Μυθολογία';
-  var txt = isEN ? 'Tap a planet for info. Tap again or tap «Mythology» to reset.'
-                 : 'Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.';
+  var txt = isEN ? 'Tap a planet for info. Tap again or tap «Reset» to reset.'
+                 : 'Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Επανεστίαση» για reset.';
   var bgEl=document.getElementById('infoBgImg');
   if(bgEl){bgEl.src='';bgEl.style.display='none';}
   var contentEl=document.getElementById('infoContent');
