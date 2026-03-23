@@ -3184,10 +3184,20 @@ var _launchVideos = [
 ];
 
 window.startMythJourney = function(){
-  var ss = document.getElementById('startScreen');
-  if(ss){ ss.style.transition='opacity 0.4s'; ss.style.opacity='0'; setTimeout(function(){ss.style.display='none';},400); }
+  // Pre-warm AudioContext immediately — must happen inside user gesture
+  try{
+    var _ac = new (window.AudioContext||window.webkitAudioContext)();
+    _ac.resume();
+    var _buf = _ac.createBuffer(1,1,22050);
+    var _bsrc = _ac.createBufferSource();
+    _bsrc.buffer=_buf; _bsrc.connect(_ac.destination); _bsrc.start(0);
+  }catch(e){}
 
   _unlockMusic();
+  playBeep();
+
+  var ss = document.getElementById('startScreen');
+  if(ss){ ss.style.transition='opacity 0.4s'; ss.style.opacity='0'; setTimeout(function(){ss.style.display='none';},400); }
 
   var lo = document.getElementById('launchOverlay');
   var lv = document.getElementById('launchVideo');
@@ -3199,20 +3209,30 @@ window.startMythJourney = function(){
     lv.src = src;
     lv.muted = false; lv.volume = 0.8;
     lo.style.display='flex';
-    // Show loading indicator
-    var ldg = document.createElement('div');
-    ldg.id='launchLoading';
-    ldg.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.6);font-family:Arial;font-size:13px;z-index:100001;';
-    ldg.textContent='Loading...';
-    lo.appendChild(ldg);
+
+    // Loading indicator stays until video actually starts playing
+    var ldg = document.getElementById('launchLoading');
+    if(!ldg){
+      ldg = document.createElement('div');
+      ldg.id='launchLoading';
+      ldg.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font-family:Arial;font-size:14px;letter-spacing:2px;z-index:100001;text-align:center;';
+      ldg.innerHTML='⏳ Loading video...';
+      lo.appendChild(ldg);
+    }
 
     lv.load();
     var _played=false;
     function tryPlay(){
       if(_played)return; _played=true;
-      var l=document.getElementById('launchLoading'); if(l) l.remove();
       lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
     }
+
+    // Remove loading only when video ACTUALLY starts playing
+    lv.addEventListener('playing', function onPlaying(){
+      lv.removeEventListener('playing', onPlaying);
+      var l=document.getElementById('launchLoading'); if(l) l.remove();
+    });
+
     lv.addEventListener('canplay',function onCP(){ lv.removeEventListener('canplay',onCP); tryPlay(); });
     lv.addEventListener('loadeddata',function onLD(){ lv.removeEventListener('loadeddata',onLD); tryPlay(); });
     lv.onerror=function(){ skipLaunch(); };
