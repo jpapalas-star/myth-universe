@@ -255,6 +255,7 @@ html,body{
     <button onclick="toggleLang();updateLangBtnLabel();" style="background:rgba(255,220,60,0.12);border:1px solid rgba(255,220,60,0.4);border-radius:12px;color:#ffe040;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;" id="langBtnInner">GR / EN</button>
     <button onclick="cycleVoice();" style="background:rgba(100,200,255,0.12);border:1px solid rgba(100,200,255,0.4);border-radius:12px;color:#8fd3ff;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🔊 Voice</button>
     <button id="musicToggleBtn" onclick="toggleMusic();" style="background:rgba(180,100,255,0.12);border:1px solid rgba(180,100,255,0.4);border-radius:12px;color:#cc88ff;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🎵 Music ON</button>
+    <button id="neuralModeBtn" onclick="toggleNeuralMode();" style="background:rgba(0,220,180,0.12);border:1px solid rgba(0,220,180,0.4);border-radius:12px;color:#00ddcc;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🧠 Neural Mode</button>
   </div>
 </div>
 
@@ -2485,8 +2486,11 @@ fetch('app-data.json',{cache:'default'})
       document.body.appendChild(errDiv);
     }
     if(window._hideLoader) window._hideLoader();
-    // Start music after planets loaded
-    setTimeout(startMusic, 500);
+    // Start music after planets loaded - will play immediately if already unlocked
+    setTimeout(function(){
+      if(_musicUnlocked){ startMusic(); }
+      else { window._pendingMusic = true; } // will start on first interaction
+    }, 500);
   })
   .catch(err=>{
     infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';
@@ -2803,6 +2807,173 @@ engine.runRenderLoop(()=>{
 
 window.addEventListener('resize',()=>engine.resize());
 
+// ── NEURAL MODE ──────────────────────────────────────────────────────
+var _neuralMode = false;
+var _neuralMeshes = [];
+
+function toggleNeuralMode(){
+  _neuralMode = !_neuralMode;
+  var btn = document.getElementById('neuralModeBtn');
+  if(_neuralMode){
+    if(btn) btn.textContent = '🧠 Neural ON';
+    _applyNeuralMode();
+  } else {
+    if(btn) btn.textContent = '🧠 Neural Mode';
+    _removeNeuralMode();
+  }
+}
+
+function _applyNeuralMode(){
+  // 1. Background - dark pink/mauve biological
+  scene.clearColor = new BABYLON.Color4(0.12, 0.04, 0.10, 1);
+
+  // 2. Sky - pink/mauve biological
+  var nc = skyTexture.getContext();
+  nc.fillStyle = '#1e0618';
+  nc.fillRect(0,0,1024,1024);
+  // Biological glow patches
+  var bioColors = ['320,80%,45%','280,70%,40%','200,80%,50%','340,60%,35%'];
+  for(var i=0;i<30;i++){
+    var x=Math.random()*1024, y=Math.random()*1024;
+    var r=60+Math.random()*180;
+    var hue=bioColors[Math.floor(Math.random()*bioColors.length)];
+    var g=nc.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,'hsla('+hue+',0.22)');
+    g.addColorStop(0.5,'hsla('+hue+',0.10)');
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    nc.fillStyle=g;
+    nc.beginPath(); nc.arc(x,y,r,0,Math.PI*2); nc.fill();
+  }
+  // Tiny bright particles (neurotransmitters)
+  for(var i=0;i<400;i++){
+    var x=Math.random()*1024, y=Math.random()*1024;
+    var a=0.4+Math.random()*0.6;
+    nc.fillStyle='rgba(200,255,240,'+a+')';
+    nc.fillRect(x,y,1+Math.random()*1.5,1+Math.random()*1.5);
+  }
+  skyTexture.update();
+
+  // 3. Lighting - warm pink ambient
+  hemi.diffuse = new BABYLON.Color3(0.7, 0.3, 0.55);
+  hemi.groundColor = new BABYLON.Color3(0.2, 0.05, 0.18);
+  hemi.intensity = 1.8;
+  chaosLight.diffuse = new BABYLON.Color3(0.4, 0.7, 0.9);
+  glow.intensity = 1.4;
+
+  // 4. Transform spheres into neural cells
+  Object.values(nodes).forEach(function(n){
+    if(!n.sphere) return;
+    var mat = n.sphere.material;
+    if(!mat) return;
+    var isChaos = n.sphere.metadata && n.sphere.metadata.isChaos;
+    if(isChaos){
+      mat.emissiveColor = new BABYLON.Color3(0.8, 0.2, 0.6);
+      mat.diffuseColor  = new BABYLON.Color3(0.5, 0.1, 0.4);
+      mat.alpha = 0.7;
+    } else {
+      // Glowing cell body
+      mat.emissiveColor = new BABYLON.Color3(0.6, 0.7, 0.95);
+      mat.diffuseColor  = new BABYLON.Color3(0.3, 0.4, 0.7);
+      mat.alpha = 0.55;
+      mat.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+    }
+    // Add dendrite bumps (small spheres on surface)
+    _addDendrites(n);
+  });
+
+  // 5. Connection tubes - cyan neural axons
+  lineMaterials.forEach(function(lm){
+    lm.mat.emissiveColor = new BABYLON.Color3(0.1, 0.9, 0.85);
+    lm.mat.diffuseColor  = new BABYLON.Color3(0.0, 0.6, 0.7);
+    lm.mat.alpha = 0.75;
+  });
+}
+
+function _addDendrites(n){
+  if(!n.sphere) return;
+  var size = n.size || 4;
+  var count = Math.floor(4 + Math.random()*5);
+  for(var i=0;i<count;i++){
+    var theta = Math.random()*Math.PI*2;
+    var phi   = Math.random()*Math.PI;
+    var r = size/2;
+    var bumpPos = new BABYLON.Vector3(
+      Math.sin(phi)*Math.cos(theta)*r,
+      Math.cos(phi)*r,
+      Math.sin(phi)*Math.sin(theta)*r
+    );
+    var bumpSize = 0.8 + Math.random()*1.2;
+    var bump = BABYLON.MeshBuilder.CreateSphere('dendrite_'+n.id+'_'+i,{diameter:bumpSize,segments:5},scene);
+    bump.position = n.sphere.position.add(bumpPos);
+    var bMat = new BABYLON.StandardMaterial('bmat_'+n.id+'_'+i,scene);
+    bMat.emissiveColor = new BABYLON.Color3(0.2, 0.85, 0.9);
+    bMat.diffuseColor  = new BABYLON.Color3(0.1, 0.5, 0.6);
+    bMat.alpha = 0.8;
+    bump.material = bMat;
+    bump.renderingGroupId = 1;
+    _neuralMeshes.push(bump);
+  }
+}
+
+function _removeNeuralMode(){
+  // Restore space background
+  scene.clearColor = new BABYLON.Color4(0.01, 0.02, 0.05, 1);
+
+  // Restore sky
+  var nc = skyTexture.getContext();
+  nc.fillStyle = '#01030a';
+  nc.fillRect(0,0,1024,1024);
+  for(var i=0;i<300;i++){
+    var x=Math.random()*1024,y=Math.random()*1024,s=Math.random()*2.2;
+    nc.fillStyle='rgba(255,255,255,'+(0.3+Math.random()*0.7)+')';
+    nc.fillRect(x,y,s,s);
+  }
+  for(var i=0;i<25;i++){
+    var x=Math.random()*1024,y=Math.random()*1024,r=80+Math.random()*220;
+    var hue=[210,240,270,310][Math.floor(Math.random()*4)];
+    var g=nc.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,'hsla('+hue+',90%,65%,0.14)');
+    g.addColorStop(0.45,'hsla('+hue+',90%,45%,0.07)');
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    nc.fillStyle=g; nc.beginPath(); nc.arc(x,y,r,0,Math.PI*2); nc.fill();
+  }
+  skyTexture.update();
+
+  // Restore lighting
+  hemi.diffuse = new BABYLON.Color3(0.8, 0.82, 0.9);
+  hemi.groundColor = new BABYLON.Color3(0.3, 0.3, 0.4);
+  hemi.intensity = 1.2;
+  chaosLight.diffuse = new BABYLON.Color3(1, 0.95, 0.85);
+  glow.intensity = 0.8;
+
+  // Restore sphere materials
+  Object.values(nodes).forEach(function(n){
+    if(!n.sphere||!n.sphere.material) return;
+    var mat = n.sphere.material;
+    var isChaos = n.sphere.metadata && n.sphere.metadata.isChaos;
+    if(isChaos){
+      mat.emissiveColor = new BABYLON.Color3(0.9, 0.2, 0.2);
+      mat.alpha = 0.0;
+    } else {
+      mat.emissiveColor = new BABYLON.Color3(0.18, 0.18, 0.22);
+      mat.diffuseColor  = new BABYLON.Color3(0.3, 0.3, 0.4);
+      mat.alpha = 0.0;
+    }
+  });
+
+  // Restore connection colors
+  lineMaterials.forEach(function(lm){
+    var isPartner = lm.type === 'partner';
+    lm.mat.emissiveColor = lm.base.scale(isPartner?0.95:1.05);
+    lm.mat.diffuseColor  = lm.base.scale(isPartner?1.2:1.15);
+    lm.mat.alpha = isPartner ? 0.62 : 0.90;
+  });
+
+  // Remove dendrite meshes
+  _neuralMeshes.forEach(function(m){ if(m&&!m.isDisposed()) m.dispose(); });
+  _neuralMeshes = [];
+}
+
 // ── AUDIO SYSTEM ─────────────────────────────────────────────────────
 var _musicTracks = [
   './Assets/Sounds/Music/1.mp3',
@@ -2846,13 +3017,12 @@ var _musicUnlocked = false;
 function _unlockMusic(){
   if(_musicUnlocked) return;
   _musicUnlocked = true;
-  // Unlock audio context
   var ctx = new (window.AudioContext||window.webkitAudioContext)();
   ctx.resume();
-  // If music should be playing, start it
-  if(_musicOn && _musicAudio.paused && !_musicAudio.src){
+  if(window._pendingMusic && _musicOn){
+    window._pendingMusic = false;
     startMusic();
-  } else if(_musicOn && _musicAudio.paused){
+  } else if(_musicOn && _musicAudio.paused && _musicAudio.src){
     _musicAudio.play().catch(function(){});
   }
   document.removeEventListener('touchstart', _unlockMusic);
