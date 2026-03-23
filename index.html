@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://raw.githubusercontent.com">
 <link rel="preload" href="https://cdn.babylonjs.com/babylon.js" as="script">
 <meta http-equiv="Cache-Control" content="max-age=86400">
-<script src="https://code.responsivevoice.org/responsivevoice.js?key=FREE"></script>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 
 <script>
@@ -285,9 +284,16 @@ html,body{
   <div class="panelRow"><label><input id="toggleNebula" type="checkbox" checked> Show nebula</label></div>
   <div class="panelRow"><label><input id="toggleStars" type="checkbox" checked> Show stars</label></div>
   <div class="panelSep"></div>
-  <div>Drag = rotate</div>
-  <div>Pinch / wheel = zoom</div>
-  <div>1 finger drag = pan</div>
+  <div>1 δάχτυλο → pan</div>
+  <div>2 δάχτυλα → pan / pinch zoom / twist</div>
+  <div>Tap → focus & πληροφορίες</div>
+  <div>Tap ξανά → reset</div>
+  <div class="panelSep"></div>
+  <div>1 finger → pan</div>
+  <div>2 fingers → pan / pinch zoom / twist</div>
+  <div>Tap → focus & info</div>
+  <div>Tap again → reset</div>
+  <div class="panelSep"></div>
   <div>Blue arrows = parent → child</div>
   <div>Red = partners</div>
   <div>Tap entity = family focus</div>
@@ -1369,6 +1375,22 @@ function toggleLang(){
   document.getElementById('langBtn').textContent = appLang==='gr' ? 'GR / EN' : 'EN / GR';
   var hb = document.getElementById('homeBtn');
   if(hb) hb.textContent = appLang==='gr' ? 'Μυθολογία' : 'Mythology';
+
+  // Auto-switch voice to match language
+  var isEN = appLang==='en';
+  if(window.speechSynthesis){
+    var voices = window.speechSynthesis.getVoices();
+    var langFilter = isEN ? 'en' : 'el';
+    var filtered = voices.filter(function(v){ return v.lang.toLowerCase().indexOf(langFilter)===0; });
+    if(filtered.length>0){
+      // Pick first male if available, else first
+      var male = filtered.find(function(v){ return v.name.toLowerCase().indexOf('male')>=0 && v.name.toLowerCase().indexOf('female')<0; });
+      _selectedVoice = male || filtered[0];
+      _voiceIndex = (window.speechSynthesis.getVoices()||[]).indexOf(_selectedVoice);
+      showToast('🔊 '+(isEN?'English':'Ελληνική')+': '+_selectedVoice.name);
+    }
+  }
+
   resetInfo();
   if(_lastInfoD) showInfo(_lastInfoD);
 }
@@ -3573,5 +3595,6 @@ function _updateGasVisual(){
   }
 }
 </script>
+<script src="https://code.responsivevoice.org/responsivevoice.js?key=iTT65rNX"></script>
 </body>
 </html>
