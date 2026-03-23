@@ -2536,7 +2536,7 @@ function toggleDriveMode(){
     _velAlpha=0;_velBeta=0;_velRadius=0;_velTx=0;_velTy=0;_velTz=0;
     _prevAlpha=camera.alpha;_prevBeta=camera.beta;_prevRadius=camera.radius;
     _prevTx=camera.target.x;_prevTy=camera.target.y;_prevTz=camera.target.z;
-    camera.lowerBetaLimit=0.05; camera.upperBetaLimit=Math.PI*0.95;
+    camera.lowerBetaLimit=0.02; camera.upperBetaLimit=Math.PI*0.98;
     driveSpeed=0; _gasActive=false; _gasTurbo=false;
     _lookId=null; _lookAlphaDelta=0; _lookBetaDelta=0;
     animatePlanetsY(true);
@@ -2701,9 +2701,12 @@ engine.runRenderLoop(()=>{
 
   // Drive mode movement
   if(driveMode){
-    // Find distance to nearest planet for speed scaling
+    // Distance to galaxy center (for inbound/outbound turbo)
+    var _cx=camera.target.x, _cy=camera.target.y, _cz=camera.target.z;
+    var _distCenter = Math.sqrt(_cx*_cx + _cz*_cz);
+
+    // Distance to nearest planet (for slow-down near planets)
     var _nearDist=9999;
-    var _cx=camera.target.x,_cy=camera.target.y,_cz=camera.target.z;
     var _nodeKeys=Object.keys(nodes);
     for(var _ni=0;_ni<_nodeKeys.length;_ni++){
       var _ns=nodes[_nodeKeys[_ni]].sphere;
@@ -2712,31 +2715,48 @@ engine.runRenderLoop(()=>{
       var _dd=Math.sqrt(_dx*_dx+_dy*_dy+_dz*_dz);
       if(_dd<_nearDist) _nearDist=_dd;
     }
-    var _FAR=150,_CLOSE=40;
+    var _FAR=150, _CLOSE=40;
     var _prox=Math.max(0,Math.min(1,(_nearDist-_CLOSE)/(_FAR-_CLOSE)));
 
-    // Gas: steady speed or turbo
-    var _baseSpeed = _gasActive ? (navFast?2.5:1.4) * (0.2 + _prox*2.8) : 0;
-    var _turboMult = _gasTurbo ? 5.0 : 1.0;
-    driveSpeed = _baseSpeed * _turboMult;
+    // Forward vector: camera looks FROM camPos TOWARD target
+    // BabylonJS: camPos = target + r*(sin(b)*cos(a), cos(b), sin(b)*sin(a))
+    // forward = normalize(target - camPos) = -(sin(b)*cos(a), cos(b), sin(b)*sin(a))
+    var _ma=camera.alpha, _mb=camera.beta;
+    var _fwdX = -Math.sin(_mb)*Math.cos(_ma);
+    var _fwdY = -Math.cos(_mb);
+    var _fwdZ = -Math.sin(_mb)*Math.sin(_ma);
 
-    // FPS-style pivot: camera position fixed, target moves
-    // BabylonJS: camPos = target + r*(cos(a)*sin(b), cos(b), sin(a)*sin(b))
-    // Steering applied directly in touchmove for smooth feel
+    // Turbo speed: fast inbound (toward center), capped outbound
+    var _baseSpeed = _gasActive ? (navFast?2.5:1.4) * (0.2 + _prox*2.0) : 0;
+    if(_gasTurbo){
+      // Dot product of forward with inbound direction (toward center)
+      var _inboundX = -_cx/Math.max(1,_distCenter);
+      var _inboundZ = -_cz/Math.max(1,_distCenter);
+      var _dot = _fwdX*_inboundX + _fwdZ*_inboundZ; // -1=outbound, +1=inbound
+      var _inboundFactor = (_dot+1)*0.5; // 0..1, 1=heading to center
+      // Inbound: up to 8x, outbound: capped at 2x
+      var _turboMult = 2.0 + _inboundFactor * 6.0;
+      driveSpeed = _baseSpeed * _turboMult;
+    } else {
+      driveSpeed = _baseSpeed;
+    }
+
     _lookAlphaDelta=0; _lookBetaDelta=0;
 
-    // Move forward using CURRENT camera direction (after steering)
+    // Move forward along crosshair direction
     if(driveSpeed>0.01){
-      var ma=camera.alpha, mb=camera.beta;
-      camera.target.x -= Math.cos(ma)*Math.sin(mb)*driveSpeed;
-      camera.target.z -= Math.sin(ma)*Math.sin(mb)*driveSpeed;
-      camera.target.y -= Math.cos(mb)*driveSpeed*0.4;
-      // Wrap-around
-      var tx=camera.target.x,tz2=camera.target.z;
-      var tD=Math.sqrt(tx*tx+tz2*tz2);
-      if(tD>900){camera.target.x=-tx*0.95;camera.target.z=-tz2*0.95;}
-      if(camera.target.y>250){camera.target.y=-200;}
-      if(camera.target.y<-250){camera.target.y=200;}
+      camera.target.x += _fwdX * driveSpeed;
+      camera.target.y += _fwdY * driveSpeed * 0.4;
+      camera.target.z += _fwdZ * driveSpeed;
+      // Soft boundary — push back gently, no hard reset
+      var _tD=Math.sqrt(camera.target.x*camera.target.x+camera.target.z*camera.target.z);
+      if(_tD>850){
+        var _push=(_tD-850)/_tD*0.08;
+        camera.target.x*=(1-_push);
+        camera.target.z*=(1-_push);
+      }
+      if(camera.target.y>250){camera.target.y=250;}
+      if(camera.target.y<-250){camera.target.y=-250;}
     }
 
     // Warp: turbo + far = full warp
@@ -3498,32 +3518,28 @@ document.addEventListener('DOMContentLoaded',function(){
         var dx=t.clientX-_lookXPrev;
         var dy=t.clientY-_lookYPrev;
         _lookXPrev=t.clientX; _lookYPrev=t.clientY;
-        // Apply directly for smooth feel — no accumulation lag
+
+        var r=camera.radius, a=camera.alpha, b=camera.beta;
+        // BabylonJS correct: camPos = target + r*(sin(b)*cos(a), cos(b), sin(b)*sin(a))
+        var cpx=camera.target.x + r*Math.sin(b)*Math.cos(a);
+        var cpy=camera.target.y + r*Math.cos(b);
+        var cpz=camera.target.z + r*Math.sin(b)*Math.sin(a);
+
         if(Math.abs(dx)>0.3){
           var dirX=_lookInvertX?1:-1;
-          var r=camera.radius, a=camera.alpha, b=camera.beta;
-          var cpx=camera.target.x+r*Math.cos(a)*Math.sin(b);
-          var cpy=camera.target.y+r*Math.cos(b);
-          var cpz=camera.target.z+r*Math.sin(a)*Math.sin(b);
-          a+=dirX*(dx/(window.innerWidth||400))*2.2;
+          a += dirX*(dx/(window.innerWidth||400))*2.5;
           camera.alpha=a;
-          camera.target.x=cpx-r*Math.cos(a)*Math.sin(b);
-          camera.target.y=cpy-r*Math.cos(b);
-          camera.target.z=cpz-r*Math.sin(a)*Math.sin(b);
         }
         if(Math.abs(dy)>0.3){
           var dirY=_lookInvertY?1:-1;
-          var r2=camera.radius, a2=camera.alpha, b2=camera.beta;
-          var cpx2=camera.target.x+r2*Math.cos(a2)*Math.sin(b2);
-          var cpy2=camera.target.y+r2*Math.cos(b2);
-          var cpz2=camera.target.z+r2*Math.sin(a2)*Math.sin(b2);
-          b2=_cb(b2+dirY*(dy/(window.innerHeight||800))*2.0);
-          camera.beta=b2;
-          camera.target.x=cpx2-r2*Math.cos(a2)*Math.sin(b2);
-          camera.target.y=cpy2-r2*Math.cos(b2);
-          camera.target.z=cpz2-r2*Math.sin(a2)*Math.sin(b2);
+          b = _cb(b + dirY*(dy/(window.innerHeight||800))*2.0);
+          camera.beta=b;
         }
-        // Keep deltas for render loop gas steering
+        // Reposition target so camera stays at same world position
+        camera.target.x = cpx - r*Math.sin(b)*Math.cos(a);
+        camera.target.y = cpy - r*Math.cos(b);
+        camera.target.z = cpz - r*Math.sin(b)*Math.sin(a);
+
         _lookAlphaDelta=dx; _lookBetaDelta=dy;
       }
     }
