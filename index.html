@@ -532,7 +532,7 @@ canvas.addEventListener('touchmove', function(e) {
 
       ratio = 1 + rawChange * damping;
       camera.radius = _cr(camera.radius * ratio);
-      if(ratio < 1 && camera.radius < 200) _driftTargetToNearest();
+      if(ratio < 1 && camera.radius < 60) _driftTargetToNearest();
       _didZoom=true;
     }
 
@@ -637,10 +637,11 @@ canvas.addEventListener('wheel', function(e) {
   var zoomFactor = navFast ? (e.deltaY > 0 ? 1.14 : 0.88) : (e.deltaY > 0 ? 1.08 : 0.926);
   camera.radius = _cr(camera.radius * zoomFactor);
   // When zooming in close, drift target toward nearest planet
-  if(zoomFactor < 1 && camera.radius < 200) _driftTargetToNearest();
+  if(zoomFactor < 1 && camera.radius < 60) _driftTargetToNearest();
 }, { passive: true });
 
 function _driftTargetToNearest(){
+  if(!focusedId) return; // only drift when in focus mode
   var best=null, bestD=9999;
   Object.values(nodes).forEach(function(n){
     if(!n.sphere||!n.sphere.isEnabled()) return;
@@ -649,9 +650,8 @@ function _driftTargetToNearest(){
     var d=Math.sqrt(dx*dx+dy*dy+dz*dz);
     if(d<bestD){bestD=d;best=p;}
   });
-  if(!best||bestD>300) return;
-  // Lerp target 15% toward nearest planet
-  var t=0.15;
+  if(!best||bestD>80) return; // only if very close to a planet
+  var t=0.08;
   camera.target.x += (best.x-camera.target.x)*t;
   camera.target.y += (best.y-camera.target.y)*t;
   camera.target.z += (best.z-camera.target.z)*t;
