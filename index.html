@@ -1453,8 +1453,10 @@ function speakText(){
   function onEnd(){ if(ttsBtn) ttsBtn.style.display='none'; }
   if(window.responsiveVoice && responsiveVoice.voiceSupport()){
     var voice = (appLang==='en') ? 'UK English Male' : _rvVoice;
+    showToast('🔊 ResponsiveVoice: '+voice);
     responsiveVoice.speak(txt, voice, {rate:0.9, pitch:1, onend:onEnd, onerror:onEnd});
   } else {
+    showToast('🔊 WebSpeech: '+(_selectedVoice?_selectedVoice.name:'default'));
     _wbSpeak(txt, onEnd);
   }
 }
