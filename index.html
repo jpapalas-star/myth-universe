@@ -3634,7 +3634,7 @@ function closeVideo(){
 <script>
 // ── NEW DRIVE CONTROLS ────────────────────────────────────────────────
 var _gasActive=false, _gasTurbo=false;
-var _lookId=null, _lookX0=0, _lookY0=0, _lookXPrev=0, _lookYPrev=0;
+var _lookId=null, _lookX0=0, _lookY0=0, _lookXPrev=0, _lookYPrev=0, _lookTapTime=0;
 var _lookAlphaDelta=0, _lookBetaDelta=0;
 var _lookInvertX=true, _lookInvertY=true; // default: both inverted
 
@@ -3683,6 +3683,7 @@ document.addEventListener('DOMContentLoaded',function(){
         _lookX0=t.clientX; _lookY0=t.clientY;
         _lookXPrev=t.clientX; _lookYPrev=t.clientY;
         _lookAlphaDelta=0; _lookBetaDelta=0;
+        _lookTapTime=Date.now();
       }
     }
   },{passive:false});
@@ -3711,7 +3712,20 @@ document.addEventListener('DOMContentLoaded',function(){
   lookArea.addEventListener('touchend',function(e){
     e.preventDefault();
     for(var i=0;i<e.changedTouches.length;i++){
-      if(e.changedTouches[i].identifier===_lookId){
+      var t=e.changedTouches[i];
+      if(t.identifier===_lookId){
+        // Detect tap: little movement + quick release
+        var elapsed = Date.now() - (_lookTapTime||0);
+        var dist = Math.hypot(t.clientX-_lookX0, t.clientY-_lookY0);
+        if(dist < 12 && elapsed < 350){
+          // It's a tap — try to pick a planet
+          var rect=canvas.getBoundingClientRect();
+          var sx=t.clientX-rect.left, sy=t.clientY-rect.top;
+          var pickedId=_pick(sx,sy);
+          if(pickedId && nodes[pickedId]){
+            enterFocus(pickedId);
+          }
+        }
         _lookId=null; _lookAlphaDelta=0; _lookBetaDelta=0;
       }
     }
