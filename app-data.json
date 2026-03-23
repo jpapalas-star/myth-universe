@@ -1305,11 +1305,9 @@
     "ring": false,
     "glow": 0.4,
     "video": "./Assets/Heros/Videos/ΚΑΔΜΟΣ.mp4",
-    "photo": "./Assets/Heros/Photos/ΚΑΔΜΟΣ.png",
-    "focusPhoto": "./Assets/Heros/Photos/ΚΑΔΜΟΣ.png",
-    "photos": [
-      "./Assets/Heros/Photos/ΚΑΔΜΟΣ.png"
-    ]
+    "photo": "",
+    "focusPhoto": "",
+    "photos": []
   },
   {
     "id": "HERO_DAEDALUS_001",
@@ -4864,8 +4862,8 @@
     "sprite": "titan-male",
     "ring": true,
     "glow": 0.45,
-    "photo": "./Assets/Titans/Titan_Photos/ΚΟΙΟΣ.png",
-    "focusPhoto": "./Assets/Titans/Titan_Photos/ΚΟΙΟΣ.png"
+    "photo": "",
+    "focusPhoto": ""
   },
   {
     "id": "TITAN_HYPERION_001",
@@ -4947,8 +4945,8 @@
     "sprite": "titan-male",
     "ring": true,
     "glow": 0.45,
-    "photo": "./Assets/Titans/Titan_Photos/ΚΡΙΟΣ.png",
-    "focusPhoto": "./Assets/Titans/Titan_Photos/ΚΡΙΟΣ.png"
+    "photo": "",
+    "focusPhoto": ""
   },
   {
     "id": "TITAN_MNEMOSYNE_001",
@@ -5057,13 +5055,10 @@
     "sprite": "titan-male",
     "ring": true,
     "glow": 0.45,
-    "photo": "./Assets/Titans/Titan_Photos/ΑΤΛΑΣ.png",
+    "photo": "",
     "video": "./Assets/Heros/Videos/ΠΡΟΜΗΘΕΑΣ.mp4",
-    "photos": [
-      "./Assets/Titans/Titan_Photos/ΑΤΛΑΣ.png",
-      "./Assets/Heros/Photos/ΠΡΟΜΗΘΕΑΣ.png"
-    ],
-    "focusPhoto": "./Assets/Heros/Photos/ΠΡΟΜΗΘΕΑΣ.png"
+    "photos": [],
+    "focusPhoto": ""
   },
   {
     "id": "TITAN_RHEA_001",
@@ -5145,8 +5140,8 @@
     "sprite": "titan-female",
     "ring": true,
     "glow": 0.45,
-    "photo": "./Assets/Titans/Titan_Photos/ΜΝΗΜΟΣΥΝΗ.png",
-    "focusPhoto": "./Assets/Titans/Titan_Photos/ΜΝΗΜΟΣΥΝΗ.png"
+    "photo": "",
+    "focusPhoto": ""
   },
   {
     "id": "TITAN_THEMIS_001",
@@ -5919,11 +5914,9 @@
     "ring": false,
     "glow": 0.4,
     "video": "./Assets/Heros/Videos/ΚΑΣΤΟΡΑΣ.mp4",
-    "photo": "./Assets/Heros/Photos/ΚΑΣΤΟΡΑΣ.png",
-    "focusPhoto": "./Assets/Heros/Photos/ΚΑΣΤΟΡΑΣ.png",
-    "photos": [
-      "./Assets/Heros/Photos/ΚΑΣΤΟΡΑΣ.png"
-    ]
+    "photo": "",
+    "focusPhoto": "",
+    "photos": []
   },
   {
     "id": "HERO_POLYDEUCES_001",
@@ -5948,11 +5941,9 @@
     "ring": false,
     "glow": 0.4,
     "video": "./Assets/Heros/Videos/ΠΟΛΥΔΕΥΚΗΣ.mp4",
-    "photo": "./Assets/Heros/Photos/ΠΟΛΥΔΕΥΚΗΣ.png",
-    "focusPhoto": "./Assets/Heros/Photos/ΠΟΛΥΔΕΥΚΗΣ.png",
-    "photos": [
-      "./Assets/Heros/Photos/ΠΟΛΥΔΕΥΚΗΣ.png"
-    ]
+    "photo": "",
+    "focusPhoto": "",
+    "photos": []
   },
   {
     "id": "HERO_TELEMACHUS_001",
@@ -6289,8 +6280,8 @@
     "sprite": "titan-male",
     "ring": true,
     "glow": 0.45,
-    "photo": "./Assets/Titans/Titan_Photos/ΚΟΙΟΣ.png",
-    "focusPhoto": "./Assets/Titans/Titan_Photos/ΚΟΙΟΣ.png"
+    "photo": "",
+    "focusPhoto": ""
   },
   {
     "id": "TITAN_ASTERIA_001",
@@ -6314,8 +6305,8 @@
     "sprite": "titan-female",
     "ring": true,
     "glow": 0.45,
-    "photo": "./Assets/Titans/Titan_Photos/ΦΟΙΒΗ.png",
-    "focusPhoto": "./Assets/Titans/Titan_Photos/ΦΟΙΒΗ.png"
+    "photo": "",
+    "focusPhoto": ""
   },
   {
     "id": "MORTAL_CELEUS_001",
@@ -6395,11 +6386,9 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "./Assets/Heros/Photos/ΤΡΙΠΤΟΛΕΜΟΣ.png",
-    "focusPhoto": "./Assets/Heros/Photos/ΤΡΙΠΤΟΛΕΜΟΣ.png",
-    "photos": [
-      "./Assets/Heros/Photos/ΤΡΙΠΤΟΛΕΜΟΣ.png"
-    ]
+    "photo": "",
+    "focusPhoto": "",
+    "photos": []
   },
   {
     "id": "GOD_PLUTUS_001",
@@ -6877,11 +6866,9 @@
     "ring": false,
     "glow": 0.4,
     "video": "./Assets/Heros/Videos/ΓΑΝΥΜΗΔΗΣ.mp4",
-    "photo": "./Assets/Heros/Photos/ΓΑΝΥΜΗΔΗΣ.png",
-    "focusPhoto": "./Assets/Heros/Photos/ΓΑΝΥΜΗΔΗΣ.png",
-    "photos": [
-      "./Assets/Heros/Photos/ΓΑΝΥΜΗΔΗΣ.png"
-    ]
+    "photo": "",
+    "focusPhoto": "",
+    "photos": []
   },
   {
     "id": "HERO_ENDYMION_001",
@@ -6906,11 +6893,9 @@
     "ring": false,
     "glow": 0.4,
     "video": "./Assets/Heros/Videos/ΕΝΔΥΜΙΩΝ.mp4",
-    "photo": "./Assets/Heros/Photos/ΕΝΔΥΜΙΩΝ.png",
-    "focusPhoto": "./Assets/Heros/Photos/ΕΝΔΥΜΙΩΝ.png",
-    "photos": [
-      "./Assets/Heros/Photos/ΕΝΔΥΜΙΩΝ.png"
-    ]
+    "photo": "",
+    "focusPhoto": "",
+    "photos": []
   },
   {
     "id": "HERO_TIRESIAS_001",
@@ -7101,9 +7086,9 @@
     "sprite": "titan-male",
     "ring": true,
     "glow": 0.45,
-    "photo": "./Assets/Heros/Photos/ΠΕΡΣΕΑΣ.png",
+    "photo": "",
     "video": "./Assets/Heros/Videos/ΠΕΡΣΕΑΣ.mp4",
-    "focusPhoto": "./Assets/Heros/Photos/ΠΕΡΣΕΑΣ.png"
+    "focusPhoto": ""
   },
   {
     "id": "HERO_NEOPTOLEMUS_001",
@@ -7527,11 +7512,9 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "./Assets/Heros/Photos/ΑΜΦΙΑΡΑΟΣ.png",
-    "photos": [
-      "./Assets/Heros/Photos/ΑΜΦΙΑΡΑΟΣ.png"
-    ],
-    "focusPhoto": "./Assets/Heros/Photos/ΑΜΦΙΑΡΑΟΣ.png"
+    "photo": "",
+    "photos": [],
+    "focusPhoto": ""
   },
   {
     "id": "HERO_LEANDER_001",
@@ -7551,11 +7534,9 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "./Assets/Heros/Photos/ΛΕΑΝΔΡΟΣ.png",
-    "photos": [
-      "./Assets/Heros/Photos/ΛΕΑΝΔΡΟΣ.png"
-    ],
-    "focusPhoto": "./Assets/Heros/Photos/ΛΕΑΝΔΡΟΣ.png"
+    "photo": "",
+    "photos": [],
+    "focusPhoto": ""
   },
   {
     "id": "PRIM_AION_001",
