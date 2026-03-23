@@ -2697,25 +2697,7 @@ engine.runRenderLoop(()=>{
 
     // FPS-style pivot: camera position fixed, target moves
     // BabylonJS: camPos = target + r*(cos(a)*sin(b), cos(b), sin(a)*sin(b))
-    if(Math.abs(_lookAlphaDelta)>0.5 || Math.abs(_lookBetaDelta)>0.5){
-      var r=camera.radius, a=camera.alpha, b=camera.beta;
-      var cpx = camera.target.x + r * Math.cos(a) * Math.sin(b);
-      var cpy = camera.target.y + r * Math.cos(b);
-      var cpz = camera.target.z + r * Math.sin(a) * Math.sin(b);
-      if(Math.abs(_lookAlphaDelta)>0.5){
-        var dirX = _lookInvertX ? 1 : -1;
-        a += dirX * (_lookAlphaDelta / (window.innerWidth||400)) * 2.2;
-        camera.alpha = a;
-      }
-      if(Math.abs(_lookBetaDelta)>0.5){
-        var dirY = _lookInvertY ? 1 : -1;
-        b = _cb(b + dirY * (_lookBetaDelta / (window.innerHeight||800)) * 2.0);
-        camera.beta = b;
-      }
-      camera.target.x = cpx - r * Math.cos(a) * Math.sin(b);
-      camera.target.y = cpy - r * Math.cos(b);
-      camera.target.z = cpz - r * Math.sin(a) * Math.sin(b);
-    }
+    // Steering applied directly in touchmove for smooth feel
     _lookAlphaDelta=0; _lookBetaDelta=0;
 
     // Move forward using CURRENT camera direction (after steering)
@@ -3011,9 +2993,36 @@ document.addEventListener('DOMContentLoaded',function(){
     for(var i=0;i<e.changedTouches.length;i++){
       var t=e.changedTouches[i];
       if(t.identifier===_lookId){
-        _lookAlphaDelta=t.clientX-_lookXPrev;
-        _lookBetaDelta =t.clientY-_lookYPrev;
+        var dx=t.clientX-_lookXPrev;
+        var dy=t.clientY-_lookYPrev;
         _lookXPrev=t.clientX; _lookYPrev=t.clientY;
+        // Apply directly for smooth feel — no accumulation lag
+        if(Math.abs(dx)>0.3){
+          var dirX=_lookInvertX?1:-1;
+          var r=camera.radius, a=camera.alpha, b=camera.beta;
+          var cpx=camera.target.x+r*Math.cos(a)*Math.sin(b);
+          var cpy=camera.target.y+r*Math.cos(b);
+          var cpz=camera.target.z+r*Math.sin(a)*Math.sin(b);
+          a+=dirX*(dx/(window.innerWidth||400))*2.2;
+          camera.alpha=a;
+          camera.target.x=cpx-r*Math.cos(a)*Math.sin(b);
+          camera.target.y=cpy-r*Math.cos(b);
+          camera.target.z=cpz-r*Math.sin(a)*Math.sin(b);
+        }
+        if(Math.abs(dy)>0.3){
+          var dirY=_lookInvertY?1:-1;
+          var r2=camera.radius, a2=camera.alpha, b2=camera.beta;
+          var cpx2=camera.target.x+r2*Math.cos(a2)*Math.sin(b2);
+          var cpy2=camera.target.y+r2*Math.cos(b2);
+          var cpz2=camera.target.z+r2*Math.sin(a2)*Math.sin(b2);
+          b2=_cb(b2+dirY*(dy/(window.innerHeight||800))*2.0);
+          camera.beta=b2;
+          camera.target.x=cpx2-r2*Math.cos(a2)*Math.sin(b2);
+          camera.target.y=cpy2-r2*Math.cos(b2);
+          camera.target.z=cpz2-r2*Math.sin(a2)*Math.sin(b2);
+        }
+        // Keep deltas for render loop gas steering
+        _lookAlphaDelta=dx; _lookBetaDelta=dy;
       }
     }
   },{passive:false});
