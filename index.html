@@ -258,9 +258,18 @@ html,body{
   </div>
 </div>
 
+<!-- START SCREEN - shown first for audio unlock -->
+<div id="startScreen" style="position:fixed;inset:0;z-index:100000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;">
+  <div style="color:#ffe040;font-family:Arial,sans-serif;font-size:28px;font-weight:bold;letter-spacing:3px;text-align:center;text-shadow:0 0 30px rgba(255,200,60,0.6);">MYTH UNIVERSE</div>
+  <div style="color:#aaa;font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-align:center;">Explore Greek Mythology in 3D</div>
+  <button onclick="startMythJourney()" style="margin-top:16px;background:linear-gradient(135deg,rgba(255,180,30,0.25),rgba(255,100,20,0.15));border:2px solid rgba(255,180,30,0.7);border-radius:30px;color:#ffe040;font-family:Arial,sans-serif;font-size:17px;font-weight:bold;padding:16px 36px;cursor:pointer;letter-spacing:2px;text-shadow:0 0 10px rgba(255,200,60,0.5);box-shadow:0 0 30px rgba(255,150,20,0.3);">
+    🌟 Start your Myth Journey!
+  </button>
+</div>
+
 <!-- Launch video overlay -->
-<div id="launchOverlay" style="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline autoplay muted></video>
+<div id="launchOverlay" style="position:fixed;inset:0;z-index:99999;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
+  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline muted></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
 <button id="homeBtn" type="button">Μυθολογία</button>
@@ -2832,6 +2841,26 @@ function startMusic(){
   _scheduleSpacecraft();
 }
 
+// Music needs user interaction to start - unlock on first touch/click
+var _musicUnlocked = false;
+function _unlockMusic(){
+  if(_musicUnlocked) return;
+  _musicUnlocked = true;
+  // Unlock audio context
+  var ctx = new (window.AudioContext||window.webkitAudioContext)();
+  ctx.resume();
+  // If music should be playing, start it
+  if(_musicOn && _musicAudio.paused && !_musicAudio.src){
+    startMusic();
+  } else if(_musicOn && _musicAudio.paused){
+    _musicAudio.play().catch(function(){});
+  }
+  document.removeEventListener('touchstart', _unlockMusic);
+  document.removeEventListener('click', _unlockMusic);
+}
+document.addEventListener('touchstart', _unlockMusic, {passive:true});
+document.addEventListener('click', _unlockMusic);
+
 function _playMusicTrack(idx){
   if(!_musicOn) return;
   var track;
@@ -2897,16 +2926,38 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 // ── LAUNCH VIDEO ──────────────────────────────────────────────────────
-(function(){
-  var lv = document.getElementById('launchVideo');
+// Launch videos in folder - will play whichever is there
+var _launchVideos = [
+  './Assets/Launch_Video/YouCut_20260321_235725718.mp4'
+  // Add more here if needed - first found will play
+];
+
+window.startMythJourney = function(){
+  // Hide start screen
+  var ss = document.getElementById('startScreen');
+  if(ss){ ss.style.transition='opacity 0.4s'; ss.style.opacity='0'; setTimeout(function(){ss.style.display='none';},400); }
+
+  // Unlock audio
+  _unlockMusic();
+
+  // Try to play launch video
   var lo = document.getElementById('launchOverlay');
-  if(!lv||!lo) return;
-  lv.src = './Assets/Launch_Video/YouCut_20260321_235725718.mp4';
-  lv.play().catch(function(){ skipLaunch(); });
+  var lv = document.getElementById('launchVideo');
+  if(!lv||!lo){ return; }
+
+  // Pick first available video
+  var src = _launchVideos[0];
+  lv.src = src;
+  lv.muted = true;
+  lo.style.display='flex';
+
+  var p = lv.play();
+  if(p !== undefined){
+    p.catch(function(){ skipLaunch(); });
+  }
   lv.onended = function(){ skipLaunch(); };
-  // Auto-skip if video fails to load after 5s
-  setTimeout(function(){ if(lo.style.display!=='none') skipLaunch(); }, 8000);
-})();
+  setTimeout(function(){ if(lo && lo.style.display!=='none') skipLaunch(); }, 15000);
+};
 
 window.skipLaunch = function(){
   var lo = document.getElementById('launchOverlay');
@@ -2915,8 +2966,9 @@ window.skipLaunch = function(){
   if(lo){
     lo.style.transition='opacity 0.5s';
     lo.style.opacity='0';
-    setTimeout(function(){ lo.style.display='none'; }, 500);
+    setTimeout(function(){ lo.style.display='none'; lo.style.opacity='1'; }, 500);
   }
+  _unlockMusic();
 };
 </script>
 <div id="loadScreen" style="position:fixed;inset:0;background:#02040a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
