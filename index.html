@@ -272,7 +272,7 @@ html,body{
   <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline muted></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
-<button id="homeBtn" type="button">Επανεστίαση στο κέντρο</button>
+<button id="homeBtn" type="button">Επανεστίαση</button>
 
 <input id="searchBox" type="text" placeholder="Search name, id, category..." autocomplete="off">
 <div id="searchResults"></div>
@@ -1407,7 +1407,7 @@ function toggleLang(){
   appLang = appLang==='gr' ? 'en' : 'gr';
   document.getElementById('langBtn').textContent = appLang==='gr' ? 'GR / EN' : 'EN / GR';
   var hb = document.getElementById('homeBtn');
-  if(hb) hb.textContent = appLang==='gr' ? 'Επανεστίαση στο κέντρο' : 'Reset to center';
+  if(hb) hb.textContent = appLang==='gr' ? 'Επανεστίαση' : 'Reset';
 
   // Auto-switch voice to match language
   var isEN = appLang==='en';
@@ -2830,20 +2830,21 @@ engine.runRenderLoop(()=>{
 
     _lookAlphaDelta=0; _lookBetaDelta=0;
 
-    // Move forward along crosshair direction
+    // Move: shift BOTH camera position and target together (FPS translation)
+    // Camera world pos = target + r*(sin(b)*cos(a), cos(b), sin(b)*sin(a))
+    // Moving forward = shift target by fwd*speed (camera follows since it's offset from target)
     if(driveSpeed>0.01){
       camera.target.x += _fwdX * driveSpeed;
-      camera.target.y += _fwdY * driveSpeed * 0.4;
+      camera.target.y += _fwdY * driveSpeed * 0.35;
       camera.target.z += _fwdZ * driveSpeed;
-      // Soft boundary — push back gently, no hard reset
+      // Soft boundary
       var _tD=Math.sqrt(camera.target.x*camera.target.x+camera.target.z*camera.target.z);
       if(_tD>850){
-        var _push=(_tD-850)/_tD*0.08;
+        var _push=(_tD-850)/_tD*0.06;
         camera.target.x*=(1-_push);
         camera.target.z*=(1-_push);
       }
-      if(camera.target.y>250){camera.target.y=250;}
-      if(camera.target.y<-250){camera.target.y=-250;}
+      camera.target.y=Math.max(-250,Math.min(250,camera.target.y));
     }
 
     // Warp: turbo + far = full warp
@@ -3336,6 +3337,42 @@ window.startMythJourney = function(){
 
   var _knownPath = './Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
 
+  // Play countdown sound while video loads
+  var _countdownSnd = null;
+  function _playCountdown(){
+    try{
+      _countdownSnd = new Audio('./Sounds/Launch_Sequence_Sound/Rocket Launch Countdown(1).mp3');
+      _countdownSnd.volume = 0.8;
+      _countdownSnd.play().catch(function(){});
+    }catch(e){}
+  }
+  function _stopCountdown(){
+    if(_countdownSnd){ 
+      try{ _countdownSnd.pause(); _countdownSnd.currentTime=0; }catch(e){}
+      _countdownSnd=null;
+    }
+  }
+  _playCountdown();
+
+  // Play countdown sound while video loads
+  var _countdownSnd = null;
+  try{
+    _countdownSnd = new Audio('./Sounds/Launch_Sequence_Sound/Rocket Launch Countdown(1).mp3');
+    _countdownSnd.volume = 0.7;
+    _countdownSnd.play().catch(function(){});
+  }catch(e){}
+
+  function _stopCountdown(){
+    if(_countdownSnd){
+      // Fade out countdown
+      var steps=10, sv=_countdownSnd.volume, st=0;
+      var ft=setInterval(function(){
+        st++; _countdownSnd.volume=Math.max(0,sv*(1-st/steps));
+        if(st>=steps){ clearInterval(ft); try{_countdownSnd.pause();}catch(e){} }
+      },80);
+    }
+  }
+
   function _playLaunchVideo(src){
     lv.src = src;
     lv.muted = false; lv.volume = 0.8;
@@ -3362,6 +3399,7 @@ window.startMythJourney = function(){
     lv.addEventListener('playing', function onPlaying(){
       lv.removeEventListener('playing', onPlaying);
       var l=document.getElementById('launchLoading'); if(l) l.remove();
+      _stopCountdown();
     });
 
     lv.addEventListener('canplay',function onCP(){ lv.removeEventListener('canplay',onCP); tryPlay(); });
@@ -3381,6 +3419,9 @@ window.skipLaunch = function(){
   var lv = document.getElementById('launchVideo');
   if(lv){ lv.pause(); lv.src=''; }
   var ldg = document.getElementById('launchLoading'); if(ldg) ldg.remove();
+  // Stop countdown sound
+  try{ if(window._cntdSnd){window._cntdSnd.pause();} }catch(e){}
+  if(typeof _stopCountdown==='function') _stopCountdown();
   if(lo){
     lo.style.transition='opacity 0.5s';
     lo.style.opacity='0';
@@ -3605,28 +3646,18 @@ document.addEventListener('DOMContentLoaded',function(){
         var dx=t.clientX-_lookXPrev;
         var dy=t.clientY-_lookYPrev;
         _lookXPrev=t.clientX; _lookYPrev=t.clientY;
-
-        var r=camera.radius, a=camera.alpha, b=camera.beta;
-        // BabylonJS correct: camPos = target + r*(sin(b)*cos(a), cos(b), sin(b)*sin(a))
-        var cpx=camera.target.x + r*Math.sin(b)*Math.cos(a);
-        var cpy=camera.target.y + r*Math.cos(b);
-        var cpz=camera.target.z + r*Math.sin(b)*Math.sin(a);
-
         if(Math.abs(dx)>0.3){
           var dirX=_lookInvertX?1:-1;
-          a += dirX*(dx/(window.innerWidth||400))*2.5;
-          camera.alpha=a;
+          camera.alpha += dirX*(dx/(window.innerWidth||400))*2.5;
         }
         if(Math.abs(dy)>0.3){
           var dirY=_lookInvertY?1:-1;
-          b = _cb(b + dirY*(dy/(window.innerHeight||800))*2.0);
-          camera.beta=b;
+          camera.beta = _cb(camera.beta + dirY*(dy/(window.innerHeight||800))*2.0);
         }
-        // Reposition target so camera stays at same world position
-        camera.target.x = cpx - r*Math.sin(b)*Math.cos(a);
-        camera.target.y = cpy - r*Math.cos(b);
-        camera.target.z = cpz - r*Math.sin(b)*Math.sin(a);
-
+        _lookAlphaDelta=dx; _lookBetaDelta=dy;
+      }
+    }
+  },{passive:false});
         _lookAlphaDelta=dx; _lookBetaDelta=dy;
       }
     }
