@@ -315,7 +315,7 @@ const camera = new BABYLON.ArcRotateCamera(
 );
 
 camera.detachControl();
-camera.lowerRadiusLimit = 40;
+camera.lowerRadiusLimit = 2;
 camera.upperRadiusLimit = 12000;
 camera.lowerBetaLimit   = 0.08;
 camera.upperBetaLimit   = Math.PI / 2.02;
@@ -624,8 +624,8 @@ window.addEventListener('mouseup', function(e) {
 
 // Mouse wheel: zoom toward cursor
 canvas.addEventListener('wheel', function(e) {
-  // Additive zoom: step size proportional to current distance for linear feel
-  camera.radius = _cr(camera.radius * (e.deltaY > 0 ? 1.08 : 0.926));
+  var zoomFactor = navFast ? (e.deltaY > 0 ? 1.14 : 0.88) : (e.deltaY > 0 ? 1.08 : 0.926);
+  camera.radius = _cr(camera.radius * zoomFactor);
 }, { passive: true });
 
 
@@ -1672,7 +1672,12 @@ function saveOriginalPositions(){
     if(fp) n.sphere.position.copyFrom(fp);
   });
 }
-function restoreOriginalPositions(){Object.values(nodes).forEach(n=>{const p=originalPositions.get(n.id);if(p)n.sphere.position.copyFrom(p);});}
+function restoreOriginalPositions(){
+  Object.values(nodes).forEach(n=>{
+    var p = driveMode ? originalPositions.get(n.id) : flatPositions.get(n.id);
+    if(p) n.sphere.position.copyFrom(p);
+  });
+}
 
 var _yTransAnim=null;
 function animatePlanetsY(toDrive){
@@ -1851,7 +1856,7 @@ function renderConnections(filterSet){
     const curve=BABYLON.Curve3.CreateQuadraticBezier(a.clone(),ctrl,b.clone(),16);
     const path=curve.getPoints();
 
-    const tube=BABYLON.MeshBuilder.CreateTube('conn_'+idx,{path,radius:rec.type==='partner'?0.10:0.055},scene);
+    const tube=BABYLON.MeshBuilder.CreateTube('conn_'+idx,{path,radius:rec.type==='partner'?0.04:0.022},scene);
     connectionMeshes.push(tube);
 
     const mat=new BABYLON.StandardMaterial('conn_mat_'+idx,scene);
@@ -2046,7 +2051,7 @@ function enterFocus(id){
   var pos=getNodePos(id);
   if(pos){
     var newTarget = pos.clone();
-    var minDist = nodes[id].size * 1.2 + 18; // don't enter sphere
+    var minDist = 2; // allow close zoom
     camera.lowerRadiusLimit = minDist;
     var newRadius = nodes[id].size * 10 + 60;
     // Compute target alpha: face planet from outside its ring
@@ -2110,7 +2115,7 @@ function resetFocus(fromPop){
   _animToken++;          // cancel any running focus animation
   _inertiaActive=false;  // stop inertia so it doesn't fight the restore
   _velAlpha=0; _velBeta=0; _velRadius=0; _velTx=0; _velTy=0; _velTz=0;
-  camera.lowerRadiusLimit = 40;
+  camera.lowerRadiusLimit = 2;
 
   // Restore ALL nodes to full opacity immediately
   Object.values(nodes).forEach(function(n){
