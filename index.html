@@ -2942,25 +2942,36 @@ window.startMythJourney = function(){
   var lv = document.getElementById('launchVideo');
   if(!lv||!lo){ return; }
 
-  var src = './Assets/Launch_Video/YouCut_20260321_235725718.mp4';
-  lv.src = src;
-  lv.muted = false; // user already clicked so unmuted ok
-  lv.volume = 0.8;
-  lo.style.display='flex';
-
-  // Force load then play
-  lv.load();
-  lv.addEventListener('canplay', function onCanPlay(){
-    lv.removeEventListener('canplay', onCanPlay);
-    lv.play().catch(function(err){
-      // If unmuted fails, try muted
-      lv.muted = true;
-      lv.play().catch(function(){ skipLaunch(); });
+  // Fetch GitHub tree to find first video in Launch_Video folder
+  fetch('https://api.github.com/repos/jpapalas-star/myth-universe/git/trees/HEAD?recursive=1')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var videos = (data.tree||[]).filter(function(x){
+        return x.type==='blob' && x.path.indexOf('Assets/Launch_Video/')===0 &&
+               /\.(mp4|webm|mov)$/i.test(x.path);
+      });
+      if(!videos.length){ return; }
+      _playLaunchVideo('./'+videos[0].path);
+    })
+    .catch(function(){
+      // Fallback: try common pattern
+      _playLaunchVideo('./Assets/Launch_Video/launch.mp4');
     });
-  });
-  lv.onerror = function(){ skipLaunch(); };
-  lv.onended = function(){ skipLaunch(); };
-  setTimeout(function(){ if(lo && lo.style.display!=='none') skipLaunch(); }, 20000);
+
+  function _playLaunchVideo(src){
+    lv.src = src;
+    lv.muted = false;
+    lv.volume = 0.8;
+    lo.style.display='flex';
+    lv.load();
+    lv.addEventListener('canplay', function onCP(){
+      lv.removeEventListener('canplay',onCP);
+      lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
+    });
+    lv.onerror = function(){ skipLaunch(); };
+    lv.onended = function(){ skipLaunch(); };
+    setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); }, 20000);
+  }
 };
 
 window.skipLaunch = function(){
