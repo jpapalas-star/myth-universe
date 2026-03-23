@@ -542,8 +542,8 @@ canvas.addEventListener('touchmove', function(e) {
       if(ratio < 1 && camera.radius < 60) _driftTargetToNearest();
       // Warp sound during pinch
       if(window._startWarpSound) _startWarpSound();
+      if(window._scheduleWarpStop) _scheduleWarpStop(350);
       clearTimeout(_warpWheelStop);
-      _warpWheelStop = setTimeout(function(){ if(window._stopWarpSound) _stopWarpSound(); }, 250);
       _didZoom=true;
     }
 
@@ -650,8 +650,8 @@ canvas.addEventListener('wheel', function(e) {
   if(zoomFactor < 1 && camera.radius < 60) _driftTargetToNearest();
   // Warp sound while zooming
   if(window._startWarpSound) _startWarpSound();
+  if(window._scheduleWarpStop) _scheduleWarpStop(350);
   clearTimeout(_warpWheelStop);
-  _warpWheelStop = setTimeout(function(){ if(window._stopWarpSound) _stopWarpSound(); }, 200);
 }, { passive: true });
 
 function _driftTargetToNearest(){
@@ -2746,10 +2746,10 @@ engine.runRenderLoop(()=>{
       if(window._startWarpSound) _startWarpSound();
     } else if(_gasActive && _prox>0.6){
       _warpLevel=Math.min(0.4,_warpLevel+0.03);
-      if(window._stopWarpSound) _stopWarpSound();
+      if(window._warpSndActive && window._scheduleWarpStop) _scheduleWarpStop(500);
     } else {
       _warpLevel=Math.max(0,_warpLevel-0.05);
-      if(!_gasTurbo && window._warpSndActive && window._stopWarpSound) _stopWarpSound();
+      if(window._warpSndActive && window._scheduleWarpStop) _scheduleWarpStop(300);
     }
   }
 
@@ -2814,45 +2814,58 @@ engine.runRenderLoop(()=>{
 window.addEventListener('resize',()=>engine.resize());
 
 // ── WARP WHOOSH SOUND ────────────────────────────────────────────────
-var _warpSnd = null; // lazy init after user interaction
+var _warpSnd = null;
 window._warpSndActive = false;
 var _warpFadeTimer = null;
+var _warpStopTimeout = null; // single stop timeout — prevents stacking
 
 function _getWarpSnd(){
   if(!_warpSnd){
-    try{
-      _warpSnd = new Audio('./Sounds/Warp_whoosh/long_whosh_zoom_warp.mp3');
-      _warpSnd.loop = true; _warpSnd.volume = 0;
-    }catch(e){ return null; }
+    try{ _warpSnd=new Audio('./Sounds/Warp_whoosh/long_whosh_zoom_warp.mp3'); _warpSnd.loop=true; _warpSnd.volume=0; }
+    catch(e){ return null; }
   }
   return _warpSnd;
 }
 
 function _startWarpSound(){
   if(!_musicUnlocked) return;
-  var snd = _getWarpSnd(); if(!snd) return;
+  var snd=_getWarpSnd(); if(!snd) return;
+  // Cancel any pending stop
+  if(_warpStopTimeout){ clearTimeout(_warpStopTimeout); _warpStopTimeout=null; }
   if(_warpFadeTimer){ clearInterval(_warpFadeTimer); _warpFadeTimer=null; }
   if(!window._warpSndActive){
-    window._warpSndActive = true;
-    snd.currentTime = 0;
+    window._warpSndActive=true;
+    snd.currentTime=0;
     snd.play().catch(function(){});
   }
-  snd.volume = Math.min(0.7, snd.volume + 0.15);
+  // Ramp up volume
+  if(snd.volume<0.7) snd.volume=Math.min(0.7, snd.volume+0.2);
 }
 
-function _stopWarpSound(){
-  var snd = _warpSnd; if(!snd||!window._warpSndActive) return;
+function _scheduleWarpStop(ms){
+  // Cancel previous schedule, set new one
+  if(_warpStopTimeout){ clearTimeout(_warpStopTimeout); _warpStopTimeout=null; }
+  _warpStopTimeout = setTimeout(function(){ _warpStopTimeout=null; _stopWarpSoundNow(); }, ms||300);
+}
+
+function _stopWarpSoundNow(){
+  var snd=_warpSnd; if(!snd) return;
   if(_warpFadeTimer){ clearInterval(_warpFadeTimer); _warpFadeTimer=null; }
+  if(!window._warpSndActive){ return; }
   var steps=20, startVol=snd.volume, step=0;
-  _warpFadeTimer = setInterval(function(){
+  _warpFadeTimer=setInterval(function(){
     step++;
-    snd.volume = Math.max(0, startVol*(1-step/steps));
+    snd.volume=Math.max(0, startVol*(1-step/steps));
     if(step>=steps){
       clearInterval(_warpFadeTimer); _warpFadeTimer=null;
-      snd.pause(); snd.volume=0; window._warpSndActive=false;
+      try{ snd.pause(); }catch(e){}
+      snd.volume=0; window._warpSndActive=false;
     }
-  }, 50);
+  },50);
 }
+
+// Keep old name for compatibility
+function _stopWarpSound(){ _scheduleWarpStop(300); }
 
 // ── NEURAL MODE ──────────────────────────────────────────────────────
 var _neuralMode = false;
@@ -3186,18 +3199,26 @@ window.startMythJourney = function(){
     lv.src = src;
     lv.muted = false; lv.volume = 0.8;
     lo.style.display='flex';
+    // Show loading indicator
+    var ldg = document.createElement('div');
+    ldg.id='launchLoading';
+    ldg.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.6);font-family:Arial;font-size:13px;z-index:100001;';
+    ldg.textContent='Loading...';
+    lo.appendChild(ldg);
+
     lv.load();
     var _played=false;
     function tryPlay(){
       if(_played)return; _played=true;
+      var l=document.getElementById('launchLoading'); if(l) l.remove();
       lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
     }
     lv.addEventListener('canplay',function onCP(){ lv.removeEventListener('canplay',onCP); tryPlay(); });
     lv.addEventListener('loadeddata',function onLD(){ lv.removeEventListener('loadeddata',onLD); tryPlay(); });
     lv.onerror=function(){ skipLaunch(); };
     lv.onended=function(){ skipLaunch(); };
-    setTimeout(function(){ if(!_played) tryPlay(); },1500);
-    setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); },30000);
+    setTimeout(function(){ if(!_played) tryPlay(); },2000);
+    setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); },40000);
   }
 
   // Play immediately with known path — no API delay
