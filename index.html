@@ -302,9 +302,42 @@ html,body{
 <div id="info" style="position:fixed;">
   <div id="infoBg"><img id="infoBgImg" src="" alt="" onerror="this.style.display='none'"></div>
   <div id="infoContent">
-  <h2>Myth Universe</h2>
-  <div class="sub">Chaos center · generation rings · family clusters</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+    <h2 style="margin:0;">Myth Universe</h2>
+    <button onclick="toggleInstructions()" style="background:rgba(255,220,60,0.12);border:1px solid rgba(255,220,60,0.35);border-radius:12px;color:#ffe040;font-size:11px;padding:4px 10px;cursor:pointer;white-space:nowrap;">📖 Οδηγίες</button>
+  </div>
+  <div class="sub">Ελληνική Μυθολογία</div>
   <div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.</div>
+  </div>
+</div>
+
+<!-- Instructions overlay -->
+<div id="instructionsOverlay" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;">
+  <div style="background:rgba(10,5,25,0.98);border:1px solid rgba(255,220,60,0.3);border-radius:16px;padding:20px 24px;max-width:320px;width:90%;color:#fff;font-family:Arial,sans-serif;position:relative;">
+    <button onclick="toggleInstructions()" style="position:absolute;top:10px;right:12px;background:none;border:none;color:#ffe040;font-size:18px;cursor:pointer;">✕</button>
+    <h3 style="color:#ffe040;margin:0 0 14px 0;letter-spacing:1px;">Οδηγίες</h3>
+    <div style="font-size:13px;line-height:1.8;color:#dde;">
+      <b style="color:#ffe040;">Πλοήγηση</b><br>
+      1 δάχτυλο → pan<br>
+      2 δάχτυλα → pan / pinch zoom / twist<br>
+      Tap → focus & πληροφορίες<br>
+      Tap ξανά → reset<br>
+      <br>
+      <b style="color:#ffe040;">Navigation</b><br>
+      1 finger → pan<br>
+      2 fingers → pan / pinch zoom / twist<br>
+      Tap → focus & info<br>
+      Tap again → reset<br>
+      <br>
+      <b style="color:#ffe040;">Χρώματα</b><br>
+      Μπλε βέλη → γονέας → παιδί<br>
+      Κόκκινες γραμμές → σύντροφοι<br>
+      <br>
+      <b style="color:#ffe040;">Buttons</b><br>
+      🚀 Drive → πλοήγηση στον γαλαξία<br>
+      🌟 Περιπέτεια → γνώρισε την οικογένεια<br>
+      🧠 Neural → εναλλακτική εμφάνιση
+    </div>
   </div>
 </div>
 
@@ -1638,11 +1671,21 @@ function _advEnd(){
   _advSpeak(msg, null);
 }
 
+function toggleInstructions(){
+  var ov=document.getElementById('instructionsOverlay');
+  if(!ov) return;
+  var showing = ov.style.display==='flex';
+  ov.style.display = showing ? 'none' : 'flex';
+}
+
 function stopFamilyAdventure(){
   _advActive=false;
   if(_advTimer){clearTimeout(_advTimer);_advTimer=null;}
   _hideAdvOverlay();
+  // Stop ALL voices
   stopSpeak();
+  if(window.responsiveVoice) responsiveVoice.cancel();
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
 var _voiceIndex = 0;
@@ -1709,14 +1752,17 @@ if(window.speechSynthesis){
 
 function resetInfo(){
   var isEN=appLang==='en';
-  var sub = isEN ? 'Chaos center · generation rings · family clusters'
-                 : 'Κέντρο Χάους · δακτύλιοι γενεών · οικογενειακά συστήματα';
+  var sub = isEN ? 'Greek Mythology' : 'Ελληνική Μυθολογία';
   var txt = isEN ? 'Tap a planet for info. Tap again or tap «Mythology» to reset.'
                  : 'Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Μυθολογία» για reset.';
   var bgEl=document.getElementById('infoBgImg');
   if(bgEl){bgEl.src='';bgEl.style.display='none';}
   var contentEl=document.getElementById('infoContent');
-  if(contentEl) contentEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">${sub}</div><div class="txt">${txt}</div>`;
+  if(contentEl) contentEl.innerHTML=
+    `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h2 style="margin:0;">Myth Universe</h2>
+      <button onclick="toggleInstructions()" style="background:rgba(255,220,60,0.12);border:1px solid rgba(255,220,60,0.35);border-radius:12px;color:#ffe040;font-size:11px;padding:4px 10px;cursor:pointer;white-space:nowrap;">📖 Οδηγίες</button>
+    </div><div class="sub">${sub}</div><div class="txt">${txt}</div>`;
   else infoEl.innerHTML=`<h2>Myth Universe</h2><div class="sub">${sub}</div><div class="txt">${txt}</div>`;
 }
 
