@@ -473,20 +473,9 @@ canvas.addEventListener('touchmove', function(e) {
       camera.alpha -= dmx2 * 0.0015;
       camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
     } else {
-      // Pan always
+      // Pan - same speed as 2-finger
       _velAlpha = 0; _velBeta = 0;
-      _panDelta(dmx2, dmy2);
-
-      // Boundary
-      var WALL = 560;
-      var tx = camera.target.x, tz = camera.target.z;
-      var distW = Math.sqrt(tx*tx + tz*tz);
-      if (distW > WALL) {
-        var over = distW - WALL;
-        camera.target.x -= (tx / distW) * over * 0.3;
-        camera.target.z -= (tz / distW) * over * 0.3;
-        camera.alpha -= dmx2 * 0.0008;
-      }
+      _panDelta(dmx2 * (navFast?6.5:3.5), dmy2 * (navFast?6.5:3.5));
     }
     _t1.x = t.clientX; _t1.y = t.clientY;
 
@@ -2358,14 +2347,14 @@ fetch('app-data.json',{cache:'default'})
 
     // Tier → radial zone [minR, maxR] from Chaos
     var ZONES = {
-      primordial: [70,  140],
-      titan:      [150, 240],
-      olympian:   [255, 360],
-      nymph:      [370, 440],
-      hero:       [370, 460],
-      mortal:     [370, 460],
-      monster:    [470, 570],
-      outer:      [470, 580]
+      primordial: [55,  110],
+      titan:      [120, 190],
+      olympian:   [200, 290],
+      nymph:      [300, 360],
+      hero:       [300, 370],
+      mortal:     [300, 370],
+      monster:    [380, 450],
+      outer:      [380, 460]
     };
 
     function getTier(d){
