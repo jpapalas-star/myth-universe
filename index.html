@@ -2134,11 +2134,27 @@ function restoreCameraState(){
   savedCameraState=null;
 }
 
+var _focusFromDrive = false; // was in drive mode when focus started
+
 function enterFocus(id){
   if(!nodes[id]) return;
   if(focusedId===id){resetFocus(false);return;}
   // Save ONLY if not already in focus mode (preserve original pre-focus state)
-  if(!focusedId) saveCameraState();
+  if(!focusedId){
+    saveCameraState();
+    _focusFromDrive = driveMode;
+    // Exit drive mode temporarily for focus
+    if(driveMode){
+      var btn=document.getElementById('driveModeBtn');
+      var ov=document.getElementById('driveOverlay');
+      if(ov) ov.style.display='none';
+      // Don't call full toggleDriveMode — just pause it
+      driveMode=false;
+      driveSpeed=0; _gasActive=false; _gasTurbo=false;
+      camera.lowerBetaLimit=0.08; camera.upperBetaLimit=Math.PI/2.02;
+      animatePlanetsY(false);
+    }
+  }
 
   focusedId=id;
   const relatives=getRelativesSet(id);
@@ -2243,10 +2259,14 @@ function enterFocus(id){
 function resetFocus(fromPop){
   focusedId=null;
   if(typeof closeVideo==='function') closeVideo();
+  // Stop ALL speech
   if(window.speechSynthesis) window.speechSynthesis.cancel();
-  _animToken++;          // cancel any running focus animation
-  _inertiaActive=false;  // stop inertia so it doesn't fight the restore
+  if(window.responsiveVoice) responsiveVoice.cancel();
+  stopSpeak();
+  _animToken++;
+  _inertiaActive=false;
   _velAlpha=0; _velBeta=0; _velRadius=0; _velTx=0; _velTy=0; _velTz=0;
+  _vel2x=0; _vel2y=0; _velZoom=1; _inertia2=false;
   camera.lowerRadiusLimit = 2;
 
   // Restore ALL nodes to full opacity immediately
@@ -2274,7 +2294,30 @@ function resetFocus(fromPop){
 
   restoreOriginalPositions();
   renderConnections();       // show all lines immediately
-  restoreCameraState();      // smooth camera back to saved position
+
+  if(_focusFromDrive){
+    // Return to drive mode
+    _focusFromDrive=false;
+    restoreCameraState();
+    setTimeout(function(){
+      driveMode=true;
+      var btn=document.getElementById('driveModeBtn');
+      var ov=document.getElementById('driveOverlay');
+      var invertBtn=document.getElementById('invertBtn');
+      var slowBtn=document.getElementById('navSpeedBtn');
+      var gearBtn=document.getElementById('gearBtn');
+      if(btn){btn.style.color='#ff8866';btn.style.borderColor='rgba(255,80,80,0.7)';btn.style.left='76px';}
+      if(ov) ov.style.display='block';
+      if(invertBtn) invertBtn.style.display='block';
+      if(slowBtn) slowBtn.style.display='none';
+      if(gearBtn) gearBtn.style.display='none';
+      camera.lowerBetaLimit=0.02; camera.upperBetaLimit=Math.PI*0.98;
+      animatePlanetsY(true);
+    }, 400);
+  } else {
+    restoreCameraState();
+  }
+
   resetInfo();
   hideSearchResults();
 
@@ -2372,10 +2415,14 @@ document.addEventListener('click',e=>{
 });
 
 homeBtn.addEventListener('click',function(){
-  // Full reset: return to Chaos center, restore all nodes, clear focus
   focusedId=null;
+  _focusFromDrive=false;
   _t1=null; _multi=false; _tf=null; _mdn=null;
-  savedCameraState=null; // clear saved state so restore doesn't fight us
+  // Kill ALL inertia
+  _inertiaActive=false; _inertia2=false;
+  _velAlpha=0;_velBeta=0;_velRadius=0;_velTx=0;_velTy=0;_velTz=0;
+  _vel2x=0;_vel2y=0;_velZoom=1;
+  savedCameraState=null;
   restoreOriginalPositions();
   renderConnections();
   Object.values(nodes).forEach(function(n){
