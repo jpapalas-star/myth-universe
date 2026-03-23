@@ -383,6 +383,7 @@ function _pick(sx,sy){
 // Google-Maps-style controls:
 //   1 finger drag  → pan  (world point under finger stays fixed)
 //   2 fingers      → pan + pinch-zoom (toward finger midpoint) + twist-rotate
+var _warpWheelStop = null; // declared early — used in both touch and wheel handlers
 //   tap            → select entity
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -642,7 +643,6 @@ window.addEventListener('mouseup', function(e) {
   if (el < 400) _doTap(id);
 });
 
-var _warpWheelStop = null;
 // Mouse wheel: zoom toward cursor
 canvas.addEventListener('wheel', function(e) {
   var zoomFactor = navFast ? (e.deltaY > 0 ? 1.14 : 0.88) : (e.deltaY > 0 ? 1.08 : 0.926);
@@ -2494,11 +2494,6 @@ fetch('app-data.json',{cache:'default'})
       document.body.appendChild(errDiv);
     }
     if(window._hideLoader) window._hideLoader();
-    // Start music after planets loaded - will play immediately if already unlocked
-    setTimeout(function(){
-      if(_musicUnlocked){ startMusic(); }
-      else { window._pendingMusic = true; } // will start on first interaction
-    }, 500);
   })
   .catch(err=>{
     infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';
@@ -2819,37 +2814,42 @@ engine.runRenderLoop(()=>{
 window.addEventListener('resize',()=>engine.resize());
 
 // ── WARP WHOOSH SOUND ────────────────────────────────────────────────
-var _warpSnd = new Audio('./Sounds/Warp_whoosh/long_whosh_zoom_warp.mp3');
-_warpSnd.loop = true;
-_warpSnd.volume = 0;
+var _warpSnd = null; // lazy init after user interaction
 window._warpSndActive = false;
 var _warpFadeTimer = null;
 
+function _getWarpSnd(){
+  if(!_warpSnd){
+    try{
+      _warpSnd = new Audio('./Sounds/Warp_whoosh/long_whosh_zoom_warp.mp3');
+      _warpSnd.loop = true; _warpSnd.volume = 0;
+    }catch(e){ return null; }
+  }
+  return _warpSnd;
+}
+
 function _startWarpSound(){
   if(!_musicUnlocked) return;
+  var snd = _getWarpSnd(); if(!snd) return;
   if(_warpFadeTimer){ clearInterval(_warpFadeTimer); _warpFadeTimer=null; }
   if(!window._warpSndActive){
     window._warpSndActive = true;
-    _warpSnd.currentTime = 0;
-    _warpSnd.play().catch(function(){});
+    snd.currentTime = 0;
+    snd.play().catch(function(){});
   }
-  _warpSnd.volume = Math.min(0.7, _warpSnd.volume + 0.15);
+  snd.volume = Math.min(0.7, snd.volume + 0.15);
 }
 
 function _stopWarpSound(){
-  if(!window._warpSndActive) return;
+  var snd = _warpSnd; if(!snd||!window._warpSndActive) return;
   if(_warpFadeTimer){ clearInterval(_warpFadeTimer); _warpFadeTimer=null; }
-  var steps = 20;
-  var startVol = _warpSnd.volume;
-  var step = 0;
+  var steps=20, startVol=snd.volume, step=0;
   _warpFadeTimer = setInterval(function(){
     step++;
-    _warpSnd.volume = Math.max(0, startVol * (1 - step/steps));
-    if(step >= steps){
+    snd.volume = Math.max(0, startVol*(1-step/steps));
+    if(step>=steps){
       clearInterval(_warpFadeTimer); _warpFadeTimer=null;
-      _warpSnd.pause();
-      _warpSnd.volume = 0;
-      window._warpSndActive = false;
+      snd.pause(); snd.volume=0; window._warpSndActive=false;
     }
   }, 50);
 }
@@ -2871,68 +2871,67 @@ function toggleNeuralMode(){
 }
 
 function _applyNeuralMode(){
-  // 1. Background - dark pink/mauve biological
-  scene.clearColor = new BABYLON.Color4(0.12, 0.04, 0.10, 1);
+  scene.clearColor = new BABYLON.Color4(0.10, 0.03, 0.08, 1);
 
-  // 2. Sky - pink/mauve biological
   var nc = skyTexture.getContext();
-  nc.fillStyle = '#1e0618';
-  nc.fillRect(0,0,1024,1024);
-  // Biological glow patches
-  var bioColors = ['320,80%,45%','280,70%,40%','200,80%,50%','340,60%,35%'];
-  for(var i=0;i<30;i++){
-    var x=Math.random()*1024, y=Math.random()*1024;
-    var r=60+Math.random()*180;
-    var hue=bioColors[Math.floor(Math.random()*bioColors.length)];
-    var g=nc.createRadialGradient(x,y,0,x,y,r);
-    g.addColorStop(0,'hsla('+hue+',0.22)');
-    g.addColorStop(0.5,'hsla('+hue+',0.10)');
-    g.addColorStop(1,'rgba(0,0,0,0)');
-    nc.fillStyle=g;
-    nc.beginPath(); nc.arc(x,y,r,0,Math.PI*2); nc.fill();
-  }
-  // Tiny bright particles (neurotransmitters)
-  for(var i=0;i<400;i++){
-    var x=Math.random()*1024, y=Math.random()*1024;
-    var a=0.4+Math.random()*0.6;
-    nc.fillStyle='rgba(200,255,240,'+a+')';
-    nc.fillRect(x,y,1+Math.random()*1.5,1+Math.random()*1.5);
+  var bgGrad = nc.createRadialGradient(512,512,0,512,512,800);
+  bgGrad.addColorStop(0,'#2a0520'); bgGrad.addColorStop(0.5,'#180310'); bgGrad.addColorStop(1,'#0a0108');
+  nc.fillStyle=bgGrad; nc.fillRect(0,0,1024,1024);
+
+  var bioPatches=[
+    {x:200,y:300,r:220,h:'320,75%,35%'},{x:700,y:200,r:180,h:'280,60%,30%'},
+    {x:500,y:700,r:250,h:'200,70%,40%'},{x:100,y:700,r:150,h:'340,65%,28%'},
+    {x:800,y:600,r:200,h:'190,80%,35%'},{x:400,y:100,r:160,h:'310,70%,32%'},
+  ];
+  bioPatches.forEach(function(p){
+    var g=nc.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
+    g.addColorStop(0,'hsla('+p.h+',0.30)'); g.addColorStop(0.5,'hsla('+p.h+',0.12)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    nc.fillStyle=g; nc.beginPath(); nc.arc(p.x,p.y,p.r,0,Math.PI*2); nc.fill();
+  });
+  for(var i=0;i<500;i++){
+    var x=Math.random()*1024,y=Math.random()*1024,a=0.3+Math.random()*0.7;
+    var cols=['rgba(200,240,255,','rgba(255,180,220,','rgba(180,220,255,'];
+    nc.fillStyle=cols[Math.floor(Math.random()*3)]+a+')';
+    nc.fillRect(x,y,0.8+Math.random()*1.8,0.8+Math.random()*1.8);
   }
   skyTexture.update();
 
-  // 3. Lighting - warm pink ambient
-  hemi.diffuse = new BABYLON.Color3(0.7, 0.3, 0.55);
-  hemi.groundColor = new BABYLON.Color3(0.2, 0.05, 0.18);
-  hemi.intensity = 1.8;
-  chaosLight.diffuse = new BABYLON.Color3(0.4, 0.7, 0.9);
-  glow.intensity = 1.4;
+  hemi.diffuse = new BABYLON.Color3(0.55, 0.20, 0.42);
+  hemi.groundColor = new BABYLON.Color3(0.10, 0.02, 0.08);
+  hemi.intensity = 2.0;
+  chaosLight.diffuse = new BABYLON.Color3(0.2, 0.65, 0.85);
+  chaosLight.intensity = 600;
+  glow.intensity = 1.8;
 
-  // 4. Transform spheres into neural cells
   Object.values(nodes).forEach(function(n){
     if(!n.sphere) return;
     var mat = n.sphere.material;
     if(!mat) return;
     var isChaos = n.sphere.metadata && n.sphere.metadata.isChaos;
     if(isChaos){
-      mat.emissiveColor = new BABYLON.Color3(0.8, 0.2, 0.6);
-      mat.diffuseColor  = new BABYLON.Color3(0.5, 0.1, 0.4);
-      mat.alpha = 0.7;
+      mat.emissiveColor = new BABYLON.Color3(0.9, 0.3, 0.6);
+      mat.diffuseColor  = new BABYLON.Color3(0.6, 0.1, 0.4);
+      mat.alpha = 0.45;
+      mat.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
     } else {
-      // Glowing cell body
-      mat.emissiveColor = new BABYLON.Color3(0.6, 0.7, 0.95);
-      mat.diffuseColor  = new BABYLON.Color3(0.3, 0.4, 0.7);
-      mat.alpha = 0.55;
+      mat.emissiveColor = new BABYLON.Color3(0.3, 0.55, 0.85);
+      mat.diffuseColor  = new BABYLON.Color3(0.15, 0.3, 0.6);
+      mat.alpha = 0.28;
       mat.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
     }
-    // Add dendrite bumps (small spheres on surface)
     _addDendrites(n);
   });
 
-  // 5. Connection tubes - cyan neural axons
   lineMaterials.forEach(function(lm){
-    lm.mat.emissiveColor = new BABYLON.Color3(0.1, 0.9, 0.85);
-    lm.mat.diffuseColor  = new BABYLON.Color3(0.0, 0.6, 0.7);
-    lm.mat.alpha = 0.75;
+    if(lm.type==='partner'){
+      lm.mat.emissiveColor = new BABYLON.Color3(0.85, 0.30, 0.60);
+      lm.mat.diffuseColor  = new BABYLON.Color3(0.50, 0.10, 0.30);
+      lm.mat.alpha = 0.70;
+    } else {
+      lm.mat.emissiveColor = new BABYLON.Color3(0.20, 0.75, 0.90);
+      lm.mat.diffuseColor  = new BABYLON.Color3(0.10, 0.50, 0.70);
+      lm.mat.alpha = 0.80;
+    }
   });
 }
 
@@ -3041,7 +3040,8 @@ var _spacecraftSounds = [
   './Assets/Sounds/Spacecraft/640174main_Wheel20Stop.mp3'
 ];
 var _musicOn = true;
-var _musicAudio = new Audio();
+var _musicAudio = null;
+try { _musicAudio = new Audio(); } catch(e) { _musicAudio = {src:'',volume:0.55,paused:true,play:function(){return Promise.resolve();},pause:function(){},onended:null}; }
 var _musicIndex = 0;
 var _shuffledTracks = null;
 var _spacecraftTimer = null;
@@ -3127,12 +3127,19 @@ function _scheduleSpacecraft(){
 }
 
 // Beep on button clicks
-var _beepAudio = new Audio('./Assets/Sounds/Beep_button/space_beep.wav');
-_beepAudio.volume = 0.5;
+var _beepAudio = null;
+function _getBeep(){
+  if(!_beepAudio){ try{ _beepAudio=new Audio('./Assets/Sounds/Beep_button/space_beep.wav'); _beepAudio.volume=0.5; }catch(e){} }
+  return _beepAudio;
+}
 function playBeep(){
-  var b = _beepAudio.cloneNode();
-  b.volume = 0.5;
-  b.play().catch(function(){});
+  if(!_musicUnlocked) return;
+  var b = _getBeep(); if(!b) return;
+  try{
+    var c = b.cloneNode();
+    c.volume = 0.5;
+    c.play().catch(function(){});
+  }catch(e){}
 }
 
 // Add beep to all buttons
@@ -3159,36 +3166,36 @@ window.startMythJourney = function(){
   var lv = document.getElementById('launchVideo');
   if(!lv||!lo){ return; }
 
-  // Fetch GitHub tree to find first video in Launch_Video folder
-  fetch('https://api.github.com/repos/jpapalas-star/myth-universe/git/trees/HEAD?recursive=1')
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      var videos = (data.tree||[]).filter(function(x){
-        return x.type==='blob' && x.path.indexOf('Assets/Launch_Video/')===0 &&
-               /\.(mp4|webm|mov)$/i.test(x.path);
-      });
-      if(!videos.length){ return; }
-      _playLaunchVideo('./'+videos[0].path);
-    })
-    .catch(function(){
-      // Fallback: try common pattern
-      _playLaunchVideo('./Assets/Launch_Video/launch.mp4');
-    });
+  var _knownPath = './Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
 
   function _playLaunchVideo(src){
     lv.src = src;
-    lv.muted = false;
-    lv.volume = 0.8;
+    lv.muted = false; lv.volume = 0.8;
     lo.style.display='flex';
     lv.load();
-    lv.addEventListener('canplay', function onCP(){
-      lv.removeEventListener('canplay',onCP);
+    var _played=false;
+    function tryPlay(){
+      if(_played)return; _played=true;
       lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
-    });
-    lv.onerror = function(){ skipLaunch(); };
-    lv.onended = function(){ skipLaunch(); };
-    setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); }, 20000);
+    }
+    lv.addEventListener('canplay',function onCP(){ lv.removeEventListener('canplay',onCP); tryPlay(); });
+    lv.addEventListener('loadeddata',function onLD(){ lv.removeEventListener('loadeddata',onLD); tryPlay(); });
+    lv.onerror=function(){ skipLaunch(); };
+    lv.onended=function(){ skipLaunch(); };
+    setTimeout(function(){ if(!_played) tryPlay(); },2000);
+    setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); },25000);
   }
+
+  // Try GitHub API first, fallback to known path
+  fetch('https://api.github.com/repos/jpapalas-star/myth-universe/git/trees/HEAD?recursive=1')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var videos=(data.tree||[]).filter(function(x){
+        return x.type==='blob' && x.path.indexOf('Assets/Launch_Video/')===0 && /\.(mp4|webm|mov)$/i.test(x.path);
+      });
+      _playLaunchVideo(videos.length?'./'+videos[0].path:_knownPath);
+    })
+    .catch(function(){ _playLaunchVideo(_knownPath); });
 };
 
 window.skipLaunch = function(){
@@ -3201,6 +3208,8 @@ window.skipLaunch = function(){
     setTimeout(function(){ lo.style.display='none'; lo.style.opacity='1'; }, 500);
   }
   _unlockMusic();
+  // Start music after video ends
+  setTimeout(function(){ if(_musicOn) startMusic(); }, 600);
 };
 </script>
 <div id="loadScreen" style="position:fixed;inset:0;background:#02040a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
