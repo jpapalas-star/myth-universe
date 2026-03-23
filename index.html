@@ -539,6 +539,10 @@ canvas.addEventListener('touchmove', function(e) {
       ratio = 1 + rawChange * damping;
       camera.radius = _cr(camera.radius * ratio);
       if(ratio < 1 && camera.radius < 60) _driftTargetToNearest();
+      // Warp sound during pinch
+      if(window._startWarpSound) _startWarpSound();
+      clearTimeout(_warpWheelStop);
+      _warpWheelStop = setTimeout(function(){ if(window._stopWarpSound) _stopWarpSound(); }, 250);
       _didZoom=true;
     }
 
@@ -638,12 +642,16 @@ window.addEventListener('mouseup', function(e) {
   if (el < 400) _doTap(id);
 });
 
+var _warpWheelStop = null;
 // Mouse wheel: zoom toward cursor
 canvas.addEventListener('wheel', function(e) {
   var zoomFactor = navFast ? (e.deltaY > 0 ? 1.14 : 0.88) : (e.deltaY > 0 ? 1.08 : 0.926);
   camera.radius = _cr(camera.radius * zoomFactor);
-  // When zooming in close, drift target toward nearest planet
   if(zoomFactor < 1 && camera.radius < 60) _driftTargetToNearest();
+  // Warp sound while zooming
+  if(window._startWarpSound) _startWarpSound();
+  clearTimeout(_warpWheelStop);
+  _warpWheelStop = setTimeout(function(){ if(window._stopWarpSound) _stopWarpSound(); }, 200);
 }, { passive: true });
 
 function _driftTargetToNearest(){
@@ -2740,10 +2748,13 @@ engine.runRenderLoop(()=>{
     if(_gasTurbo && _prox>0.3){
       _warpLevel=Math.min(1,_warpLevel+0.07);
       if(window._warpInit&&_warpLevel<0.08)window._warpInit();
+      if(window._startWarpSound) _startWarpSound();
     } else if(_gasActive && _prox>0.6){
       _warpLevel=Math.min(0.4,_warpLevel+0.03);
+      if(window._stopWarpSound) _stopWarpSound();
     } else {
       _warpLevel=Math.max(0,_warpLevel-0.05);
+      if(!_gasTurbo && window._warpSndActive && window._stopWarpSound) _stopWarpSound();
     }
   }
 
@@ -2806,6 +2817,42 @@ engine.runRenderLoop(()=>{
 });
 
 window.addEventListener('resize',()=>engine.resize());
+
+// ── WARP WHOOSH SOUND ────────────────────────────────────────────────
+var _warpSnd = new Audio('./Sounds/Warp_whoosh/long_whosh_zoom_warp.mp3');
+_warpSnd.loop = true;
+_warpSnd.volume = 0;
+window._warpSndActive = false;
+var _warpFadeTimer = null;
+
+function _startWarpSound(){
+  if(!_musicUnlocked) return;
+  if(_warpFadeTimer){ clearInterval(_warpFadeTimer); _warpFadeTimer=null; }
+  if(!window._warpSndActive){
+    window._warpSndActive = true;
+    _warpSnd.currentTime = 0;
+    _warpSnd.play().catch(function(){});
+  }
+  _warpSnd.volume = Math.min(0.7, _warpSnd.volume + 0.15);
+}
+
+function _stopWarpSound(){
+  if(!window._warpSndActive) return;
+  if(_warpFadeTimer){ clearInterval(_warpFadeTimer); _warpFadeTimer=null; }
+  var steps = 20;
+  var startVol = _warpSnd.volume;
+  var step = 0;
+  _warpFadeTimer = setInterval(function(){
+    step++;
+    _warpSnd.volume = Math.max(0, startVol * (1 - step/steps));
+    if(step >= steps){
+      clearInterval(_warpFadeTimer); _warpFadeTimer=null;
+      _warpSnd.pause();
+      _warpSnd.volume = 0;
+      window._warpSndActive = false;
+    }
+  }, 50);
+}
 
 // ── NEURAL MODE ──────────────────────────────────────────────────────
 var _neuralMode = false;
