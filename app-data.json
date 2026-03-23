@@ -3823,7 +3823,12 @@
     "theme": "sky-light",
     "sprite": "god",
     "ring": true,
-    "glow": 0.65
+    "glow": 0.65,
+    "photo": "./Assets/Photos_Small/ΕΡΩΣ_copy_512x768.png",
+    "focusPhoto": "./Assets/Photos_Small/ΕΡΩΣ_copy_512x768.png",
+    "photos": [
+      "./Assets/Photos_Small/ΕΡΩΣ_copy_512x768.png"
+    ]
   },
   {
     "id": "OLYMP_HADES_001",
