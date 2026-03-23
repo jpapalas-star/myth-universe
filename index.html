@@ -254,7 +254,14 @@ html,body{
   <div style="display:flex;flex-direction:column;gap:8px;">
     <button onclick="toggleLang();updateLangBtnLabel();" style="background:rgba(255,220,60,0.12);border:1px solid rgba(255,220,60,0.4);border-radius:12px;color:#ffe040;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;" id="langBtnInner">GR / EN</button>
     <button onclick="cycleVoice();" style="background:rgba(100,200,255,0.12);border:1px solid rgba(100,200,255,0.4);border-radius:12px;color:#8fd3ff;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🔊 Voice</button>
+    <button id="musicToggleBtn" onclick="toggleMusic();" style="background:rgba(180,100,255,0.12);border:1px solid rgba(180,100,255,0.4);border-radius:12px;color:#cc88ff;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🎵 Music ON</button>
   </div>
+</div>
+
+<!-- Launch video overlay -->
+<div id="launchOverlay" style="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline autoplay muted></video>
+  <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
 <button id="homeBtn" type="button">Μυθολογία</button>
 
@@ -2469,6 +2476,8 @@ fetch('app-data.json',{cache:'default'})
       document.body.appendChild(errDiv);
     }
     if(window._hideLoader) window._hideLoader();
+    // Start music after planets loaded
+    setTimeout(startMusic, 500);
   })
   .catch(err=>{
     infoEl.innerHTML='<h2>JSON ERROR</h2><div class="txt">'+String(err)+'</div>';
@@ -2784,6 +2793,131 @@ engine.runRenderLoop(()=>{
 });
 
 window.addEventListener('resize',()=>engine.resize());
+
+// ── AUDIO SYSTEM ─────────────────────────────────────────────────────
+var _musicTracks = [
+  './Assets/Sounds/Music/1.mp3',
+  './Assets/Sounds/Music/2.mp3',
+  './Assets/Sounds/Music/3.mp3'
+];
+var _spacecraftSounds = [
+  './Assets/Sounds/Spacecraft/578629main_hawquindar.mp3',
+  './Assets/Sounds/Spacecraft/582367main_Mercury-6_Zero-G.mp3',
+  './Assets/Sounds/Spacecraft/582368main_Mercury-6_God-Speed.mp3',
+  './Assets/Sounds/Spacecraft/582374main_Aurora-7_Fireflies.mp3',
+  './Assets/Sounds/Spacecraft/582382main_Aurora-7_Guyamas-Greeting.mp3',
+  './Assets/Sounds/Spacecraft/584791main_spookysaturn.mp3',
+  './Assets/Sounds/Spacecraft/584795main_saturn_radio_waves.mp3',
+  './Assets/Sounds/Spacecraft/639900main_How_do_you_Read.mp3',
+  './Assets/Sounds/Spacecraft/640149main_Computers20are20in20Control.mp3',
+  './Assets/Sounds/Spacecraft/640167main_Nice20to20be20in20Orbit.mp3',
+  './Assets/Sounds/Spacecraft/640174main_Wheel20Stop.mp3'
+];
+var _musicOn = true;
+var _musicAudio = new Audio();
+var _musicIndex = 0;
+var _shuffledTracks = null;
+var _spacecraftTimer = null;
+
+function _shuffleArray(arr){
+  var a=arr.slice(); 
+  for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}
+  return a;
+}
+
+function startMusic(){
+  if(!_musicOn) return;
+  _musicIndex = 0;
+  _playMusicTrack(0);
+  _scheduleSpacecraft();
+}
+
+function _playMusicTrack(idx){
+  if(!_musicOn) return;
+  var track;
+  if(idx < _musicTracks.length){
+    track = _musicTracks[idx];
+    _musicIndex = idx;
+  } else {
+    // After first 3, shuffle remaining (all 3 again randomized)
+    if(!_shuffledTracks) _shuffledTracks = _shuffleArray(_musicTracks);
+    var si = (idx - _musicTracks.length) % _shuffledTracks.length;
+    if(si === 0) _shuffledTracks = _shuffleArray(_musicTracks);
+    track = _shuffledTracks[si];
+    _musicIndex = idx;
+  }
+  _musicAudio.src = track;
+  _musicAudio.volume = 0.55;
+  _musicAudio.play().catch(function(){});
+  _musicAudio.onended = function(){
+    if(_musicOn) _playMusicTrack(_musicIndex + 1);
+  };
+}
+
+function toggleMusic(){
+  _musicOn = !_musicOn;
+  var btn = document.getElementById('musicToggleBtn');
+  if(_musicOn){
+    _playMusicTrack(_musicIndex);
+    _scheduleSpacecraft();
+    if(btn) btn.textContent = '🎵 Music ON';
+  } else {
+    _musicAudio.pause();
+    if(_spacecraftTimer){ clearTimeout(_spacecraftTimer); _spacecraftTimer=null; }
+    if(btn) btn.textContent = '🎵 Music OFF';
+  }
+}
+
+function _scheduleSpacecraft(){
+  if(_spacecraftTimer) clearTimeout(_spacecraftTimer);
+  var delay = (20 + Math.random()*10) * 1000;
+  _spacecraftTimer = setTimeout(function(){
+    if(!_musicOn) return;
+    var sfx = new Audio(_spacecraftSounds[Math.floor(Math.random()*_spacecraftSounds.length)]);
+    sfx.volume = 0.7 * (_musicAudio.volume||0.55);
+    sfx.play().catch(function(){});
+    _scheduleSpacecraft();
+  }, delay);
+}
+
+// Beep on button clicks
+var _beepAudio = new Audio('./Assets/Sounds/Beep_button/space_beep.wav');
+_beepAudio.volume = 0.5;
+function playBeep(){
+  var b = _beepAudio.cloneNode();
+  b.volume = 0.5;
+  b.play().catch(function(){});
+}
+
+// Add beep to all buttons
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('button').forEach(function(btn){
+    btn.addEventListener('click', playBeep);
+  });
+});
+
+// ── LAUNCH VIDEO ──────────────────────────────────────────────────────
+(function(){
+  var lv = document.getElementById('launchVideo');
+  var lo = document.getElementById('launchOverlay');
+  if(!lv||!lo) return;
+  lv.src = './Assets/Launch_Video/YouCut_20260321_235725718.mp4';
+  lv.play().catch(function(){ skipLaunch(); });
+  lv.onended = function(){ skipLaunch(); };
+  // Auto-skip if video fails to load after 5s
+  setTimeout(function(){ if(lo.style.display!=='none') skipLaunch(); }, 8000);
+})();
+
+window.skipLaunch = function(){
+  var lo = document.getElementById('launchOverlay');
+  var lv = document.getElementById('launchVideo');
+  if(lv){ lv.pause(); lv.src=''; }
+  if(lo){
+    lo.style.transition='opacity 0.5s';
+    lo.style.opacity='0';
+    setTimeout(function(){ lo.style.display='none'; }, 500);
+  }
+};
 </script>
 <div id="loadScreen" style="position:fixed;inset:0;background:#02040a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
   <div style="color:#ffd060;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;letter-spacing:3px;">MYTH UNIVERSE</div>
