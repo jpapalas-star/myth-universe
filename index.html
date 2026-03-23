@@ -3091,8 +3091,9 @@ var _musicUnlocked = false;
 function _unlockMusic(){
   if(_musicUnlocked) return;
   _musicUnlocked = true;
-  var ctx = new (window.AudioContext||window.webkitAudioContext)();
-  ctx.resume();
+  _initBeepCtx();
+  if(_beepCtx) _beepCtx.resume();
+  _loadBeepBuffer();
   if(window._pendingMusic && _musicOn){
     window._pendingMusic = false;
     startMusic();
@@ -3154,27 +3155,54 @@ function _scheduleSpacecraft(){
 }
 
 // Beep on button clicks
-var _beepAudio = null;
-function _getBeep(){
-  if(!_beepAudio){ try{ _beepAudio=new Audio('./Assets/Sounds/Beep_button/space_beep.wav'); _beepAudio.volume=0.5; }catch(e){} }
-  return _beepAudio;
-}
-function playBeep(){
-  if(!_musicUnlocked) return;
-  var b = _getBeep(); if(!b) return;
+// ── BEEP SYSTEM — Web Audio API for zero-latency playback ──────────
+var _beepCtx = null;
+var _beepBuffer = null;
+var _beepLoaded = false;
+
+function _initBeepCtx(){
+  if(_beepCtx) return;
   try{
-    var c = b.cloneNode();
-    c.volume = 0.5;
-    c.play().catch(function(){});
+    _beepCtx = new (window.AudioContext||window.webkitAudioContext)();
   }catch(e){}
 }
 
-// Add beep to all buttons
-document.addEventListener('DOMContentLoaded', function(){
-  document.querySelectorAll('button').forEach(function(btn){
-    btn.addEventListener('click', playBeep);
-  });
-});
+function _loadBeepBuffer(){
+  if(_beepLoaded||!_beepCtx) return;
+  _beepLoaded = true;
+  fetch('./Assets/Sounds/Beep_button/space_beep.wav')
+    .then(function(r){ return r.arrayBuffer(); })
+    .then(function(ab){ return _beepCtx.decodeAudioData(ab); })
+    .then(function(buf){ _beepBuffer=buf; })
+    .catch(function(){});
+}
+
+function playBeep(){
+  // Try Web Audio (zero latency)
+  if(_beepCtx && _beepBuffer){
+    try{
+      var src = _beepCtx.createBufferSource();
+      var gain = _beepCtx.createGain();
+      gain.gain.value = 0.5;
+      src.buffer = _beepBuffer;
+      src.connect(gain);
+      gain.connect(_beepCtx.destination);
+      src.start(0);
+      return;
+    }catch(e){}
+  }
+  // Fallback: HTML Audio
+  try{
+    var a = new Audio('./Assets/Sounds/Beep_button/space_beep.wav');
+    a.volume=0.5; a.play().catch(function(){});
+  }catch(e){}
+}
+
+// Hook beep to ALL buttons via event delegation (captures dynamic buttons too)
+document.addEventListener('click', function(e){
+  var btn = e.target.closest('button');
+  if(btn && _beepCtx) playBeep();
+}, true); // capture phase = fires before anything else
 
 // ── LAUNCH VIDEO ──────────────────────────────────────────────────────
 // Launch videos in folder - will play whichever is there
@@ -3184,17 +3212,13 @@ var _launchVideos = [
 ];
 
 window.startMythJourney = function(){
-  // Pre-warm AudioContext immediately — must happen inside user gesture
-  try{
-    var _ac = new (window.AudioContext||window.webkitAudioContext)();
-    _ac.resume();
-    var _buf = _ac.createBuffer(1,1,22050);
-    var _bsrc = _ac.createBufferSource();
-    _bsrc.buffer=_buf; _bsrc.connect(_ac.destination); _bsrc.start(0);
-  }catch(e){}
+  // Init Web Audio immediately inside user gesture
+  _initBeepCtx();
+  if(_beepCtx) _beepCtx.resume();
+  _loadBeepBuffer();
+  playBeep(); // plays instantly (or near-instantly first time)
 
   _unlockMusic();
-  playBeep();
 
   var ss = document.getElementById('startScreen');
   if(ss){ ss.style.transition='opacity 0.4s'; ss.style.opacity='0'; setTimeout(function(){ss.style.display='none';},400); }
@@ -3249,14 +3273,18 @@ window.skipLaunch = function(){
   var lo = document.getElementById('launchOverlay');
   var lv = document.getElementById('launchVideo');
   if(lv){ lv.pause(); lv.src=''; }
+  var ldg = document.getElementById('launchLoading'); if(ldg) ldg.remove();
   if(lo){
     lo.style.transition='opacity 0.5s';
     lo.style.opacity='0';
     setTimeout(function(){ lo.style.display='none'; lo.style.opacity='1'; }, 500);
   }
-  _unlockMusic();
-  // Start music after video ends
-  setTimeout(function(){ if(_musicOn) startMusic(); }, 600);
+  // Ensure unlocked
+  if(!_musicUnlocked){ _musicUnlocked=true; _initBeepCtx(); if(_beepCtx) _beepCtx.resume(); _loadBeepBuffer(); }
+  // Start music
+  setTimeout(function(){
+    if(_musicOn && _musicAudio && _musicAudio.paused) startMusic();
+  }, 700);
 };
 </script>
 <div id="loadScreen" style="position:fixed;inset:0;background:#02040a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
