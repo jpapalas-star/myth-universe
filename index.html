@@ -2933,30 +2933,34 @@ var _launchVideos = [
 ];
 
 window.startMythJourney = function(){
-  // Hide start screen
   var ss = document.getElementById('startScreen');
   if(ss){ ss.style.transition='opacity 0.4s'; ss.style.opacity='0'; setTimeout(function(){ss.style.display='none';},400); }
 
-  // Unlock audio
   _unlockMusic();
 
-  // Try to play launch video
   var lo = document.getElementById('launchOverlay');
   var lv = document.getElementById('launchVideo');
   if(!lv||!lo){ return; }
 
-  // Pick first available video
-  var src = _launchVideos[0];
+  var src = './Assets/Launch_Video/YouCut_20260321_235725718.mp4';
   lv.src = src;
-  lv.muted = true;
+  lv.muted = false; // user already clicked so unmuted ok
+  lv.volume = 0.8;
   lo.style.display='flex';
 
-  var p = lv.play();
-  if(p !== undefined){
-    p.catch(function(){ skipLaunch(); });
-  }
+  // Force load then play
+  lv.load();
+  lv.addEventListener('canplay', function onCanPlay(){
+    lv.removeEventListener('canplay', onCanPlay);
+    lv.play().catch(function(err){
+      // If unmuted fails, try muted
+      lv.muted = true;
+      lv.play().catch(function(){ skipLaunch(); });
+    });
+  });
+  lv.onerror = function(){ skipLaunch(); };
   lv.onended = function(){ skipLaunch(); };
-  setTimeout(function(){ if(lo && lo.style.display!=='none') skipLaunch(); }, 15000);
+  setTimeout(function(){ if(lo && lo.style.display!=='none') skipLaunch(); }, 20000);
 };
 
 window.skipLaunch = function(){
