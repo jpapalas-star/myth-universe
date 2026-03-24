@@ -2216,6 +2216,10 @@ function _fetchCinematic(cb){
         });
       });
       _cinematicCache = cache;
+      // Preload one video from each category immediately
+      [1,2,3].forEach(function(t){
+        var l=cache.landing[t]; if(l.length>0) _preloadVideo(l[0]);
+      });
       cb(cache);
     })
     .catch(function(){ _cinematicCache={landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}}; cb(_cinematicCache); });
@@ -2228,13 +2232,31 @@ function _pickN(arr, n){
   return shuffled.slice(0, Math.min(n, shuffled.length));
 }
 
+// Preload a video URL in background
+function _preloadVideo(src){
+  if(!src) return;
+  try{
+    var v = document.createElement('video');
+    v.preload = 'auto';
+    v.src = src;
+    v.load();
+    // Keep ref briefly then release
+    setTimeout(function(){ v.src=''; }, 15000);
+  }catch(e){}
+}
+
 // Play a list of videos in sequence, then call onDone
 function _playVideoSequence(srcs, onDone){
   if(!srcs || srcs.length===0){ onDone(); return; }
   var idx=0;
+  // Preload first 2 immediately
+  if(srcs[0]) _preloadVideo(srcs[0]);
+  if(srcs[1]) _preloadVideo(srcs[1]);
   function playNext(){
     if(idx>=srcs.length){ onDone(); return; }
     var src=srcs[idx++];
+    // Preload next while current plays
+    if(srcs[idx]) _preloadVideo(srcs[idx]);
     _playOneVideo(src, playNext);
   }
   playNext();
@@ -3635,22 +3657,8 @@ window.startMythJourney = function(){
 
   var _knownPath = './Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
 
-  // Play countdown sound while video loads
-  var _countdownSnd = null;
-  function _playCountdown(){
-    try{
-      _countdownSnd = new Audio('./Sounds/Launch_Sequence_Sound/Rocket Launch Countdown(1).mp3');
-      _countdownSnd.volume = 0.8;
-      _countdownSnd.play().catch(function(){});
-    }catch(e){}
-  }
-  function _stopCountdown(){
-    if(_countdownSnd){ 
-      try{ _countdownSnd.pause(); _countdownSnd.currentTime=0; }catch(e){}
-      _countdownSnd=null;
-    }
-  }
-  _playCountdown();
+  // Intro audio already playing from soundChoice(true) - just let it continue
+  // It will stop when video starts playing (_stopIntroMusic called in 'playing' event)
 
 
   function _playLaunchVideo(src){
@@ -3679,7 +3687,6 @@ window.startMythJourney = function(){
     lv.addEventListener('playing', function onPlaying(){
       lv.removeEventListener('playing', onPlaying);
       var l=document.getElementById('launchLoading'); if(l) l.remove();
-      _stopCountdown();
       _stopIntroMusic();
     });
 
@@ -3700,7 +3707,6 @@ window.skipLaunch = function(){
   var lv = document.getElementById('launchVideo');
   if(lv){ lv.pause(); lv.src=''; }
   var ldg = document.getElementById('launchLoading'); if(ldg) ldg.remove();
-  if(typeof _stopCountdown==='function') _stopCountdown();
   if(typeof _stopIntroMusic==='function') _stopIntroMusic();
   if(lo){
     lo.style.transition='opacity 0.5s';
