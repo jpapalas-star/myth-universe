@@ -8,20 +8,7 @@
 <link rel="preconnect" href="https://raw.githubusercontent.com">
 <link rel="preload" href="https://cdn.babylonjs.com/babylon.js" as="script">
 <meta http-equiv="Cache-Control" content="max-age=86400">
-<script src="https://cdn.babylonjs.com/babylon.js">
-function fadePlay(src){
-  var v=document.getElementById('launchVideo');
-  if(!v)return;
-  v.style.opacity=0;
-  setTimeout(function(){
-    v.src=src;
-    v.load();
-    v.play().catch(function(){});
-    v.style.opacity=1;
-  },300);
-}
-
-</script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
 
 <script>
 window.onerror = function(msg, url, line, col, error) {
@@ -251,12 +238,20 @@ html,body{
     max-height:34vh
   }
 }
+
+#indexBtn{left:10px;top:10px;}
+#gearBtn{right:10px;top:10px;}
+#navSpeedBtn{left:10px;top:52px;}
+#homeBtn{left:50%;transform:translateX(-50%);top:52px;}
+#driveModeBtn{right:10px;top:52px;}
+#searchBox{left:10px;right:10px;top:96px;width:auto;}
+
 </style>
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:52px;left:calc(50% + 76px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
-<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:52px;left:calc(50% - 124px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
+<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:52px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
+<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:52px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="display:none;">GR / EN</button>
 <button id="invertBtn" onclick="toggleInvert()" style="display:none;position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(100,220,100,0.5);border-radius:16px;color:#64dc64;font-size:11px;font-weight:bold;padding:6px 10px;cursor:pointer;">Invert X/Y</button>
 <!-- Gear button -->
@@ -336,7 +331,7 @@ window.skipLaunch = function(){
 
 <!-- Launch video overlay -->
 <div id="launchOverlay" style="position:fixed;inset:0;z-index:99999;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
-  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;border:4px solid #ffe040;border-radius:12px;transition:opacity 0.3s;opacity:1;" playsinline muted></video>
+  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline muted></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
 <button id="homeBtn" type="button">Επανεστίαση</button>
