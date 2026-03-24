@@ -62,7 +62,7 @@ html,body{
   cursor:pointer;
   backdrop-filter:blur(6px)
 }
-#indexBtn{left:10px}
+#indexBtn{left:10px;top:10px!important}
 #homeBtn{left:50%;transform:translateX(-50%);top:52px!important}
 
 #searchBox{
@@ -2243,23 +2243,36 @@ function _playOneVideo(src, onDone){
   var ov=document.getElementById('videoOverlay');
   var lv=document.getElementById('videoEl');
   if(!ov||!lv){ onDone(); return; }
-  lv.src=src; lv.muted=false; lv.volume=0.85;
-  ov.style.opacity='1'; ov.style.display='flex';
-  lv.load();
-  var _done=false;
-  function finish(){
-    if(_done)return; _done=true;
-    // Don't use closeVideo() - just hide/clear so sequence continues fast
-    lv.pause(); lv.src='';
-    ov.style.display='none'; ov.style.opacity='1';
-    setTimeout(onDone, 150);
+
+  // Show overlay (keep it open for whole sequence)
+  ov.style.display='flex';
+
+  // Fade out current video if playing, then switch
+  function doPlay(){
+    lv.style.transition='opacity 0.4s';
+    lv.style.opacity='0';
+    setTimeout(function(){
+      lv.src=src; lv.muted=false; lv.volume=0.85;
+      lv.load();
+      var _done=false;
+      function finish(){
+        if(_done)return; _done=true;
+        setTimeout(onDone, 100);
+      }
+      lv.addEventListener('canplay',function onCP(){
+        lv.removeEventListener('canplay',onCP);
+        lv.play().catch(finish);
+        lv.style.opacity='1';
+      });
+      lv.onerror=finish;
+      lv.onended=finish;
+      // Wire skip to skip ONLY this video
+      var skipBtn=document.getElementById('videoSkip');
+      if(skipBtn) skipBtn.onclick=function(){ finish(); };
+      setTimeout(function(){ if(!_done) finish(); },30000);
+    }, 350);
   }
-  lv.addEventListener('canplay',function onCP(){ lv.removeEventListener('canplay',onCP); lv.play().catch(finish); });
-  lv.onended=finish; lv.onerror=finish;
-  // Wire skip button
-  var skipBtn=document.getElementById('videoSkip');
-  if(skipBtn) skipBtn.onclick=function(){ finish(); };
-  setTimeout(function(){ if(!_done) finish(); },30000);
+  doPlay();
 }
 
 // Build and play the full cinematic sequence for a focus/adventure step
@@ -2302,7 +2315,13 @@ function _playCinematicSequence(entityVideo, onDone){
     window._cinematicPlaying = true;
     _playVideoSequence(queue, function(){
       window._cinematicPlaying = false;
-      onDone();
+      // Close overlay after full sequence
+      var ov=document.getElementById('videoOverlay');
+      var lv=document.getElementById('videoEl');
+      if(lv){ lv.pause(); lv.src=''; }
+      if(ov){ ov.style.transition='opacity 0.4s'; ov.style.opacity='0';
+        setTimeout(function(){ ov.style.display='none'; ov.style.opacity='1'; },400); }
+      setTimeout(onDone, 450);
     });
   });
 }
@@ -2426,12 +2445,11 @@ function enterFocus(id){
     var _bgSrc=(_d.photo||_d.focusPhoto||'');
     if(_bgEl){ _bgEl.src=_bgSrc; _bgEl.style.display=_bgSrc?'block':'none'; }
   }
-  if(typeof playEntityVideo==='function' && !_advActive && !_cinematicPlaying) playEntityVideo(dataMap[id]);
-  // Auto-start TTS after video or immediately if no video
+  // Auto-start TTS
   setTimeout(function(){
-    if(_advActive) return; // adventure handles its own TTS
+    if(_advActive) return;
     if(typeof speakText==='function') speakText();
-  }, dataMap[id]&&dataMap[id].video ? 100 : 400);
+  }, 400);
   if(!suppressPop) history.pushState({focus:id},'');
 }
 
@@ -3428,9 +3446,12 @@ function _elSpeak(text, onDone){
       voice_id: appLang==='gr' ? _elVoiceId : null
     })
   })
-  .then(function(r){ return r.json(); })
+  .then(function(r){
+    if(!r.ok){ showToast('⚠️ EL HTTP '+r.status+' → fallback'); _rvSpeak(text,onDone); return Promise.reject('http'); }
+    return r.json();
+  })
   .then(function(data){
-    if(!data.audio){ if(onDone) onDone(); return; }
+    if(!data||!data.audio){ showToast('⚠️ EL no audio → fallback'); _rvSpeak(text,onDone); return; }
     var audioSrc='data:'+data.contentType+';base64,'+data.audio;
     _elAudio=new Audio(audioSrc);
     _elAudio.volume=0.9;
@@ -3440,7 +3461,8 @@ function _elSpeak(text, onDone){
     showToast('🔊 ElevenLabs: Iordanis');
   })
   .catch(function(err){
-    showToast('⚠️ EL → fallback');
+    if(err==='http') return;
+    showToast('⚠️ EL error → fallback');
     _rvSpeak(text, onDone);
   });
 }
