@@ -48,21 +48,20 @@ html,body{
   display:block;
   touch-action:none
 }
-#indexBtn,#homeBtn{
+#indexBtn{
   position:fixed;
   z-index:200;
   color:#fff;
   background:rgba(0,0,0,.55);
   border:1px solid rgba(255,255,255,.16);
   border-radius:12px;
-  padding:5px 10px;
-  font-size:12px;
+  padding:6px 12px;
+  font-size:13px;
   font-weight:bold;
   cursor:pointer;
   backdrop-filter:blur(6px)
 }
 #indexBtn{left:10px;top:10px;}
-#homeBtn{left:50%;transform:translateX(-50%);top:52px!important;}
 
 #searchBox{
   position:fixed;
@@ -242,8 +241,11 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:52px;left:calc(50% + 76px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
-<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:52px;left:calc(50% - 124px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
+<div id="topRow2" style="position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:200;display:flex;gap:8px;align-items:center;">
+  <button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
+  <button id="homeBtn" type="button" style="background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;backdrop-filter:blur(6px);">Επανεστίαση</button>
+  <button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
+</div>
 <button id="langBtn" onclick="toggleLang()" style="display:none;">GR / EN</button>
 <button id="invertBtn" onclick="toggleInvert()" style="display:none;position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(100,220,100,0.5);border-radius:16px;color:#64dc64;font-size:11px;font-weight:bold;padding:6px 10px;cursor:pointer;">Invert X/Y</button>
 <!-- Gear button -->
@@ -326,7 +328,6 @@ window.skipLaunch = function(){
   <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline muted></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
-<button id="homeBtn" type="button">Επανεστίαση</button>
 
 <input id="searchBox" type="text" placeholder="Search name, id, category..." autocomplete="off">
 <div id="searchResults"></div>
@@ -2496,11 +2497,11 @@ function resetFocus(fromPop){
       var invertBtn=document.getElementById('invertBtn');
       var slowBtn=document.getElementById('navSpeedBtn');
       var gearBtn=document.getElementById('gearBtn');
-      if(btn){btn.style.color='#ff8866';btn.style.borderColor='rgba(255,80,80,0.7)';btn.style.left='calc(50% - 148px)';btn.style.right='';}
+      if(btn){btn.style.color='#ff8866';btn.style.borderColor='rgba(255,80,80,0.7)';}
       if(ov) ov.style.display='block';
       if(invertBtn) invertBtn.style.display='block';
-      if(slowBtn) slowBtn.style.display='none';
       if(gearBtn) gearBtn.style.display='none';
+      var r2=document.getElementById('topRow2'); if(r2) r2.style.visibility='hidden';
       camera.lowerBetaLimit=0.02; camera.upperBetaLimit=Math.PI*0.98;
       animatePlanetsY(true);
     }, 400);
@@ -2854,9 +2855,9 @@ function toggleDriveMode(){
     btn.style.color='#ff8866';btn.style.borderColor='rgba(255,80,80,0.7)';
     if(ov)ov.style.display='block';
     if(invertBtn) invertBtn.style.display='block';
-    if(slowBtn) slowBtn.style.display='none';
     if(gearBtn) gearBtn.style.display='none';
-    btn.style.left='calc(50% - 148px)';btn.style.right='';
+    var r2=document.getElementById('topRow2'); if(r2) r2.style.visibility='hidden';
+
     // Kill inertia so no jump-back on enter
     _inertiaActive=false;
     _velAlpha=0;_velBeta=0;_velRadius=0;_velTx=0;_velTy=0;_velTz=0;
@@ -2870,9 +2871,9 @@ function toggleDriveMode(){
     btn.style.color='#ffe040';btn.style.borderColor='rgba(255,220,60,0.4)';
     if(ov)ov.style.display='none';
     if(invertBtn) invertBtn.style.display='none';
-    if(slowBtn) slowBtn.style.display='block';
+    var r2=document.getElementById('topRow2'); if(r2) r2.style.visibility='visible';
     if(gearBtn) gearBtn.style.display='block';
-    btn.style.left='calc(50% + 90px)';btn.style.right='';
+
     driveSpeed=0; _gasActive=false; _gasTurbo=false; _warpLevel=0;
     _inertiaActive=false;
     _velAlpha=0;_velBeta=0;_velRadius=0;_velTx=0;_velTy=0;_velTz=0;
