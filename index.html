@@ -293,6 +293,13 @@ window.startMythJourney = function(){
     lv.onended=function(){ if(window.skipLaunch) skipLaunch(); };
   }
 };
+// skipLaunch stub - real version defined in main script
+window.skipLaunch = function(){
+  var lo = document.getElementById('launchOverlay');
+  var lv = document.getElementById('launchVideo');
+  if(lv){ try{lv.pause();lv.src='';}catch(e){} }
+  if(lo){ lo.style.transition='opacity 0.5s'; lo.style.opacity='0'; setTimeout(function(){ lo.style.display='none'; lo.style.opacity='1'; },500); }
+};
 </script>
 <div id="soundDialog" style="position:fixed;inset:0;z-index:200001;background:#000;display:flex;align-items:center;justify-content:center;">
   <div style="background:rgba(10,5,25,0.98);border:1px solid rgba(255,220,60,0.4);border-radius:20px;padding:30px 36px;text-align:center;max-width:300px;">
@@ -2307,6 +2314,8 @@ function enterFocusWithLanding(id){
     enterFocus(id);
   });
 }
+
+function enterFocus(id){
   if(!nodes[id]) return;
   if(focusedId===id){resetFocus(false);return;}
   // Save ONLY if not already in focus mode (preserve original pre-focus state)
