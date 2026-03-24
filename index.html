@@ -3460,7 +3460,7 @@ function _elSpeak(text, onDone){
     _elAudio.onended=function(){ _elAudio=null; if(onDone) setTimeout(onDone,300); };
     _elAudio.onerror=function(){ _elAudio=null; if(onDone) onDone(); };
     _elAudio.play().catch(function(){ if(onDone) onDone(); });
-    showToast('🔊 ElevenLabs: Iordanis');
+    showToast('🔊 ElevenLabs: Takis');
   })
   .catch(function(err){
     if(err==='http') return;
