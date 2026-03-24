@@ -280,16 +280,6 @@ window.soundChoice = function(enabled){
   }, 350);
 };
 // Stub - overridden by main script when loaded
-
-function videoFocusOn(){
- var v=document.getElementById("launchVideo");
- if(v) v.style.transform="scale(1.08)";
-}
-function videoFocusOff(){
- var v=document.getElementById("launchVideo");
- if(v) v.style.transform="scale(1)";
-}
-
 window.startMythJourney = function(){
   var ss = document.getElementById('startScreen');
   if(ss){ ss.style.transition='opacity 0.4s'; ss.style.opacity='0'; setTimeout(function(){ss.style.display='none';},400); }
@@ -299,15 +289,12 @@ window.startMythJourney = function(){
   if(lv){
     lv.src='./Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
     lv.muted=true; lv.load();
-    videoFocusOn();
-    lv.play().catch(function(){ lv.muted=false; videoFocusOn();
-    lv.play().catch(function(){}); });
+    lv.play().catch(function(){ lv.muted=false; lv.play().catch(function(){}); });
     lv.onended=function(){ if(window.skipLaunch) skipLaunch(); };
   }
 };
 // skipLaunch stub - real version defined in main script
 window.skipLaunch = function(){
- videoFocusOff();
   var lo = document.getElementById('launchOverlay');
   var lv = document.getElementById('launchVideo');
   if(lv){ try{lv.pause();lv.src='';}catch(e){} }
@@ -336,7 +323,7 @@ window.skipLaunch = function(){
 
 <!-- Launch video overlay -->
 <div id="launchOverlay" style="position:fixed;inset:0;z-index:99999;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
-  <video id="launchVideo" style="height:90vh;width:auto;max-width:60vw;object-fit:contain;background:#000;transition:opacity 0.3s, transform 0.3s;transform:scale(1);" playsinline muted></video>
+  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline muted></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
 <button id="homeBtn" type="button">Επανεστίαση</button>
@@ -3631,16 +3618,6 @@ document.addEventListener('click', function(e){
 }, true); // capture phase = fires before anything else
 
 // ── LAUNCH VIDEO ──────────────────────────────────────────────────────
-
-function videoFocusOn(){
- var v=document.getElementById("launchVideo");
- if(v) v.style.transform="scale(1.08)";
-}
-function videoFocusOff(){
- var v=document.getElementById("launchVideo");
- if(v) v.style.transform="scale(1)";
-}
-
 window.startMythJourney = function(){
   _initBeepCtx();
   _loadBeepBuffer();
@@ -3694,9 +3671,7 @@ window.startMythJourney = function(){
     var _played=false;
     function tryPlay(){
       if(_played)return; _played=true;
-      videoFocusOn();
-    lv.play().catch(function(){ lv.muted=true; videoFocusOn();
-    lv.play().catch(function(){ skipLaunch(); }); });
+      lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
     }
 
     // Remove loading only when video ACTUALLY starts playing
@@ -3720,7 +3695,6 @@ window.startMythJourney = function(){
 };
 
 window.skipLaunch = function(){
- videoFocusOff();
   var lo = document.getElementById('launchOverlay');
   var lv = document.getElementById('launchVideo');
   if(lv){ lv.pause(); lv.src=''; }
@@ -4025,5 +3999,68 @@ function _updateGasVisual(){
 }
 </script>
 <script src="https://code.responsivevoice.org/responsivevoice.js?key=iTT65rNX"></script>
+
+<div id="focusFrame"
+style="
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+height:80vh;
+aspect-ratio:9/16;
+border:4px solid #ffe040;
+border-radius:12px;
+overflow:hidden;
+display:none;
+z-index:99999;
+">
+
+<video id="focusVideoA"
+style="position:absolute;height:100%;width:100%;object-fit:cover;opacity:1;transition:opacity 0.3s;"
+playsinline muted></video>
+
+<video id="focusVideoB"
+style="position:absolute;height:100%;width:100%;object-fit:cover;opacity:0;transition:opacity 0.3s;"
+playsinline muted></video>
+
+</div>
+
+<script>
+let focusCurrent="A";
+
+function playFocusVideo(src){
+
+let a=document.getElementById("focusVideoA");
+let b=document.getElementById("focusVideoB");
+let frame=document.getElementById("focusFrame");
+
+frame.style.display="block";
+
+let show,hide;
+
+if(focusCurrent==="A"){
+show=b;
+hide=a;
+focusCurrent="B";
+}else{
+show=a;
+hide=b;
+focusCurrent="A";
+}
+
+show.src=src;
+show.load();
+show.play().catch(()=>{});
+
+show.style.opacity=1;
+hide.style.opacity=0;
+
+}
+
+function hideFocusVideo(){
+document.getElementById("focusFrame").style.display="none";
+}
+</script>
+
 </body>
 </html>
