@@ -238,20 +238,12 @@ html,body{
     max-height:34vh
   }
 }
-
-#indexBtn{left:10px;top:10px;}
-#gearBtn{right:10px;top:10px;}
-#navSpeedBtn{left:10px;top:52px;}
-#homeBtn{left:50%;transform:translateX(-50%);top:52px;}
-#driveModeBtn{right:10px;top:52px;}
-#searchBox{left:10px;right:10px;top:96px;width:auto;}
-
 </style>
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:52px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
-<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:52px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
+<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:52px;left:calc(50% + 76px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
+<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:52px;left:calc(50% - 124px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="display:none;">GR / EN</button>
 <button id="invertBtn" onclick="toggleInvert()" style="display:none;position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(100,220,100,0.5);border-radius:16px;color:#64dc64;font-size:11px;font-weight:bold;padding:6px 10px;cursor:pointer;">Invert X/Y</button>
 <!-- Gear button -->
@@ -288,6 +280,16 @@ window.soundChoice = function(enabled){
   }, 350);
 };
 // Stub - overridden by main script when loaded
+
+function videoFocusOn(){
+ var v=document.getElementById("launchVideo");
+ if(v) v.style.transform="scale(1.12)";
+}
+function videoFocusOff(){
+ var v=document.getElementById("launchVideo");
+ if(v) v.style.transform="scale(1)";
+}
+
 window.startMythJourney = function(){
   var ss = document.getElementById('startScreen');
   if(ss){ ss.style.transition='opacity 0.4s'; ss.style.opacity='0'; setTimeout(function(){ss.style.display='none';},400); }
@@ -297,12 +299,15 @@ window.startMythJourney = function(){
   if(lv){
     lv.src='./Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
     lv.muted=true; lv.load();
-    lv.play().catch(function(){ lv.muted=false; lv.play().catch(function(){}); });
+    videoFocusOn();
+    lv.play().catch(function(){ lv.muted=false; videoFocusOn();
+    lv.play().catch(function(){}); });
     lv.onended=function(){ if(window.skipLaunch) skipLaunch(); };
   }
 };
 // skipLaunch stub - real version defined in main script
 window.skipLaunch = function(){
+ videoFocusOff();
   var lo = document.getElementById('launchOverlay');
   var lv = document.getElementById('launchVideo');
   if(lv){ try{lv.pause();lv.src='';}catch(e){} }
@@ -331,7 +336,7 @@ window.skipLaunch = function(){
 
 <!-- Launch video overlay -->
 <div id="launchOverlay" style="position:fixed;inset:0;z-index:99999;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
-  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline muted></video>
+  <video id="launchVideo" style="height:100%;width:auto;max-width:100%;object-fit:contain;background:#000;border:4px solid #ffe040;border-radius:12px;transition:opacity 0.3s, transform 0.3s;transform:scale(1);" playsinline muted></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
 <button id="homeBtn" type="button">Επανεστίαση</button>
@@ -3626,6 +3631,16 @@ document.addEventListener('click', function(e){
 }, true); // capture phase = fires before anything else
 
 // ── LAUNCH VIDEO ──────────────────────────────────────────────────────
+
+function videoFocusOn(){
+ var v=document.getElementById("launchVideo");
+ if(v) v.style.transform="scale(1.12)";
+}
+function videoFocusOff(){
+ var v=document.getElementById("launchVideo");
+ if(v) v.style.transform="scale(1)";
+}
+
 window.startMythJourney = function(){
   _initBeepCtx();
   _loadBeepBuffer();
@@ -3679,7 +3694,9 @@ window.startMythJourney = function(){
     var _played=false;
     function tryPlay(){
       if(_played)return; _played=true;
-      lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
+      videoFocusOn();
+    lv.play().catch(function(){ lv.muted=true; videoFocusOn();
+    lv.play().catch(function(){ skipLaunch(); }); });
     }
 
     // Remove loading only when video ACTUALLY starts playing
@@ -3703,6 +3720,7 @@ window.startMythJourney = function(){
 };
 
 window.skipLaunch = function(){
+ videoFocusOff();
   var lo = document.getElementById('launchOverlay');
   var lv = document.getElementById('launchVideo');
   if(lv){ lv.pause(); lv.src=''; }
