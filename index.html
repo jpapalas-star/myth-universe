@@ -283,7 +283,7 @@ window.soundChoice = function(enabled){
 
 function videoFocusOn(){
  var v=document.getElementById("launchVideo");
- if(v) v.style.transform="scale(1.12)";
+ if(v) v.style.transform="scale(1.08)";
 }
 function videoFocusOff(){
  var v=document.getElementById("launchVideo");
@@ -336,7 +336,7 @@ window.skipLaunch = function(){
 
 <!-- Launch video overlay -->
 <div id="launchOverlay" style="position:fixed;inset:0;z-index:99999;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
-  <video id="launchVideo" style="height:100%;width:auto;max-width:100%;object-fit:contain;background:#000;border:4px solid #ffe040;border-radius:12px;transition:opacity 0.3s, transform 0.3s;transform:scale(1);" playsinline muted></video>
+  <video id="launchVideo" style="height:90vh;width:auto;max-width:60vw;object-fit:contain;background:#000;transition:opacity 0.3s, transform 0.3s;transform:scale(1);" playsinline muted></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
 <button id="homeBtn" type="button">Επανεστίαση</button>
@@ -3634,7 +3634,7 @@ document.addEventListener('click', function(e){
 
 function videoFocusOn(){
  var v=document.getElementById("launchVideo");
- if(v) v.style.transform="scale(1.12)";
+ if(v) v.style.transform="scale(1.08)";
 }
 function videoFocusOff(){
  var v=document.getElementById("launchVideo");
