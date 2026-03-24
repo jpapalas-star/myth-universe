@@ -279,12 +279,19 @@ window.soundChoice = function(enabled){
     }
   }, 350);
 };
-// Stub - real function defined later in main script
+// Stub - overridden by main script when loaded
 window.startMythJourney = function(){
-  // Wait for main script to load
-  setTimeout(function(){
-    if(window._startMythJourneyReal) window._startMythJourneyReal();
-  }, 100);
+  var ss = document.getElementById('startScreen');
+  if(ss){ ss.style.transition='opacity 0.4s'; ss.style.opacity='0'; setTimeout(function(){ss.style.display='none';},400); }
+  var lo = document.getElementById('launchOverlay');
+  var lv = document.getElementById('launchVideo');
+  if(lo) lo.style.display='flex';
+  if(lv){
+    lv.src='./Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
+    lv.muted=true; lv.load();
+    lv.play().catch(function(){ lv.muted=false; lv.play().catch(function(){}); });
+    lv.onended=function(){ if(window.skipLaunch) skipLaunch(); };
+  }
 };
 </script>
 <div id="soundDialog" style="position:fixed;inset:0;z-index:200001;background:#000;display:flex;align-items:center;justify-content:center;">
@@ -3587,8 +3594,8 @@ document.addEventListener('click', function(e){
 }, true); // capture phase = fires before anything else
 
 // ── LAUNCH VIDEO ──────────────────────────────────────────────────────
-window._startMythJourneyReal = window.startMythJourney = function(){
-  if(_beepCtx) _beepCtx.resume();
+window.startMythJourney = function(){
+  _initBeepCtx();
   _loadBeepBuffer();
   playBeep(); // plays instantly (or near-instantly first time)
 
