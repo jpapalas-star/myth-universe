@@ -63,7 +63,7 @@ html,body{
   backdrop-filter:blur(6px)
 }
 #indexBtn{left:10px}
-#homeBtn{left:50%;transform:translateX(-50%)}
+#homeBtn{left:50%;transform:translateX(-50%);top:52px!important}
 
 #searchBox{
   position:fixed;
@@ -242,8 +242,8 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:14px;left:calc(50% + 90px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
-<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:14px;left:calc(50% - 148px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
+<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:52px;left:calc(50% + 90px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
+<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:52px;left:calc(50% - 148px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="display:none;">GR / EN</button>
 <button id="invertBtn" onclick="toggleInvert()" style="display:none;position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(100,220,100,0.5);border-radius:16px;color:#64dc64;font-size:11px;font-weight:bold;padding:6px 10px;cursor:pointer;">Invert X/Y</button>
 <!-- Gear button -->
@@ -732,7 +732,7 @@ function _doTap(pickedId) {
 
   if (pickedId && nodes[pickedId]) {
     if (focusedId === pickedId) resetFocus(false);
-    else enterFocus(pickedId);
+    else enterFocusWithLanding(pickedId);
   } else {
     if (focusedId) {
       resetFocus(false);
@@ -1464,19 +1464,14 @@ function speakText(){
   var ttsBtn=document.getElementById('ttsStop');
   if(ttsBtn) ttsBtn.style.display='block';
   function onEnd(){ if(ttsBtn) ttsBtn.style.display='none'; }
-  if(window.responsiveVoice && responsiveVoice.voiceSupport()){
-    var voice = (appLang==='en') ? 'UK English Male' : _rvVoice;
-    showToast('🔊 ResponsiveVoice: '+voice);
-    responsiveVoice.speak(txt, voice, {rate:0.9, pitch:1, onend:onEnd, onerror:onEnd});
-  } else {
-    showToast('🔊 WebSpeech: '+(_selectedVoice?_selectedVoice.name:'default'));
-    _wbSpeak(txt, onEnd);
-  }
+  // Use ElevenLabs (Greek Male) → fallback RV → fallback WebSpeech
+  _elSpeak(txt, onEnd);
 }
 
 function stopSpeak(){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   if(window.responsiveVoice) responsiveVoice.cancel();
+  if(_elAudio){ try{_elAudio.pause(); _elAudio.src='';}catch(e){} _elAudio=null; }
   var ttsBtn=document.getElementById('ttsStop');
   if(ttsBtn) ttsBtn.style.display='none';
 }
@@ -1585,6 +1580,7 @@ function startFamilyAdventure(rootId, btn){
   _advQueue=queue;
   _advIndex=0;
   _requestWakeLock();
+  _usedCinematicVideos.clear(); // reset used videos for this adventure
 
   _showAdvOverlay();
 
@@ -1623,22 +1619,23 @@ function _advStep(){
   var d=dataMap[id];
   if(!d){_advStep();return;}
 
-  enterFocus(id);
+  // Play cinematic sequence (landing+searching+finding+entity video) then focus+speak
+  var entityVid = d.video || null;
+  _playCinematicSequence(entityVid, function(){
+    if(!_advActive) return;
+    enterFocus(id);
 
-  if(d.video) playEntityVideo(d);
+    var isEN=appLang==='en';
+    var name=isEN?(d.Name_EN||d.Name||d.id):(d.Name||d.id);
+    var txt=isEN?(d.FullText_EN||d.FullText||''):(d.FullText||d.FullText_EN||'');
+    var relLabel=_getRelationLabel(relType, d.Gender, isEN);
+    var cleanName=name.replace(/[.,;:!?]+$/,'');
+    var say=relLabel+' '+cleanName+(txt&&txt!=='-'?'. '+txt:'');
+    say=say.trim();
 
-  var isEN=appLang==='en';
-  var name=isEN?(d.Name_EN||d.Name||d.id):(d.Name||d.id);
-  var txt=isEN?(d.FullText_EN||d.FullText||''):(d.FullText||d.FullText_EN||'');
-  var relLabel=_getRelationLabel(relType, d.Gender, isEN);
-  var cleanName=name.replace(/[.,;:!?]+$/,'');
-  var say=relLabel+' '+cleanName+(txt&&txt!=='-'?'. '+txt:'');
-  say=say.trim();
-
-  _advSpeak(say, function(){
-    var ov=document.getElementById('videoOverlay');
-    if(ov && ov.style.display!=='none') closeVideo();
-    setTimeout(_advStep, 500);
+    _advSpeak(say, function(){
+      setTimeout(_advStep, 500);
+    });
   });
 }
 
@@ -1677,6 +1674,7 @@ function _wbSpeak(text, onDone){
 function _advSpeak(text, onDone){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   if(window.responsiveVoice) responsiveVoice.cancel();
+  if(_elAudio){ try{_elAudio.pause();}catch(e){} _elAudio=null; }
   if(_advTimer){ clearTimeout(_advTimer); _advTimer=null; }
   if(!text){if(onDone)setTimeout(onDone,300);return;}
 
@@ -1688,23 +1686,12 @@ function _advSpeak(text, onDone){
     if(_advActive&&onDone) onDone();
   }
 
-  var estMs = Math.max(2500, text.length * 95); // Greek text needs more time
+  // Safety timer fallback (EL can be slow)
+  var estMs = Math.max(3000, text.length * 95);
   _advTimer = setTimeout(finish, estMs);
 
-  if(window.responsiveVoice && responsiveVoice.voiceSupport()){
-    var voice = (appLang==='en') ? 'UK English Male' : _rvVoice;
-    showToast('🔊 RV: '+voice);
-    responsiveVoice.speak(text, voice, {
-      rate: 0.9, pitch: 1,
-      onend: finish,
-      onerror: function(){
-        showToast('⚠️ RV failed → WebSpeech');
-        _wbSpeak(text, function(){ finish(); });
-      }
-    });
-  } else {
-    _wbSpeak(text, function(){ finish(); });
-  }
+  // ElevenLabs first → RV fallback → WebSpeech
+  _elSpeak(text, finish);
 }
 
 function advNext(){
@@ -1740,6 +1727,7 @@ function stopFamilyAdventure(){
   if(window.responsiveVoice) responsiveVoice.cancel();
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   _releaseWakeLock();
+  _usedCinematicVideos.clear();
 }
 
 var _voiceIndex = 0;
@@ -2170,7 +2158,138 @@ function restoreCameraState(){
 
 var _focusFromDrive = false; // was in drive mode when focus started
 
-function enterFocus(id){
+// ── CINEMATIC SEQUENCE SYSTEM ───────────────────────────────────────
+// Theme folders: 1=Scifi, 2=ExistingCiv, 3=Jungle
+var _cinematicCache = null; // {landing:{1:[],2:[],3:[]}, searching:{...}, finding:{...}}
+
+var _CINEMATIC_PATHS = {
+  landing:   ['Assets/Videos/Landing_Videos/1Scifi_ruins/',
+              'Assets/Videos/Landing_Videos/2Existing_Civ/',
+              'Assets/Videos/Landing_Videos/3Jungle/'],
+  searching: ['Assets/Videos/Searching_videos/1Scifi_videos_Searching/',
+              'Assets/Videos/Searching_videos/2Existing_Civ_SearchingVids/',
+              'Assets/Videos/Searching_videos/3Jungle_Searching_Videos/'],
+  finding:   ['Assets/Videos/Finding_Videos/1Scifi_Finding_Videos/',
+              'Assets/Videos/Finding_Videos/2Existing_Civ_Finding/',
+              'Assets/Videos/Finding_Videos/3Jungle_Finding_Videos/']
+};
+
+function _fetchCinematic(cb){
+  if(_cinematicCache){ cb(_cinematicCache); return; }
+  fetch('https://api.github.com/repos/jpapalas-star/myth-universe/git/trees/HEAD?recursive=1')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var all = data.tree||[];
+      var cache = {landing:{1:[],2:[],3:[]}, searching:{1:[],2:[],3:[]}, finding:{1:[],2:[],3:[]}};
+      all.forEach(function(x){
+        if(x.type!=='blob' || !/\.(mp4|webm|mov)$/i.test(x.path)) return;
+        var p = x.path;
+        ['landing','searching','finding'].forEach(function(type){
+          _CINEMATIC_PATHS[type].forEach(function(folder, idx){
+            if(p.indexOf(folder)===0) cache[type][idx+1].push('./'+p);
+          });
+        });
+      });
+      _cinematicCache = cache;
+      cb(cache);
+    })
+    .catch(function(){ _cinematicCache={landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}}; cb(_cinematicCache); });
+}
+
+function _rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function _pickN(arr, n){
+  var shuffled = arr.slice().sort(function(){ return Math.random()-0.5; });
+  return shuffled.slice(0, Math.min(n, shuffled.length));
+}
+
+// Play a list of videos in sequence, then call onDone
+function _playVideoSequence(srcs, onDone){
+  if(!srcs || srcs.length===0){ onDone(); return; }
+  var idx=0;
+  function playNext(){
+    if(idx>=srcs.length){ onDone(); return; }
+    var src=srcs[idx++];
+    _playOneVideo(src, playNext);
+  }
+  playNext();
+}
+
+function _playOneVideo(src, onDone){
+  var ov=document.getElementById('videoOverlay');
+  var lv=document.getElementById('videoEl');
+  if(!ov||!lv){ onDone(); return; }
+  lv.src=src; lv.muted=false; lv.volume=0.85;
+  ov.style.opacity='1'; ov.style.display='flex';
+  lv.load();
+  var _done=false;
+  function finish(){
+    if(_done)return; _done=true;
+    // Don't use closeVideo() - just hide/clear so sequence continues fast
+    lv.pause(); lv.src='';
+    ov.style.display='none'; ov.style.opacity='1';
+    setTimeout(onDone, 150);
+  }
+  lv.addEventListener('canplay',function onCP(){ lv.removeEventListener('canplay',onCP); lv.play().catch(finish); });
+  lv.onended=finish; lv.onerror=finish;
+  // Wire skip button
+  var skipBtn=document.getElementById('videoSkip');
+  if(skipBtn) skipBtn.onclick=function(){ finish(); };
+  setTimeout(function(){ if(!_done) finish(); },30000);
+}
+
+// Build and play the full cinematic sequence for a focus/adventure step
+// entityVideo: path to entity's own video (or null)
+// onDone: called when all videos done
+var _usedCinematicVideos = new Set(); // tracks used videos during adventure
+
+function _playCinematicSequence(entityVideo, onDone){
+  _fetchCinematic(function(cache){
+    var availableThemes = [1,2,3].filter(function(t){
+      return cache.landing[t].length>0 || cache.searching[t].length>0 || cache.finding[t].length>0;
+    });
+    
+    var queue = [];
+    if(availableThemes.length > 0){
+      var theme = _rand(availableThemes);
+
+      // Pick unused random video from pool
+      function pickUnused(arr){
+        var unused = arr.filter(function(v){ return !_usedCinematicVideos.has(v); });
+        // If all used, reset pool for this type
+        if(unused.length===0){ unused = arr.slice(); }
+        var pick = _rand(unused);
+        _usedCinematicVideos.add(pick);
+        return pick;
+      }
+
+      var l = cache.landing[theme];
+      if(l.length>0) queue.push(pickUnused(l));
+      var s = cache.searching[theme];
+      _pickN(s.filter(function(v){ return !_usedCinematicVideos.has(v); }).length>0
+        ? s.filter(function(v){ return !_usedCinematicVideos.has(v); })
+        : s, 2).forEach(function(v){ _usedCinematicVideos.add(v); queue.push(v); });
+      var f = cache.finding[theme];
+      if(f.length>0) queue.push(pickUnused(f));
+    }
+    if(entityVideo) queue.push(entityVideo);
+    
+    if(queue.length===0){ onDone(); return; }
+    window._cinematicPlaying = true;
+    _playVideoSequence(queue, function(){
+      window._cinematicPlaying = false;
+      onDone();
+    });
+  });
+}
+
+function enterFocusWithLanding(id){
+  var d = dataMap[id];
+  var entityVid = d && d.video ? d.video : null;
+  _playCinematicSequence(entityVid, function(){
+    enterFocus(id);
+  });
+}
   if(!nodes[id]) return;
   if(focusedId===id){resetFocus(false);return;}
   // Save ONLY if not already in focus mode (preserve original pre-focus state)
@@ -2281,7 +2400,7 @@ function enterFocus(id){
     var _bgSrc=(_d.photo||_d.focusPhoto||'');
     if(_bgEl){ _bgEl.src=_bgSrc; _bgEl.style.display=_bgSrc?'block':'none'; }
   }
-  if(typeof playEntityVideo==='function' && !_advActive) playEntityVideo(dataMap[id]);
+  if(typeof playEntityVideo==='function' && !_advActive && !_cinematicPlaying) playEntityVideo(dataMap[id]);
   // Auto-start TTS after video or immediately if no video
   setTimeout(function(){
     if(_advActive) return; // adventure handles its own TTS
@@ -3268,6 +3387,44 @@ function _removeNeuralMode(){
   _neuralMeshes = [];
 }
 
+// ── ELEVENLABS TTS via Netlify ───────────────────────────────────────
+var _elVoiceId = 'KDImLuG6RkuyuX5httC7'; // Iordanis - Greek Male
+var _netlifyTTSUrl = 'https://verdant-sable-541097.netlify.app/.netlify/functions/tts';
+var _elAudio = null;
+
+function _elSpeak(text, onDone){
+  stopSpeak();
+  if(_elAudio){ try{_elAudio.pause();}catch(e){} _elAudio=null; }
+  if(!text||text==='-'){ if(onDone) setTimeout(onDone,200); return; }
+
+  var maxLen=800;
+  if(text.length>maxLen) text=text.substring(0,maxLen)+'...';
+
+  fetch(_netlifyTTSUrl,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      text:text,
+      voice_id: appLang==='gr' ? _elVoiceId : null
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(!data.audio){ if(onDone) onDone(); return; }
+    var audioSrc='data:'+data.contentType+';base64,'+data.audio;
+    _elAudio=new Audio(audioSrc);
+    _elAudio.volume=0.9;
+    _elAudio.onended=function(){ _elAudio=null; if(onDone) setTimeout(onDone,300); };
+    _elAudio.onerror=function(){ _elAudio=null; if(onDone) onDone(); };
+    _elAudio.play().catch(function(){ if(onDone) onDone(); });
+    showToast('🔊 ElevenLabs: Iordanis');
+  })
+  .catch(function(err){
+    showToast('⚠️ EL → fallback');
+    _rvSpeak(text, onDone);
+  });
+}
+
 // ── AUDIO SYSTEM ─────────────────────────────────────────────────────
 var _musicTracks = [
   './Assets/Sounds/Music/1.mp3',
@@ -3789,7 +3946,7 @@ document.addEventListener('DOMContentLoaded',function(){
           var sx=t.clientX-rect.left, sy=t.clientY-rect.top;
           var pickedId=_pick(sx,sy);
           if(pickedId && nodes[pickedId]){
-            enterFocus(pickedId);
+            enterFocusWithLanding(pickedId);
           }
         }
         _lookId=null; _lookAlphaDelta=0; _lookBetaDelta=0;
