@@ -55,8 +55,8 @@ html,body{
   background:rgba(0,0,0,.55);
   border:1px solid rgba(255,255,255,.16);
   border-radius:12px;
-  padding:6px 12px;
-  font-size:13px;
+  padding:5px 10px;
+  font-size:12px;
   font-weight:bold;
   cursor:pointer;
   backdrop-filter:blur(6px)
@@ -241,8 +241,8 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:52px;left:calc(50% + 90px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
-<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:52px;left:calc(50% - 148px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
+<button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="position:fixed;top:52px;left:calc(50% + 76px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
+<button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="position:fixed;top:52px;left:calc(50% - 124px);z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
 <button id="langBtn" onclick="toggleLang()" style="display:none;">GR / EN</button>
 <button id="invertBtn" onclick="toggleInvert()" style="display:none;position:fixed;top:10px;right:10px;z-index:200;background:rgba(20,10,40,0.85);border:1px solid rgba(100,220,100,0.5);border-radius:16px;color:#64dc64;font-size:11px;font-weight:bold;padding:6px 10px;cursor:pointer;">Invert X/Y</button>
 <!-- Gear button -->
@@ -2243,35 +2243,28 @@ function _playOneVideo(src, onDone){
   var lv=document.getElementById('videoEl');
   if(!ov||!lv){ onDone(); return; }
 
-  // Show overlay (keep it open for whole sequence)
+  // Show overlay (stays open for whole sequence)
   ov.style.display='flex';
 
-  // Fade out current video if playing, then switch
-  function doPlay(){
-    lv.style.transition='opacity 0.4s';
-    lv.style.opacity='0';
-    setTimeout(function(){
-      lv.src=src; lv.muted=false; lv.volume=0.85;
-      lv.load();
-      var _done=false;
-      function finish(){
-        if(_done)return; _done=true;
-        setTimeout(onDone, 100);
-      }
-      lv.addEventListener('canplay',function onCP(){
-        lv.removeEventListener('canplay',onCP);
-        lv.play().catch(finish);
-        lv.style.opacity='1';
-      });
-      lv.onerror=finish;
-      lv.onended=finish;
-      // Wire skip to skip ONLY this video
-      var skipBtn=document.getElementById('videoSkip');
-      if(skipBtn) skipBtn.onclick=function(){ finish(); };
-      setTimeout(function(){ if(!_done) finish(); },30000);
-    }, 350);
-  }
-  doPlay();
+  // Fade out video, swap src, fade in
+  lv.style.transition='opacity 0.35s';
+  lv.style.opacity='0';
+  setTimeout(function(){
+    lv.src=src; lv.volume=0.85;
+    lv.load();
+    var _done=false;
+    function finish(){ if(_done)return; _done=true; setTimeout(onDone,50); }
+    lv.addEventListener('canplay',function onCP(){
+      lv.removeEventListener('canplay',onCP);
+      lv.play().catch(finish);
+      lv.style.opacity='1';
+    });
+    lv.onerror=finish;
+    lv.onended=finish;
+    var skipBtn=document.getElementById('videoSkip');
+    if(skipBtn) skipBtn.onclick=function(){ finish(); };
+    setTimeout(function(){ if(!_done) finish(); },30000);
+  },350);
 }
 
 // Build and play the full cinematic sequence for a focus/adventure step
@@ -3755,25 +3748,21 @@ window.skipLaunch = function(){
 </script>
 
 <!-- VIDEO OVERLAY -->
-<div id="videoOverlay" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;">
-  <!-- Title -->
-  <div id="videoTitle" style="text-align:center;margin-bottom:14px;padding:0 20px;">
-    <div id="videoTitleGR" style="font-family:Arial,sans-serif;font-size:22px;font-weight:bold;color:#ffe040;letter-spacing:2px;text-shadow:0 2px 8px #000;"></div>
-    <div id="videoTitleEN" style="font-family:Arial,sans-serif;font-size:14px;color:#ccc;margin-top:4px;letter-spacing:1px;"></div>
-  </div>
-  <!-- Video frame with border -->
+<div id="videoOverlay" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.92);flex-direction:column;align-items:center;justify-content:center;">
+  <!-- Fixed gold card - never resizes -->
   <div style="
     position:relative;
+    width:min(460px,94vw);
+    height:min(340px,56vh);
     border-radius:18px;
-    padding:5px;
+    padding:6px;
     background:linear-gradient(135deg,#8B6914,#FFD700,#8B6914,#FFD700,#8B6914);
-    box-shadow:0 0 40px 10px rgba(255,200,50,0.35), 0 0 80px 20px rgba(0,0,0,0.8), inset 0 0 8px rgba(255,220,80,0.3);
-    max-width:96vw;
+    box-shadow:0 0 40px 10px rgba(255,200,50,0.35),0 0 80px 20px rgba(0,0,0,0.8);
+    flex-shrink:0;
   ">
-    <div style="border-radius:14px;overflow:hidden;background:#000;border:2px solid #1a0a00;">
-      <video id="videoEl" style="display:block;width:min(480px,92vw);max-height:72vh;background:#000;" playsinline autoplay preload="auto"></video>
+    <div style="border-radius:13px;overflow:hidden;background:#000;width:100%;height:100%;position:relative;">
+      <video id="videoEl" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:1;transition:opacity 0.4s;" playsinline preload="auto"></video>
     </div>
-    <!-- corner ornaments -->
     <div style="position:absolute;top:4px;left:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
     <div style="position:absolute;top:4px;right:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
     <div style="position:absolute;bottom:4px;left:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
