@@ -268,15 +268,23 @@ window.soundChoice = function(enabled){
   _soundEnabled = enabled;
   var sd = document.getElementById('soundDialog');
   if(sd){ sd.style.transition='opacity 0.3s'; sd.style.opacity='0'; setTimeout(function(){sd.style.display='none';},300); }
-  var ss = document.getElementById('startScreen');
-  if(ss){ ss.style.display='flex'; }
-  if(enabled){
-    if(typeof _introAudio !== 'undefined' && _introAudio){
-      _introAudio.play().catch(function(){});
+  setTimeout(function(){
+    var ss = document.getElementById('startScreen');
+    if(ss){ ss.style.display='flex'; }
+    if(enabled){
+      window._playIntroWhenReady = true;
+      if(typeof _introAudio !== 'undefined' && _introAudio){
+        _introAudio.play().catch(function(){});
+      }
     }
-  } else {
-    if(typeof _stopIntroMusic==='function') _stopIntroMusic();
-  }
+  }, 350);
+};
+// Stub - real function defined later in main script
+window.startMythJourney = function(){
+  // Wait for main script to load
+  setTimeout(function(){
+    if(window._startMythJourneyReal) window._startMythJourneyReal();
+  }, 100);
 };
 </script>
 <div id="soundDialog" style="position:fixed;inset:0;z-index:200001;background:#000;display:flex;align-items:center;justify-content:center;">
@@ -3132,16 +3140,10 @@ var _introAudio = null;
     _introAudio = new Audio('./Sounds/Launch_Sequence_Sound/Rocket Launch Countdown(1).mp3');
     _introAudio.volume = 0.7;
     _introAudio.loop = false;
-    var p = _introAudio.play();
-    if(p) p.catch(function(){
-      function tryIntro(){
-        if(_introAudio){ _introAudio.play().catch(function(){}); }
-        document.removeEventListener('touchstart',tryIntro);
-        document.removeEventListener('click',tryIntro);
-      }
-      document.addEventListener('touchstart',tryIntro,{passive:true,once:true});
-      document.addEventListener('click',tryIntro,{once:true});
-    });
+    // If sound choice already made, play now
+    if(window._playIntroWhenReady){
+      _introAudio.play().catch(function(){});
+    }
   }catch(e){}
 })();
 
@@ -3591,9 +3593,7 @@ var _launchVideos = [
   // Add more here if needed - first found will play
 ];
 
-window.startMythJourney = function(){
-  // Init Web Audio immediately inside user gesture
-  _initBeepCtx();
+window._startMythJourneyReal = window.startMythJourney = function(){
   if(_beepCtx) _beepCtx.resume();
   _loadBeepBuffer();
   playBeep(); // plays instantly (or near-instantly first time)
