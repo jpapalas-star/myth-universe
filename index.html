@@ -260,6 +260,25 @@ html,body{
 
 <!-- START SCREEN - shown first for audio unlock -->
 <!-- Sound permission dialog - shown FIRST -->
+<!-- Sound permission dialog - shown FIRST -->
+<script>
+// Must be defined BEFORE the buttons that call it
+var _soundEnabled = true;
+window.soundChoice = function(enabled){
+  _soundEnabled = enabled;
+  var sd = document.getElementById('soundDialog');
+  if(sd){ sd.style.transition='opacity 0.3s'; sd.style.opacity='0'; setTimeout(function(){sd.style.display='none';},300); }
+  var ss = document.getElementById('startScreen');
+  if(ss){ ss.style.display='flex'; }
+  if(enabled){
+    if(typeof _introAudio !== 'undefined' && _introAudio){
+      _introAudio.play().catch(function(){});
+    }
+  } else {
+    if(typeof _stopIntroMusic==='function') _stopIntroMusic();
+  }
+};
+</script>
 <div id="soundDialog" style="position:fixed;inset:0;z-index:200001;background:#000;display:flex;align-items:center;justify-content:center;">
   <div style="background:rgba(10,5,25,0.98);border:1px solid rgba(255,220,60,0.4);border-radius:20px;padding:30px 36px;text-align:center;max-width:300px;">
     <div style="font-size:40px;margin-bottom:12px;">🔊</div>
@@ -1478,23 +1497,6 @@ function stopSpeak(){
 
 // ── SOUND CHOICE ─────────────────────────────────────────────────────
 var _soundEnabled = true;
-window.soundChoice = function(enabled){
-  _soundEnabled = enabled;
-  var sd = document.getElementById('soundDialog');
-  if(sd){ sd.style.transition='opacity 0.3s'; sd.style.opacity='0'; setTimeout(function(){sd.style.display='none';},300); }
-  var ss = document.getElementById('startScreen');
-  if(ss){ ss.style.display='flex'; }
-  if(enabled){
-    // Start countdown sound
-    if(typeof _introAudio !== 'undefined' && _introAudio){
-      _introAudio.play().catch(function(){});
-    }
-  } else {
-    _musicOn = false;
-    // Stop any audio
-    if(typeof _stopIntroMusic==='function') _stopIntroMusic();
-  }
-};
 var _wakeLock = null;
 async function _requestWakeLock(){
   try{
