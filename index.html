@@ -1504,7 +1504,7 @@ function stopSpeak(){
 }
 
 // ── SOUND CHOICE ─────────────────────────────────────────────────────
-var _soundEnabled = true;
+
 var _wakeLock = null;
 async function _requestWakeLock(){
   try{
@@ -3587,12 +3587,6 @@ document.addEventListener('click', function(e){
 }, true); // capture phase = fires before anything else
 
 // ── LAUNCH VIDEO ──────────────────────────────────────────────────────
-// Launch videos in folder - will play whichever is there
-var _launchVideos = [
-  './Assets/Launch_Video/YouCut_20260321_235725718.mp4'
-  // Add more here if needed - first found will play
-];
-
 window._startMythJourneyReal = window.startMythJourney = function(){
   if(_beepCtx) _beepCtx.resume();
   _loadBeepBuffer();
