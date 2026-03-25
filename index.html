@@ -67,7 +67,7 @@ html,body{
   position:fixed;
   left:10px;
   right:10px;
-  top:104px;
+  top:52px;
   z-index:40;
   color:#fff;
   background:rgba(0,0,0,.62);
@@ -86,7 +86,7 @@ html,body{
 #searchResults{
   position:fixed;
   right:10px;
-  top:96px;
+  top:88px;
   z-index:39;
   width:calc(100vw - 20px);
   max-height:220px;
@@ -202,20 +202,19 @@ html,body{
 
 @media (max-width:900px){
   #topRow2{
-    top:48px;
-    /* Ensure buttons stay compact and don't wrap onto search bar */
+    top:10px;
     font-size:11px;
   }
   #searchBox{
     left:10px;
     right:10px;
     width:auto;
-    top:90px
+    top:52px
   }
   #searchResults{
     left:10px;
     right:10px;
-    top:136px;
+    top:88px;
     width:auto;
     max-height:180px
   }
@@ -223,7 +222,7 @@ html,body{
     left:10px;
     right:10px;
     width:auto;
-    top:140px
+    top:92px
   }
   #info{
     left:10px;
@@ -246,7 +245,7 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<div id="topRow2" style="position:fixed;top:48px;left:50%;transform:translateX(-50%);z-index:200;display:flex;gap:6px;align-items:center;white-space:nowrap;">
+<div id="topRow2" style="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:200;display:flex;gap:6px;align-items:center;white-space:nowrap;">
   <button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
   <button id="homeBtn" type="button" style="background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;font-size:11px;font-weight:bold;padding:5px 10px;cursor:pointer;backdrop-filter:blur(6px);">↩ Reset</button>
   <button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
@@ -288,20 +287,29 @@ window.soundChoice = function(enabled){
     gain.gain.setValueAtTime(0.3,ac.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.15);
     osc.start(ac.currentTime); osc.stop(ac.currentTime+0.15);
-    // Start loading the WAV beep buffer in the background
-    _loadBeepBuffer();
   }catch(e){}
+
+  // Play launch countdown MP3 IMMEDIATELY inside this user gesture
+  if(enabled){
+    try{
+      var cdUrl='https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/Rocket%20Launch%20Countdown(1).mp3';
+      var cdAudio=new Audio(cdUrl);
+      cdAudio.volume=0.7;
+      window._introAudio=cdAudio;
+      cdAudio.play().catch(function(){
+        // If play fails (not buffered yet), set flag so it plays when ready
+        cdAudio.addEventListener('canplaythrough',function(){
+          cdAudio.play().catch(function(){});
+        },{once:true});
+      });
+    }catch(e){}
+  }
+
   var sd = document.getElementById('soundDialog');
   if(sd){ sd.style.transition='opacity 0.3s'; sd.style.opacity='0'; setTimeout(function(){sd.style.display='none';},300); }
   setTimeout(function(){
     var ss = document.getElementById('startScreen');
     if(ss){ ss.style.display='flex'; }
-    if(enabled){
-      window._playIntroWhenReady = true;
-      if(typeof _introAudio !== 'undefined' && _introAudio){
-        _introAudio.play().catch(function(){});
-      }
-    }
   }, 350);
 };
 // Stub - overridden by main script when loaded
@@ -2318,20 +2326,20 @@ function _playOneVideo(src, onDone){
   var lv=document.getElementById('videoEl');
   if(!ov||!lv){ onDone(); return; }
 
-  // Show overlay (stays open for whole sequence)
-  ov.style.display='flex';
+  var _done=false;
+  function finish(){ if(_done)return; _done=true; setTimeout(onDone,50); }
 
-  // Fade out video, swap src, fade in
-  lv.style.transition='opacity 0.35s';
+  // Fade OUT current video (or if overlay was hidden, just show it)
+  lv.style.transition='opacity 0.3s';
   lv.style.opacity='0';
-  setTimeout(function(){
+
+  function _loadAndPlay(){
     lv.src=src; lv.volume=0.85;
     lv.load();
-    var _done=false;
-    function finish(){ if(_done)return; _done=true; setTimeout(onDone,50); }
     lv.addEventListener('canplay',function onCP(){
       lv.removeEventListener('canplay',onCP);
       lv.play().catch(finish);
+      // Fade IN new video
       lv.style.opacity='1';
     });
     lv.onerror=finish;
@@ -2339,7 +2347,21 @@ function _playOneVideo(src, onDone){
     var skipBtn=document.getElementById('videoSkip');
     if(skipBtn) skipBtn.onclick=function(){ finish(); };
     setTimeout(function(){ if(!_done) finish(); },30000);
-  },350);
+  }
+
+  if(ov.style.display==='flex'){
+    // Already open — just swap src after fade out
+    setTimeout(_loadAndPlay, 320);
+  } else {
+    // Open overlay with fade in
+    ov.style.display='flex';
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        ov.style.opacity='1';
+      });
+    });
+    setTimeout(_loadAndPlay, 50);
+  }
 }
 
 // Build and play the full cinematic sequence for a focus/adventure step
@@ -2382,13 +2404,16 @@ function _playCinematicSequence(entityVideo, onDone){
     window._cinematicPlaying = true;
     _playVideoSequence(queue, function(){
       window._cinematicPlaying = false;
-      // Close overlay after full sequence
+      // Fade OUT overlay 0.3s then hide
       var ov=document.getElementById('videoOverlay');
       var lv=document.getElementById('videoEl');
       if(lv){ lv.pause(); lv.src=''; }
-      if(ov){ ov.style.transition='opacity 0.4s'; ov.style.opacity='0';
-        setTimeout(function(){ ov.style.display='none'; ov.style.opacity='1'; },400); }
-      setTimeout(onDone, 450);
+      if(ov){
+        ov.style.transition='opacity 0.3s';
+        ov.style.opacity='0';
+        setTimeout(function(){ ov.style.display='none'; ov.style.opacity='0'; },320);
+      }
+      setTimeout(onDone, 380);
     });
   });
 }
@@ -3244,29 +3269,8 @@ engine.runRenderLoop(()=>{
 
 window.addEventListener('resize',()=>engine.resize());
 
-// Play countdown on page load (before start button)
+// Launch countdown audio — created on-demand inside soundChoice (user gesture)
 var _introAudio = null;
-(function(){
-  // Try mp3 files in order, use the first that loads
-  var _cdFiles = ['Rocket%20Launch%20Countdown(1).mp3','countdown.mp3','launch.mp3'];
-  function _tryNextCd(idx){
-    if(idx>=_cdFiles.length) return;
-    var a = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/'+_cdFiles[idx]);
-    a.volume = 0.7;
-    a.loop = false;
-    a.onerror = function(){ _tryNextCd(idx+1); };
-    a.oncanplaythrough = function(){
-      if(!_introAudio){
-        _introAudio = a;
-        if(window._playIntroWhenReady) a.play().catch(function(){});
-      }
-    };
-    a.load();
-    // Set as candidate immediately so soundChoice can call play()
-    if(!_introAudio) _introAudio = a;
-  }
-  _tryNextCd(0);
-})();
 
 function _stopIntroMusic(){
   if(_introAudio){
@@ -3710,20 +3714,24 @@ function _loadBeepBuffer(){
 }
 
 function playBeep(){
-  // Try Web Audio (zero latency)
-  if(_beepCtx && _beepBuffer){
+  // Always try oscillator first — zero latency, no file load needed
+  var ctx = _beepCtx || window._earlyAC;
+  if(ctx){
     try{
-      var src = _beepCtx.createBufferSource();
-      var gain = _beepCtx.createGain();
-      gain.gain.value = 0.5;
-      src.buffer = _beepBuffer;
-      src.connect(gain);
-      gain.connect(_beepCtx.destination);
-      src.start(0);
+      // Resume if suspended (iOS)
+      if(ctx.state==='suspended') ctx.resume();
+      var src2 = ctx.createOscillator();
+      var gain2 = ctx.createGain();
+      src2.type = 'sine';
+      src2.frequency.value = 820;
+      gain2.gain.setValueAtTime(0.28, ctx.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.14);
+      src2.connect(gain2); gain2.connect(ctx.destination);
+      src2.start(ctx.currentTime); src2.stop(ctx.currentTime+0.14);
       return;
     }catch(e){}
   }
-  // Fallback: HTML Audio
+  // Last resort: WAV via HTML Audio
   try{
     var a = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/SPACE_BEEP/space_beep.wav');
     a.volume=0.5; a.play().catch(function(){});
@@ -3852,7 +3860,7 @@ window.skipLaunch = function(){
 </script>
 
 <!-- VIDEO OVERLAY -->
-<div id="videoOverlay" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.92);flex-direction:column;align-items:center;justify-content:center;">
+<div id="videoOverlay" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.92);flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s;">
   <!-- Fixed gold card - portrait/vertical -->
   <div style="
     position:relative;
@@ -3865,7 +3873,7 @@ window.skipLaunch = function(){
     flex-shrink:0;
   ">
     <div style="border-radius:13px;overflow:hidden;background:#000;width:100%;height:100%;position:relative;">
-      <video id="videoEl" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:1;transition:opacity 0.4s;" playsinline preload="auto"></video>
+      <video id="videoEl" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:1;transition:opacity 0.3s;" playsinline preload="auto"></video>
     </div>
     <div style="position:absolute;top:4px;left:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
     <div style="position:absolute;top:4px;right:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
@@ -3896,22 +3904,13 @@ function playEntityVideo(d){
 function closeVideo(){
   var ov=document.getElementById('videoOverlay');
   var vid=document.getElementById('videoEl');
-  // Fade out audio + image over 0.3s
-  var start=null;
-  function fadeStep(ts){
-    if(!start) start=ts;
-    var p=Math.min(1,(ts-start)/300);
-    vid.volume=1-p;
-    ov.style.opacity=''+(1-p);
-    if(p<1){requestAnimationFrame(fadeStep);}
-    else{
-      vid.pause(); vid.src='';
-      ov.style.display='none';
-      ov.style.opacity='1';
-      vid.volume=1;
-    }
-  }
-  requestAnimationFrame(fadeStep);
+  ov.style.transition='opacity 0.3s';
+  ov.style.opacity='0';
+  setTimeout(function(){
+    vid.pause(); vid.src='';
+    ov.style.display='none';
+    vid.volume=1;
+  }, 320);
 }
 </script>
 
