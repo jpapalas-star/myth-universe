@@ -67,7 +67,7 @@ html,body{
   position:fixed;
   left:10px;
   right:10px;
-  top:96px;
+  top:104px;
   z-index:40;
   color:#fff;
   background:rgba(0,0,0,.62);
@@ -268,6 +268,12 @@ html,body{
 var _soundEnabled = true;
 window.soundChoice = function(enabled){
   _soundEnabled = enabled;
+  // Init AudioContext immediately inside user gesture for instant beep
+  try{
+    var ac=new(window.AudioContext||window.webkitAudioContext)();
+    ac.resume();
+    window._earlyAC=ac;
+  }catch(e){}
   var sd = document.getElementById('soundDialog');
   if(sd){ sd.style.transition='opacity 0.3s'; sd.style.opacity='0'; setTimeout(function(){sd.style.display='none';},300); }
   setTimeout(function(){
@@ -779,7 +785,27 @@ function _doTap(pickedId) {
     if (focusedId) {
       resetFocus(false);
     } else {
+      // Tap on empty space - smooth return to default overview
       resetInfo();
+      var frames=0, maxF=35;
+      var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
+      var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
+      function ease(t){return t<0.5?2*t*t:1-2*(1-t)*(1-t);}
+      function lerp(a,b,t){return a+(b-a)*t;}
+      _animToken++; var tok=_animToken;
+      function step(){
+        if(_animToken!==tok) return;
+        frames++;
+        var p=ease(Math.min(frames/maxF,1));
+        camera.alpha    = lerp(sA, -Math.PI/2, p);
+        camera.beta     = lerp(sB, Math.PI/3.1, p);
+        camera.radius   = lerp(sR, 760, p);
+        camera.target.x = lerp(sTx, 0, p);
+        camera.target.y = lerp(sTy, 0, p);
+        camera.target.z = lerp(sTz, 0, p);
+        if(frames<maxF) setTimeout(step,16);
+      }
+      step();
     }
   }
 }
@@ -3182,7 +3208,7 @@ window.addEventListener('resize',()=>engine.resize());
 var _introAudio = null;
 (function(){
   try{
-    _introAudio = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/Rocket Launch Countdown(1).mp3');
+    _introAudio = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/Rocket%20Launch%20Countdown(1).mp3');
     _introAudio.volume = 0.7;
     _introAudio.loop = false;
     // If sound choice already made, play now
