@@ -307,15 +307,20 @@ window.soundChoice = function(enabled){
     }
   }
 
-  // ── 4. Launch MP3 — inside gesture so autoplay is allowed ────────
+  // ── 4. Launch MP3 — play preloaded audio inside gesture ──────────
   if(enabled){
     try{
-      var la=new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/590318main_ringtone_135_launch.mp3');
-      la.volume=0.75; la.loop=false;
-      window._introAudio=la;
-      la.play().catch(function(){
-        la.addEventListener('canplaythrough',function(){ la.play().catch(function(){}); },{once:true});
-      });
+      var la = window._introAudio;
+      if(la){
+        la.currentTime = 0;
+        la.volume = 0.75;
+        la.play().catch(function(){
+          // If browser blocked, retry on canplaythrough
+          la.addEventListener('canplaythrough', function(){
+            la.play().catch(function(){});
+          }, {once:true});
+        });
+      }
     }catch(e){}
   }
 
@@ -370,7 +375,7 @@ window.skipLaunch = function(){
 </div>
 
 <!-- Launch video overlay -->
-<div id="launchOverlay" style="position:fixed;inset:0;z-index:99999;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
+<div id="launchOverlay" style="position:fixed;inset:0;z-index:100002;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
   <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline muted></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
@@ -2287,11 +2292,6 @@ function _fetchCinematic(cb){
   fetch('https://myth-tts-api.vercel.app/api/videos')
     .then(function(r){ return r.json(); })
     .then(function(data){
-      // Debug: show what API returns
-      showToast('🎬 Videos API: L='+(data.landing?JSON.stringify(Object.keys(data.landing)):'?')+' S='+(data.searching?JSON.stringify(Object.keys(data.searching)):'?'));
-      console.log('Videos API response:', JSON.stringify(data));
-
-      // API may use numeric keys 1/2/3 or string keys — handle both
       function getTheme(obj, t){
         if(!obj) return [];
         return obj[t] || obj[String(t)] || [];
@@ -2303,9 +2303,10 @@ function _fetchCinematic(cb){
         finding:   { 1: getTheme(data.finding,1)||[], 2: getTheme(data.finding,2)||[], 3: getTheme(data.finding,3)||[] }
       };
       _cinematicCache = cache;
-      // Log counts
+      // Aggressively preload first video of each theme immediately
       [1,2,3].forEach(function(t){
-        console.log('Theme '+t+': L='+cache.landing[t].length+' S='+cache.searching[t].length+' F='+cache.finding[t].length);
+        if(cache.landing[t] && cache.landing[t][0]) _preloadVideo(cache.landing[t][0]);
+        if(cache.searching[t] && cache.searching[t][0]) _preloadVideo(cache.searching[t][0]);
       });
       cb(cache);
     })
@@ -2386,17 +2387,7 @@ function _preloadVideo(src){
   }catch(e){}
 }
 
-// Smooth volume ramp
-function _rampVol(lv, from, to, ms, cb){
-  var steps=16, s=0;
-  try{ lv.volume=Math.max(0,Math.min(1,from)); }catch(e){}
-  var iv=setInterval(function(){
-    s++; var p=s/steps;
-    try{ lv.volume=Math.max(0,Math.min(1,from+(to-from)*p)); }catch(e){}
-    if(s>=steps){ clearInterval(iv); if(cb) cb(); }
-  }, ms/steps);
-  return iv;
-}
+
 
 // Play a list of videos in sequence using ping-pong buffering + Web Audio GainNodes
 function _playVideoSequence(srcs, onDone){
@@ -2455,9 +2446,11 @@ function _playVideoSequence(srcs, onDone){
 
     function _advance(){
       if(_advanced) return; _advanced=true;
+      // Fade out overlay opacity too for visible transition
+      curEl.style.transition='opacity 0.5s';
       curEl.style.opacity='0';
       if(!_fading) curEl.volume=0;
-      playAt(i+1);
+      setTimeout(function(){ curEl.style.transition=''; playAt(i+1); }, 500);
     }
 
     function _onReady(){
@@ -2465,31 +2458,42 @@ function _playVideoSequence(srcs, onDone){
       curEl.removeEventListener('canplay',_onReady);
       curEl.removeEventListener('loadeddata',_onReady);
       clearTimeout(_stall);
+      clearTimeout(_stall2);
       curEl.play().catch(function(){ _advance(); });
-      _fadeGain(cur, 0, 0.85, 200); // smooth fade in via GainNode
+      _fadeGain(cur, 0, 0.85, 300); // fade in audio
+      curEl.style.transition='opacity 0.4s';
+      curEl.style.opacity='1'; // fade in visually
     }
 
     curEl.addEventListener('canplay', _onReady);
     curEl.addEventListener('loadeddata', _onReady);
-    curEl.onerror=function(){ clearTimeout(_stall); _advance(); };
+    curEl.onerror=function(){ clearTimeout(_stall); clearTimeout(_stall2); _advance(); };
 
-    // Fade out 0.5s before end (clean exit, no click)
+    // Fade out 2s before end — long, visible fade
     curEl.addEventListener('timeupdate', function onTU(){
       if(_fading||_advanced) return;
-      // Start fade 1.2s before end — gives enough time to reach 0 smoothly
-      if(curEl.duration && curEl.currentTime>=curEl.duration-1.2){
+      if(curEl.duration && curEl.currentTime>=curEl.duration-2.0){
         _fading=true;
         curEl.removeEventListener('timeupdate',onTU);
-        _fadeGain(cur, curEl.volume||0.85, 0, 1100, _advance);
+        // Fade audio AND video opacity together
+        _fadeGain(cur, curEl.volume||0.85, 0, 1800, _advance);
+        curEl.style.transition='opacity 1.8s';
+        curEl.style.opacity='0';
       }
     });
     curEl.onended=function(){
-      // Safety: if timeupdate missed, cut volume then advance
-      curEl.volume=0;
+      curEl.volume=0; curEl.style.opacity='0';
       if(!_advanced) _advance();
     };
 
-    var _stall=setTimeout(function(){ if(!_started) _onReady(); }, 8000);
+    // Stall guard: 4s then skip (reduce from 8s)
+    var _stall=setTimeout(function(){ if(!_started) _onReady(); }, 4000);
+    // Secondary: if loadstart doesn't fire in 2s, try forcing load
+    var _stall2=setTimeout(function(){
+      if(!_started){
+        try{ curEl.load(); }catch(e){}
+      }
+    }, 2000);
   }
 
   function _seqDone(){
@@ -3504,8 +3508,18 @@ engine.runRenderLoop(()=>{
 
 window.addEventListener('resize',()=>engine.resize());
 
-// Launch countdown audio — created on-demand inside soundChoice (user gesture)
+// Launch countdown audio — preloaded on page load for instant play
 var _introAudio = null;
+(function(){
+  try{
+    var la = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/590318main_ringtone_135_launch.mp3');
+    la.volume = 0.75;
+    la.loop = false;
+    la.preload = 'auto';
+    la.load(); // start downloading immediately
+    window._introAudio = la;
+  }catch(e){}
+})();
 
 function _stopIntroMusic(){
   if(_introAudio){
@@ -4026,42 +4040,33 @@ window.startMythJourney = function(){
   // Show black screen IMMEDIATELY — covers the universe while video loads
   var lo = document.getElementById('launchOverlay');
   var lv = document.getElementById('launchVideo');
-  if(lo){
-    lo.style.display='flex';
-    lo.style.opacity='1';
-    lo.style.background='#000';
-  }
 
-  // Add loading indicator right away
-  var ldg = document.getElementById('launchLoading');
-  if(!ldg && lo){
-    ldg = document.createElement('div');
+  // Show black screen IMMEDIATELY — z-index 100002 covers everything
+  if(lo){ lo.style.display='flex'; lo.style.opacity='1'; lo.style.background='#000'; }
+
+  // Hide start screen instantly — no fade, launchOverlay already covers it
+  var ss = document.getElementById('startScreen');
+  if(ss){ ss.style.display='none'; }
+
+  // Add loading indicator
+  if(lo && !document.getElementById('launchLoading')){
+    var ldg = document.createElement('div');
     ldg.id='launchLoading';
-    ldg.style.cssText=[
-      'position:fixed','bottom:50%','left:50%',
-      'transform:translate(-50%,50%)',
-      'color:rgba(255,220,60,0.85)',
-      'font-family:Arial,sans-serif',
-      'font-size:16px',
-      'letter-spacing:3px',
-      'z-index:100001',
-      'text-align:center',
-      'pointer-events:none'
-    ].join(';');
-    ldg.innerHTML='<div style="font-size:28px;font-weight:bold;margin-bottom:16px;text-shadow:0 0 20px rgba(255,200,60,0.6);">MYTH UNIVERSE</div><div id="_ldgDots" style="display:flex;gap:8px;justify-content:center;"><span class="_ld" style="width:8px;height:8px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;"></span><span class="_ld" style="width:8px;height:8px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;"></span><span class="_ld" style="width:8px;height:8px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;"></span></div>';
+    ldg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,220,60,0.9);font-family:Arial,sans-serif;text-align:center;z-index:100003;pointer-events:none;';
+    ldg.innerHTML='<div style="font-size:26px;font-weight:bold;letter-spacing:3px;margin-bottom:18px;text-shadow:0 0 20px rgba(255,200,60,0.6);">MYTH UNIVERSE</div>'
+      +'<div style="display:flex;gap:8px;justify-content:center;">'
+      +'<span class="_ld" style="width:9px;height:9px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;transition:opacity 0.15s;"></span>'
+      +'<span class="_ld" style="width:9px;height:9px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;transition:opacity 0.15s;"></span>'
+      +'<span class="_ld" style="width:9px;height:9px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;transition:opacity 0.15s;"></span>'
+      +'</div>';
     lo.appendChild(ldg);
-    // Animate dots
     var _ldCur=0, _ldDots=ldg.querySelectorAll('._ld');
     var _ldIv=setInterval(function(){
-      _ldDots.forEach(function(d,i){ d.style.opacity=i===_ldCur?'1':'0.15'; d.style.transition='opacity 0.15s'; });
+      _ldDots.forEach(function(d,i){ d.style.opacity=i===_ldCur?'1':'0.15'; });
       _ldCur=(_ldCur+1)%3;
     },500);
     ldg._ldIv=_ldIv;
   }
-
-  // Fade out start screen
-  var ss = document.getElementById('startScreen');
-  if(ss){ ss.style.transition='opacity 0.2s'; ss.style.opacity='0'; setTimeout(function(){ss.style.display='none';},200); }
 
   if(!lv||!lo){ return; }
 
