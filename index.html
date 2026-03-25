@@ -2187,42 +2187,37 @@ var _focusFromDrive = false; // was in drive mode when focus started
 // Theme folders: 1=Scifi, 2=ExistingCiv, 3=Jungle
 var _cinematicCache = null; // {landing:{1:[],2:[],3:[]}, searching:{...}, finding:{...}}
 
+// R2 base URL
+var _R2_BASE = 'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev';
+
+// Cinematic video lists - static since R2 has no directory listing API
+// Populated dynamically from _fetchCinematic
 var _CINEMATIC_PATHS = {
-  landing:   ['Assets/Videos/Landing_Videos/1Scifi_ruins/',
-              'Assets/Videos/Landing_Videos/2Existing_Civ/',
-              'Assets/Videos/Landing_Videos/3Jungle/'],
-  searching: ['Assets/Videos/Searching_videos/1Scifi_videos_Searching/',
-              'Assets/Videos/Searching_videos/2Existing_Civ_SearchingVids/',
-              'Assets/Videos/Searching_videos/3Jungle_Searching_Videos/'],
-  finding:   ['Assets/Videos/Finding_Videos/1Scifi_Finding_Videos/',
-              'Assets/Videos/Finding_Videos/2Existing_Civ_Finding/',
-              'Assets/Videos/Finding_Videos/3Jungle_Finding_Videos/']
+  landing:   ['landing/1landRuins/', 'landing/2landExistingCiv/', 'landing/3landJungle/'],
+  searching: ['searching/1SearchingRuins/', 'searching/2SearchingExistingCiv/', 'searching/3SearchingJungle/'],
+  finding:   []
 };
 
 function _fetchCinematic(cb){
   if(_cinematicCache){ cb(_cinematicCache); return; }
-  fetch('https://api.github.com/repos/jpapalas-star/myth-universe/git/trees/HEAD?recursive=1')
+  fetch('https://myth-tts-api.vercel.app/api/videos')
     .then(function(r){ return r.json(); })
     .then(function(data){
-      var all = data.tree||[];
-      var cache = {landing:{1:[],2:[],3:[]}, searching:{1:[],2:[],3:[]}, finding:{1:[],2:[],3:[]}};
-      all.forEach(function(x){
-        if(x.type!=='blob' || !/\.(mp4|webm|mov)$/i.test(x.path)) return;
-        var p = x.path;
-        ['landing','searching','finding'].forEach(function(type){
-          _CINEMATIC_PATHS[type].forEach(function(folder, idx){
-            if(p.indexOf(folder)===0) cache[type][idx+1].push('./'+p);
-          });
-        });
-      });
+      var cache = {
+        landing: { 1: data.landing[1]||[], 2: data.landing[2]||[], 3: data.landing[3]||[] },
+        searching: { 1: data.searching[1]||[], 2: data.searching[2]||[], 3: data.searching[3]||[] },
+        finding: { 1: [], 2: [], 3: [] }
+      };
       _cinematicCache = cache;
-      // Preload one video from each category immediately
       [1,2,3].forEach(function(t){
         var l=cache.landing[t]; if(l.length>0) _preloadVideo(l[0]);
       });
       cb(cache);
     })
-    .catch(function(){ _cinematicCache={landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}}; cb(_cinematicCache); });
+    .catch(function(){
+      _cinematicCache={landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}};
+      cb(_cinematicCache);
+    });
 }
 
 function _rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
@@ -3187,7 +3182,7 @@ window.addEventListener('resize',()=>engine.resize());
 var _introAudio = null;
 (function(){
   try{
-    _introAudio = new Audio('./Sounds/Launch_Sequence_Sound/Rocket Launch Countdown(1).mp3');
+    _introAudio = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/Rocket Launch Countdown(1).mp3');
     _introAudio.volume = 0.7;
     _introAudio.loop = false;
     // If sound choice already made, play now
@@ -3215,7 +3210,7 @@ var _warpStopTimeout = null; // single stop timeout — prevents stacking
 
 function _getWarpSnd(){
   if(!_warpSnd){
-    try{ _warpSnd=new Audio('./Sounds/Warp_whoosh/long_whosh_zoom_warp.mp3'); _warpSnd.loop=true; _warpSnd.volume=0; }
+    try{ _warpSnd=new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/Warp_Whoosh/long_whosh_zoom_warp.mp3'); _warpSnd.loop=true; _warpSnd.volume=0; }
     catch(e){ return null; }
   }
   return _warpSnd;
@@ -3485,9 +3480,9 @@ function _elSpeak(text, onDone){
 
 // ── AUDIO SYSTEM ─────────────────────────────────────────────────────
 var _musicTracks = [
-  './Assets/Sounds/Music/1.mp3',
-  './Assets/Sounds/Music/2.mp3',
-  './Assets/Sounds/Music/3.mp3'
+  'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/Music/1.mp3',
+  'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/Music/2.mp3',
+  'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/Music/3.mp3'
 ];
 var _spacecraftSounds = [
   './Assets/Sounds/Spacecraft/578629main_hawquindar.mp3',
@@ -3606,7 +3601,7 @@ function _initBeepCtx(){
 function _loadBeepBuffer(){
   if(_beepLoaded||!_beepCtx) return;
   _beepLoaded = true;
-  fetch('./Assets/Sounds/Beep_button/space_beep.wav')
+  fetch('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/SPACE_BEEP/space_beep.wav')
     .then(function(r){ return r.arrayBuffer(); })
     .then(function(ab){ return _beepCtx.decodeAudioData(ab); })
     .then(function(buf){ _beepBuffer=buf; })
@@ -3629,7 +3624,7 @@ function playBeep(){
   }
   // Fallback: HTML Audio
   try{
-    var a = new Audio('./Assets/Sounds/Beep_button/space_beep.wav');
+    var a = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/SPACE_BEEP/space_beep.wav');
     a.volume=0.5; a.play().catch(function(){});
   }catch(e){}
 }
