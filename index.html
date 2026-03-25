@@ -272,43 +272,46 @@ html,body{
 var _soundEnabled = true;
 window.soundChoice = function(enabled){
   _soundEnabled = enabled;
-  // Init AudioContext immediately inside user gesture for instant beep
+
+  // ── 1. Init AudioContext INSIDE user gesture ──────────────────────
   try{
-    var ac=new(window.AudioContext||window.webkitAudioContext)();
+    var ac = new(window.AudioContext||window.webkitAudioContext)();
     ac.resume();
-    window._earlyAC=ac;
-    // Share with the main beep system immediately (zero latency from here on)
-    _beepCtx=ac;
-    // Play beep immediately using oscillator (zero latency, no file needed)
-    var osc=ac.createOscillator();
-    var gain=ac.createGain();
-    osc.connect(gain); gain.connect(ac.destination);
-    osc.frequency.value=880;
-    gain.gain.setValueAtTime(0.3,ac.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.15);
-    osc.start(ac.currentTime); osc.stop(ac.currentTime+0.15);
+    window._earlyAC = ac;
+    _beepCtx = ac;
   }catch(e){}
 
-  // Play launch countdown MP3 IMMEDIATELY inside this user gesture
+  // ── 2. Beep via oscillator — zero latency ─────────────────────────
+  try{
+    var ctx2 = _beepCtx || window._earlyAC;
+    if(ctx2){
+      var osc=ctx2.createOscillator(), g=ctx2.createGain();
+      osc.type='sine'; osc.frequency.value=880;
+      g.gain.setValueAtTime(0.35, ctx2.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime+0.18);
+      osc.connect(g); g.connect(ctx2.destination);
+      osc.start(ctx2.currentTime); osc.stop(ctx2.currentTime+0.18);
+    }
+  }catch(e){}
+
+  // ── 3. Launch MP3 — play inside gesture so autoplay is allowed ────
   if(enabled){
     try{
-      var cdUrl='https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/Rocket%20Launch%20Countdown(1).mp3';
-      var cdAudio=new Audio(cdUrl);
-      cdAudio.volume=0.7;
-      window._introAudio=cdAudio;
-      cdAudio.play().catch(function(){
-        // If play fails (not buffered yet), set flag so it plays when ready
-        cdAudio.addEventListener('canplaythrough',function(){
-          cdAudio.play().catch(function(){});
-        },{once:true});
+      var launchUrl='https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/590318main_ringtone_135_launch.mp3';
+      var la=new Audio(launchUrl);
+      la.volume=0.75; la.loop=false;
+      window._introAudio=la;
+      la.play().catch(function(){
+        la.addEventListener('canplaythrough',function(){ la.play().catch(function(){}); },{once:true});
       });
     }catch(e){}
   }
 
-  var sd = document.getElementById('soundDialog');
+  // ── 4. Hide dialog, show start screen ────────────────────────────
+  var sd=document.getElementById('soundDialog');
   if(sd){ sd.style.transition='opacity 0.3s'; sd.style.opacity='0'; setTimeout(function(){sd.style.display='none';},300); }
   setTimeout(function(){
-    var ss = document.getElementById('startScreen');
+    var ss=document.getElementById('startScreen');
     if(ss){ ss.style.display='flex'; }
   }, 350);
 };
@@ -2447,6 +2450,9 @@ function enterFocus(id){
   }
 
   focusedId=id;
+  // Duck music + pause spacecraft sounds in focus mode
+  _setMusicVolume(_MUSIC_VOL_FOCUS);
+  _pauseSpacecraft();
   const relatives=getRelativesSet(id);
 
   Object.values(nodes).forEach(function(n){
@@ -2547,6 +2553,9 @@ function enterFocus(id){
 
 function resetFocus(fromPop){
   focusedId=null;
+  // Restore music volume + resume spacecraft sounds
+  _setMusicVolume(_MUSIC_VOL_NORMAL);
+  _resumeSpacecraft();
   if(typeof closeVideo==='function') closeVideo();
   // Stop ALL speech
   if(window.speechSynthesis) window.speechSynthesis.cancel();
@@ -3623,6 +3632,21 @@ function _shuffleArray(arr){
   return a;
 }
 
+var _MUSIC_VOL_NORMAL = 0.55;
+var _MUSIC_VOL_FOCUS  = 0.18; // quieter in focus mode
+
+function _setMusicVolume(vol){
+  try{ if(_musicAudio) _musicAudio.volume = vol; }catch(e){}
+}
+
+function _pauseSpacecraft(){
+  if(_spacecraftTimer){ clearTimeout(_spacecraftTimer); _spacecraftTimer=null; }
+}
+
+function _resumeSpacecraft(){
+  if(_musicOn && !focusedId) _scheduleSpacecraft();
+}
+
 function startMusic(){
   if(!_musicOn) return;
   _musicIndex = 0;
@@ -3756,8 +3780,7 @@ document.addEventListener('click', function(e){
 window.startMythJourney = function(){
   _initBeepCtx();
   _loadBeepBuffer();
-  playBeep(); // plays instantly (or near-instantly first time)
-
+  playBeep();
   _unlockMusic();
 
   var ss = document.getElementById('startScreen');
@@ -3767,18 +3790,14 @@ window.startMythJourney = function(){
   var lv = document.getElementById('launchVideo');
   if(!lv||!lo){ return; }
 
-  var _knownPath = './Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
-
-  // Intro audio already playing from soundChoice(true) - just let it continue
-  // It will stop when video starts playing (_stopIntroMusic called in 'playing' event)
-
+  // _introAudio keeps playing — don't touch it here
+  // It stops ONLY when the video fires 'playing' (i.e. actually started rendering frames)
 
   function _playLaunchVideo(src){
     lv.src = src;
     lv.muted = false; lv.volume = 0.8;
     lo.style.display='flex';
 
-    // Loading indicator stays until video actually starts playing
     var ldg = document.getElementById('launchLoading');
     if(!ldg){
       ldg = document.createElement('div');
@@ -3795,23 +3814,22 @@ window.startMythJourney = function(){
       lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
     }
 
-    // Remove loading only when video ACTUALLY starts playing
+    // Stop intro audio ONLY when video actually starts rendering
     lv.addEventListener('playing', function onPlaying(){
       lv.removeEventListener('playing', onPlaying);
       var l=document.getElementById('launchLoading'); if(l) l.remove();
-      _stopIntroMusic();
+      _stopIntroMusic(); // stop launch MP3 now
     });
 
     lv.addEventListener('canplay',function onCP(){ lv.removeEventListener('canplay',onCP); tryPlay(); });
     lv.addEventListener('loadeddata',function onLD(){ lv.removeEventListener('loadeddata',onLD); tryPlay(); });
-    lv.onerror=function(){ skipLaunch(); };
+    lv.onerror=function(){ _stopIntroMusic(); skipLaunch(); };
     lv.onended=function(){ skipLaunch(); };
     setTimeout(function(){ if(!_played) tryPlay(); },2000);
     setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); },40000);
   }
 
-  // Play immediately with known path — no API delay
-  _playLaunchVideo(_knownPath);
+  _playLaunchVideo('./Assets/Launch_Video/YouCut_20260323_1657186262.mp4');
 };
 
 window.skipLaunch = function(){
