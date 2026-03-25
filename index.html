@@ -3517,51 +3517,59 @@ function _removeNeuralMode(){
 }
 
 // ── ELEVENLABS TTS via Netlify ───────────────────────────────────────
-var _elVoiceId = 'KDImLuG6RkuyuX5httC7'; // Iordanis - Greek Male
+var _elVoiceId = 'KDImLuG6RkuyuX5httC7'; // Takis - Greek Male
 var _netlifyTTSUrl = 'https://myth-tts-api.vercel.app/api/tts';
 var _elAudio = null;
-var _elFailed = false; // set to true on 401/422 so we skip EL and go straight to fallback
+var _elFailed = false;      // true ONLY on 401/403 (wrong API key) — permanent
+var _elFailCount = 0;       // consecutive failures — reset on success
 
 function _elSpeak(text, onDone){
   stopSpeak();
   if(_elAudio){ try{_elAudio.pause();}catch(e){} _elAudio=null; }
   if(!text||text==='-'){ if(onDone) setTimeout(onDone,200); return; }
 
-  // If ElevenLabs previously returned auth error, skip straight to fallback
+  // Only skip if API key is confirmed bad (401/403)
   if(_elFailed){ _rvSpeak(text, onDone); return; }
 
   var maxLen=800;
   if(text.length>maxLen) text=text.substring(0,maxLen)+'...';
 
-  // Timeout so slow EL doesn't block TTS indefinitely
+  // 20s timeout — EL can be slow on cold start
   var _elAbort = new AbortController();
-  var _elTimeout = setTimeout(function(){ _elAbort.abort(); }, 8000);
+  var _elTimeout = setTimeout(function(){ _elAbort.abort(); }, 20000);
 
   fetch(_netlifyTTSUrl,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     signal: _elAbort.signal,
     body:JSON.stringify({
-      text:text,
-      voice_id: _elVoiceId   // always send — null causes 400
+      text: text,
+      voice_id: _elVoiceId
     })
   })
   .then(function(r){
     clearTimeout(_elTimeout);
     if(!r.ok){
-      // 400/401/403/422 = permanent failure — skip EL from now on
-      if(r.status===400||r.status===401||r.status===403||r.status===422){
+      // Only 401/403 = bad API key → disable EL permanently this session
+      if(r.status===401||r.status===403){
         _elFailed=true;
-        showToast('⚠️ ElevenLabs error ('+r.status+') → fallback');
+        showToast('⚠️ ElevenLabs API key error → RV');
       } else {
-        showToast('⚠️ EL HTTP '+r.status+' → fallback');
+        _elFailCount++;
+        showToast('⚠️ EL '+r.status+' → RV fallback');
       }
       _rvSpeak(text,onDone); return Promise.reject('http');
     }
     return r.json();
   })
   .then(function(data){
-    if(!data||!data.audio){ showToast('⚠️ EL no audio → fallback'); _rvSpeak(text,onDone); return; }
+    if(!data||!data.audio){
+      _elFailCount++;
+      showToast('⚠️ EL no audio → RV fallback');
+      _rvSpeak(text,onDone); return;
+    }
+    // Success — reset fail counter
+    _elFailCount=0;
     var audioSrc='data:'+data.contentType+';base64,'+data.audio;
     _elAudio=new Audio(audioSrc);
     _elAudio.volume=0.9;
@@ -3573,11 +3581,11 @@ function _elSpeak(text, onDone){
   .catch(function(err){
     clearTimeout(_elTimeout);
     if(err==='http') return;
-    // AbortError = timeout (8s exceeded)
+    _elFailCount++;
     if(err && err.name==='AbortError'){
-      showToast('⚠️ EL timeout → fallback');
+      showToast('⚠️ EL timeout (20s) → RV fallback');
     } else {
-      showToast('⚠️ EL error → fallback');
+      showToast('⚠️ EL error → RV fallback');
     }
     _rvSpeak(text, onDone);
   });
