@@ -2301,23 +2301,63 @@ function _preloadVideo(src){
   if(!src || _preloadPool[src]) return;
   try{
     var v = document.createElement('video');
-    v.preload = 'auto'; v.muted = true; v.src = src; v.load();
-    _preloadPool[src] = v;
-    setTimeout(function(){ v.src=''; delete _preloadPool[src]; }, 60000);
+    v.preload='auto'; v.muted=true; v.src=src; v.load();
+    _preloadPool[src]=v;
+    setTimeout(function(){ v.src=''; delete _preloadPool[src]; },60000);
   }catch(e){}
 }
 
-// Smooth volume ramp — avoids click by never jumping
-function _rampVol(lv, from, to, ms, cb){
-  var steps=16, step=0;
-  try{ lv.volume=Math.max(0,Math.min(1,from)); }catch(e){}
-  var iv=setInterval(function(){
-    step++;
-    var p=step/steps;
-    try{ lv.volume=Math.max(0,Math.min(1, from+(to-from)*p)); }catch(e){}
-    if(step>=steps){ clearInterval(iv); if(cb) cb(); }
-  }, ms/steps);
-  return iv;
+// ── VIDEO AUDIO via GainNode on shared _beepCtx ────────────────────
+// Reuses the AudioContext already unlocked in soundChoice() — no new ctx needed
+var _vidGain = null;
+var _vidSrcNode = null;
+var _vidConnected = false;
+
+function _ensureVidGain(){
+  var ac = _beepCtx || window._earlyAC;
+  if(!ac) return false;
+  if(_vidGain) return true;
+  try{
+    if(ac.state==='suspended') ac.resume();
+    _vidGain = ac.createGain();
+    _vidGain.gain.value = 0;
+    _vidGain.connect(ac.destination);
+    return true;
+  }catch(e){ return false; }
+}
+
+function _connectVidEl(lv){
+  if(_vidConnected) return true;
+  if(!_ensureVidGain()) return false;
+  var ac = _beepCtx || window._earlyAC;
+  try{
+    _vidSrcNode = ac.createMediaElementSource(lv);
+    _vidSrcNode.connect(_vidGain);
+    _vidConnected = true;
+    // HTML volume must be 1 — gain node controls level
+    lv.volume = 1;
+    return true;
+  }catch(e){ return false; }
+}
+
+function _vidFadeIn(ms){
+  if(!_vidGain){ return; }
+  var ac = _beepCtx || window._earlyAC; if(!ac) return;
+  if(ac.state==='suspended') ac.resume();
+  _vidGain.gain.cancelScheduledValues(ac.currentTime);
+  _vidGain.gain.setValueAtTime(0, ac.currentTime);
+  _vidGain.gain.linearRampToValueAtTime(0.9, ac.currentTime + ms/1000);
+}
+
+function _vidFadeOut(ms, cb){
+  if(!_vidGain){ if(cb) setTimeout(cb,ms); return; }
+  var ac = _beepCtx || window._earlyAC;
+  if(!ac){ if(cb) setTimeout(cb,ms); return; }
+  var cur = _vidGain.gain.value;
+  _vidGain.gain.cancelScheduledValues(ac.currentTime);
+  _vidGain.gain.setValueAtTime(cur, ac.currentTime);
+  _vidGain.gain.linearRampToValueAtTime(0, ac.currentTime + ms/1000);
+  setTimeout(cb||function(){}, ms+20);
 }
 
 // Play a list of videos in sequence
@@ -2336,57 +2376,67 @@ function _playVideoSequence(srcs, onDone){
 }
 
 function _playOneVideo(src, onDone){
-  var ov = document.getElementById('videoOverlay');
-  var lv = document.getElementById('videoEl');
+  var ov=document.getElementById('videoOverlay');
+  var lv=document.getElementById('videoEl');
   if(!ov||!lv){ onDone(); return; }
 
   var _done=false;
   function finish(){ if(_done)return; _done=true; setTimeout(onDone,50); }
 
   function _doLoad(){
-    lv.src=src;
-    lv.volume=0; // start silent, ramp up
+    // Connect to gain node (once only) — resume ctx if needed
+    var acOk = _connectVidEl(lv);
+    var ac = _beepCtx || window._earlyAC;
+    if(ac && ac.state==='suspended') ac.resume();
+
+    // If Web Audio not available, fall back to HTML volume
+    if(!acOk) lv.volume = 0;
+
+    lv.src = src;
     lv.load();
 
-    // Stall guard
-    var _stall=setTimeout(function(){ if(!_done){ lv.play().catch(finish); _rampVol(lv,0,0.85,200); lv.style.opacity='1'; } },8000);
+    var _stall=setTimeout(function(){
+      if(!_done){
+        lv.play().catch(finish);
+        lv.style.opacity='1';
+        if(acOk) _vidFadeIn(200); else lv.volume=0.85;
+      }
+    }, 8000);
 
     lv.addEventListener('canplay', function onCP(){
       lv.removeEventListener('canplay',onCP);
       clearTimeout(_stall);
       lv.play().catch(finish);
       lv.style.opacity='1';
-      _rampVol(lv, 0, 0.85, 180); // fade in
+      if(acOk) _vidFadeIn(220);
+      else{ var vi=0; var iv=setInterval(function(){ lv.volume=Math.min(0.85,lv.volume+0.06); if(++vi>=15) clearInterval(iv); },15); }
     });
 
     lv.onerror=function(){ clearTimeout(_stall); finish(); };
 
     lv.onended=function(){
       clearTimeout(_stall);
-      _rampVol(lv, lv.volume, 0, 180, finish); // fade out then next
+      if(acOk) _vidFadeOut(200, finish);
+      else finish();
     };
 
     var skipBtn=document.getElementById('videoSkip');
     if(skipBtn) skipBtn.onclick=function(){
-      _rampVol(lv, lv.volume, 0, 150, function(){ lv.pause(); finish(); });
+      if(acOk) _vidFadeOut(150, function(){ lv.pause(); finish(); });
+      else { lv.pause(); finish(); }
     };
 
-    setTimeout(function(){ if(!_done) finish(); }, 30000);
+    setTimeout(function(){ if(!_done) finish(); },30000);
   }
 
   if(ov.style.display==='flex'){
-    // Fade out current audio, then swap
-    _rampVol(lv, lv.volume, 0, 180, function(){
-      lv.pause();
-      lv.style.opacity='0';
-      setTimeout(_doLoad, 60);
-    });
+    // Already playing — fade out then swap
+    if(_vidConnected) _vidFadeOut(200, function(){ lv.pause(); lv.style.opacity='0'; setTimeout(_doLoad,50); });
+    else { lv.pause(); lv.style.opacity='0'; setTimeout(_doLoad,50); }
   } else {
     ov.style.display='flex';
     ov.style.opacity='0';
-    requestAnimationFrame(function(){
-      requestAnimationFrame(function(){ ov.style.opacity='1'; });
-    });
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ ov.style.opacity='1'; }); });
     _doLoad();
   }
 }
@@ -3970,11 +4020,11 @@ function playEntityVideo(d){
 function closeVideo(){
   var ov=document.getElementById('videoOverlay');
   var vid=document.getElementById('videoEl');
-  _rampVol(vid, vid.volume||0.85, 0, 220, function(){
+  _vidFadeOut(220, function(){
     vid.pause(); vid.src='';
     ov.style.transition='opacity 0.25s';
     ov.style.opacity='0';
-    setTimeout(function(){ ov.style.display='none'; }, 280);
+    setTimeout(function(){ ov.style.display='none'; },280);
   });
 }
 </script>
