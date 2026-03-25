@@ -105,8 +105,8 @@
     "sprite": "monster",
     "ring": false,
     "glow": 0.35,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00146-ΑΛΕΚΤΩ_copy_256x320.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00146-ΑΛΕΚΤΩ_copy_256x320.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos1/00146-ΑΛΕΚΤΩ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos1/00146-ΑΛΕΚΤΩ_copy_256x320.png",
     "photos": []
   },
   {
@@ -244,8 +244,8 @@
     "ring": false,
     "glow": 0.35,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/spirit.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/spirit.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΛΗΘΗ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΛΗΘΗ.png"
   },
   {
     "id": "ERIS_LIMOS_001",
@@ -326,8 +326,8 @@
     "ring": false,
     "glow": 0.35,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΛΚΥΟΝΕΑΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΛΚΥΟΝΕΑΣ.png"
   },
   {
     "id": "GIANT_ENCELADUS_001",
@@ -352,8 +352,8 @@
     "ring": false,
     "glow": 0.35,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΕΓΚΕΛΑΔΟΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΕΓΚΕΛΑΔΟΣ.png"
   },
   {
     "id": "GIANT_POLYBOTES_001",
@@ -378,8 +378,8 @@
     "ring": false,
     "glow": 0.35,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΟΛΥΒΩΤΗΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΟΛΥΒΩΤΗΣ.png"
   },
   {
     "id": "GIANT_PORPHYRION_001",
@@ -404,8 +404,8 @@
     "ring": false,
     "glow": 0.35,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΟΡΦΥΡΙΩΝ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΟΡΦΥΡΙΩΝ.png"
   },
   {
     "id": "GOD_ASCLEPIUS_001",
@@ -1293,8 +1293,8 @@
     "ring": false,
     "glow": 0.4,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΝΤΙΓΟΝΗ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΝΤΙΓΟΝΗ.png"
   },
   {
     "id": "HERO_ATALANTA_001",
@@ -1376,8 +1376,8 @@
     "ring": false,
     "glow": 0.4,
     "video": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROVIDSSMALL/ΚΑΔΜΟΣ.mp4",
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΚΑΔΜΟΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΚΑΔΜΟΣ.png",
     "photos": []
   },
   {
@@ -1432,8 +1432,8 @@
     "ring": false,
     "glow": 0.4,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/Δηιάνειρα.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/Δηιάνειρα.png"
   },
   {
     "id": "HERO_DIOMEDES_001",
@@ -1486,8 +1486,8 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00027-ΕΚΤΩΡ_copy_256x320.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00055-ΕΚΤΩΡ_copy_256x320.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00153-ΕΚΤΩΡ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00055-ΕΚΤΩΡ_copy_256x320.png",
     "photos": []
   },
   {
@@ -1712,8 +1712,8 @@
     "ring": false,
     "glow": 0.4,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/hero_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/hero_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΝΕΣΤΟΡΑΣ.jpg",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΝΕΣΤΟΡΑΣ.jpg"
   },
   {
     "id": "HERO_ODYSSEUS_001",
@@ -1824,8 +1824,8 @@
     "ring": false,
     "glow": 0.4,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/hero_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/hero_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΑΡΙΣ.jpg",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΑΡΙΣ.jpg"
   },
   {
     "id": "HERO_PATROCLUS_001",
@@ -1910,10 +1910,10 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/ΠΕΡΣΕΑΣ_copy_512x512.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos4/ΠΕΡΣΕΑΣ_copy_512x512.png",
     "video": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROVIDSSMALL/ΠΕΡΣΕΑΣ.mp4",
     "photos": [],
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/ΠΕΡΣΕΑΣ_copy_512x512.png"
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos4/ΠΕΡΣΕΑΣ_copy_512x512.png"
   },
   {
     "id": "HERO_THESEUS_001",
@@ -2054,8 +2054,8 @@
     "ring": false,
     "glow": 0.4,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΡΙΑΜΟΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΡΙΑΜΟΣ.png"
   },
   {
     "id": "MOIRA_ATROPOS_001",
@@ -2080,8 +2080,8 @@
     "ring": false,
     "glow": 0.35,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΤΡΟΠΟΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΤΡΟΠΟΣ.png"
   },
   {
     "id": "MOIRA_CLOTHO_001",
@@ -2106,8 +2106,8 @@
     "ring": false,
     "glow": 0.35,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΚΛΩΘΩ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΚΛΩΘΩ.png"
   },
   {
     "id": "MOIRA_LACHESIS_001",
@@ -2132,8 +2132,8 @@
     "ring": false,
     "glow": 0.35,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΛΑΧΕΣΙΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΛΑΧΕΣΙΣ.png"
   },
   {
     "id": "MONSTER_CERBERUS_001",
@@ -2157,8 +2157,8 @@
     "sprite": "monster",
     "ring": false,
     "glow": 0.35,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00119-ΚΑΜΠΗ_copy_256x320.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00119-ΚΑΜΠΗ_copy_256x320.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΚΕΡΒΕΡΟΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΚΕΡΒΕΡΟΣ.png",
     "photos": []
   },
   {
@@ -2267,8 +2267,8 @@
     "sprite": "monster",
     "ring": false,
     "glow": 0.35,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00127-ΓΟΡΓΟΝΑ_copy_256x320.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00127-ΓΟΡΓΟΝΑ_copy_256x320.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00127-ΓΟΡΓΟΝΑ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00127-ΓΟΡΓΟΝΑ_copy_256x320.png",
     "photos": []
   },
   {
@@ -2433,8 +2433,8 @@
     "sprite": "monster",
     "ring": false,
     "glow": 0.35,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00073-ΣΦΙΓΞ_copy_256x320.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00073-ΣΦΙΓΞ_copy_256x320.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00073-ΣΦΙΓΞ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00073-ΣΦΙΓΞ_copy_256x320.png",
     "photos": []
   },
   {
@@ -2459,8 +2459,8 @@
     "sprite": "monster",
     "ring": false,
     "glow": 0.35,
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/monster_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/monster_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos1/00103-ΤΥΦΩΝ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos1/00103-ΤΥΦΩΝ_copy_256x320.png",
     "photos": []
   },
   {
@@ -2486,8 +2486,8 @@
     "ring": false,
     "glow": 0.4,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΡΙΑΔΝΗ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΡΙΑΔΝΗ.png"
   },
   {
     "id": "MORTAL_EUROPA_001",
@@ -3098,8 +3098,8 @@
     "sprite": "nymph",
     "ring": false,
     "glow": 0.7,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00138-ΥΑΔΑ_copy_256x320.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00138-ΥΑΔΑ_copy_256x320.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos2/00138-ΥΑΔΑ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos2/00138-ΥΑΔΑ_copy_256x320.png",
     "photos": []
   },
   {
@@ -3125,8 +3125,8 @@
     "ring": false,
     "glow": 0.7,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΜΑΙΑ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΜΑΙΑ.png"
   },
   {
     "id": "NYMPH_MEROPE_001",
@@ -3179,8 +3179,8 @@
     "ring": false,
     "glow": 0.7,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΝΗΡΗΙΔΕΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΝΗΡΗΙΔΕΣ.png"
   },
   {
     "id": "NYMPH_OCEANIDS_001",
@@ -3204,8 +3204,8 @@
     "sprite": "nymph",
     "ring": false,
     "glow": 0.7,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00139-ΩΚΕΑΝΙΔΑ_copy_256x320.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00139-ΩΚΕΑΝΙΔΑ_copy_256x320.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos2/00139-ΩΚΕΑΝΙΔΑ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos2/00139-ΩΚΕΑΝΙΔΑ_copy_256x320.png",
     "photos": []
   },
   {
@@ -3231,8 +3231,8 @@
     "ring": false,
     "glow": 0.7,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΛΕΙΑΔΕΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΛΕΙΑΔΕΣ.png"
   },
   {
     "id": "NYMPH_PLEIONE_001",
@@ -3425,8 +3425,8 @@
     "ring": false,
     "glow": 0.35,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/spirit.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/spirit.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΓΗΡΑΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΓΗΡΑΣ.png"
   },
   {
     "id": "NYX_HYPNOS_001",
@@ -3507,8 +3507,8 @@
     "ring": false,
     "glow": 0.35,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/spirit.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/spirit.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΜΩΜΟΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΜΩΜΟΣ.png"
   },
   {
     "id": "NYX_MOROS_001",
@@ -3762,10 +3762,10 @@
     "sprite": "god",
     "ring": true,
     "glow": 0.85,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/ΑΠΟΛΛΩΝΑΣ_copy_512x512.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos4/ΑΠΟΛΛΩΝΑΣ_copy_512x512.png",
     "video": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/GODSVIDSMALL/ΑΠΟΛΛΩΝΑΣ.mp4",
     "photos": [],
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/ΑΠΟΛΛΩΝΑΣ_copy_512x512.png"
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos4/ΑΠΟΛΛΩΝΑΣ_copy_512x512.png"
   },
   {
     "id": "OLYMP_ARES_001",
@@ -3963,8 +3963,8 @@
     "ring": true,
     "glow": 0.85,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΔΗΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΔΗΣ.png"
   },
   {
     "id": "OLYMP_HEBE_001",
@@ -3989,8 +3989,8 @@
     "ring": true,
     "glow": 0.85,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΗΒΗ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΗΒΗ.png"
   },
   {
     "id": "OLYMP_HEPHAESTUS_001",
@@ -4339,6 +4339,34 @@
     ]
   },
   {
+    "id": "PRIM_PHANES_001",
+    "Name": "Φάνης (Phanes)",
+    "Name_EN": "Phanes",
+    "Category": "Πρωτογενής (Ορφική)",
+    "Type": "person",
+    "Parents": "-",
+    "Partners": "-",
+    "Children": "PRIM_NYX_001",
+    "Summary": "energy",
+    "Gender": "male",
+    "ModelType": "energy",
+    "Shape": "light",
+    "Level": 1,
+    "Generation": 0,
+    "FullText": "Ο Φάνης είναι μια από τις πιο αινιγματικές και εκπληκτικές μορφές της Ορφικής μυθολογίας. Γεννήθηκε από ένα κοσμικό αυγό που δημιουργήθηκε στην αρχή του χρόνου, μέσα στο απέραντο σκοτάδι. Όταν το αυγό άνοιξε, ο Φάνης εξερράγη σαν φως — φωτεινός, χρυσός, τετράφτερος, ερμαφρόδιτος. Το όνομά του σημαίνει «αυτός που φέρνει το φως» ή «αυτός που εμφανίζεται».\n\nΟ Φάνης ήταν η πρώτη γέννηση, το πρώτον γεννηθέν, ο αρχέγονος θεός της γέννησης και της ζωής. Ταυτίζεται με τον Έρωτα (Eros Protogonos), τον Πρωτόγονο Έρωτα που κινεί τα πάντα. Επίσης γνωστός ως Μήτης (σοφία), Ηρικεπαίος (δύναμη) και Πρωτόγονος.\n\nΣτην Ορφική κοσμογονία, ο Φάνης κυβέρνησε τους θεούς ως πρώτος βασιλιάς. Ο Κρόνος τον κατάπιε, και ο Δίας τον απορρόφησε για να φέρει όλη τη δημιουργία μέσα του — κάνοντας τον Δία τον κυρίαρχο σύμπαν. Έτσι ο Φάνης δεν χάθηκε ποτέ· συνεχίζει να υπάρχει μέσα σε κάθε θεό, σε κάθε φωτεινή στιγμή του κόσμου.",
+    "FullText_EN": "Phanes is one of the most enigmatic and extraordinary figures in Orphic mythology. He was born from a cosmic egg that formed in the primordial darkness at the beginning of time. When the egg cracked open, Phanes burst forth as light — radiant, golden, four-winged, and androgynous. His name means 'the one who brings light' or 'the one who appears'.\n\nPhanes was the Firstborn, the primordial god of procreation and the beginning of life. He is identified with Eros Protogonos — the First-Born Love that sets all things in motion — and also known as Metis (wisdom), Erikepaios (power), and Protogonos (Firstborn).\n\nIn Orphic cosmogony, Phanes ruled the gods as the first king of the universe. Kronos swallowed him, and Zeus later absorbed him entirely — drawing all of creation into himself and becoming the supreme cosmic principle. So Phanes was never truly lost; he continues to exist within every god, within every moment of light in the world.\n\nHe represents the Orphic idea that light and love are the fundamental creative forces — that the universe was not born from violence or chaos, but from a golden radiance that wanted to be seen.",
+    "visualClass": "primordial-form",
+    "theme": "void-light",
+    "sprite": "energy-neutral",
+    "ring": false,
+    "glow": 1.0,
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΦΑΝΗΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΦΑΝΗΣ.png",
+    "photos": [
+      "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΦΑΝΗΣ.png"
+    ]
+  },
+  {
     "id": "PRIM_EREBUS_001",
     "Name": "Έρεβος (Erebus)",
     "Name_EN": "Erebus",
@@ -4388,8 +4416,8 @@
     "sprite": "energy-neutral",
     "ring": false,
     "glow": 1.0,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/ΕΡΩΣ_copy_512x768.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/ΕΡΩΣ_copy_512x768.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΕΡΩΣ.jpg",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΕΡΩΣ.jpg",
     "photos": []
   },
   {
@@ -4725,8 +4753,8 @@
     "sprite": "goddess",
     "ring": true,
     "glow": 0.65,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00116-ΚΗΤΟΣ_copy_256x320.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00116-ΚΗΤΟΣ_copy_256x320.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00116-ΚΗΤΟΣ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00116-ΚΗΤΟΣ_copy_256x320.png",
     "photos": []
   },
   {
@@ -4985,8 +5013,8 @@
     "sprite": "titan-male",
     "ring": true,
     "glow": 0.45,
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΕΠΙΜΗΘΕΑΣ.jpg",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΕΠΙΜΗΘΕΑΣ.jpg",
     "photos": []
   },
   {
@@ -5069,8 +5097,8 @@
     "sprite": "titan-male",
     "ring": true,
     "glow": 0.45,
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΜΕΝΟΙΤΙΟΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΜΕΝΟΙΤΙΟΣ.png",
     "photos": []
   },
   {
@@ -5180,10 +5208,10 @@
     "sprite": "titan-male",
     "ring": true,
     "glow": 0.45,
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΠΡΟΜΗΘΕΑΣ.png",
     "video": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROVIDSSMALL/ΠΡΟΜΗΘΕΑΣ.mp4",
     "photos": [],
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΠΡΟΜΗΘΕΑΣ.png"
   },
   {
     "id": "TITAN_RHEA_001",
@@ -5236,10 +5264,10 @@
     "sprite": "titan-female",
     "ring": true,
     "glow": 0.45,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/ΤΥΘΗΣ_copy_512x512.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos4/ΤΥΘΗΣ_copy_512x512.png",
     "video": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/TITANVIDSMALL/ΤΗΘΥΣ.mp4",
     "photos": [],
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/ΤΥΘΗΣ_copy_512x512.png"
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos4/ΤΥΘΗΣ_copy_512x512.png"
   },
   {
     "id": "TITAN_THEIA_001",
@@ -5263,8 +5291,8 @@
     "sprite": "titan-female",
     "ring": true,
     "glow": 0.45,
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/titan_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/titan_female.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΘΕΙΑ.jpg",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΘΕΙΑ.jpg",
     "photos": []
   },
   {
@@ -5487,8 +5515,8 @@
     "ring": true,
     "glow": 0.65,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΒΟΡΕΑΣ.jpg",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΒΟΡΕΑΣ.jpg"
   },
   {
     "id": "WIND_EURUS_001",
@@ -5513,8 +5541,8 @@
     "ring": true,
     "glow": 0.65,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΕΥΡΟΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΕΥΡΟΣ.png"
   },
   {
     "id": "WIND_NOTUS_001",
@@ -5539,8 +5567,8 @@
     "ring": true,
     "glow": 0.65,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΝΟΤΟΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΝΟΤΟΣ.png"
   },
   {
     "id": "WIND_ZEPHYRUS_001",
@@ -5565,8 +5593,8 @@
     "ring": true,
     "glow": 0.65,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΖΕΦΥΡΟΣ.jpg",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΖΕΦΥΡΟΣ.jpg"
   },
   {
     "id": "ZEUS_HELEN_001",
@@ -5825,8 +5853,8 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00028-ΔΕΥΚΑΛΙΩΝ_copy_256x320.png",
-    "focusPhoto": "",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos1/00056-ΔΕΥΚΑΛΙΩΝ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos1/00154-ΔΕΥΚΑΛΙΩΝ_copy_256x320.png",
     "photos": []
   },
   {
@@ -5879,8 +5907,8 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00096-ΕΛΛΗΝ_copy_256x320.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00096-ΕΛΛΗΝ_copy_256x320.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00096-ΕΛΛΗΝ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00096-ΕΛΛΗΝ_copy_256x320.png",
     "photos": []
   },
   {
@@ -6019,8 +6047,8 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00017-ΤΕΛΑΜΩΝ_copy_256x364.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00038-ΤΕΛΑΜΩΝ_copy_256x364.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos2/00038-ΤΕΛΑΜΩΝ_copy_256x364_1.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos2/00038-ΤΕΛΑΜΩΝ_copy_256x364.png",
     "photos": []
   },
   {
@@ -6046,8 +6074,8 @@
     "ring": false,
     "glow": 0.4,
     "video": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROVIDSSMALL/ΚΑΣΤΟΡΑΣ.mp4",
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΚΑΣΤΟΡΑΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΚΑΣΤΟΡΑΣ.png",
     "photos": []
   },
   {
@@ -6073,8 +6101,8 @@
     "ring": false,
     "glow": 0.4,
     "video": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROVIDSSMALL/ΠΟΛΥΔΕΥΚΗΣ.mp4",
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΠΟΛΥΔΕΥΚΗΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΠΟΛΥΔΕΥΚΗΣ.png",
     "photos": []
   },
   {
@@ -6243,8 +6271,8 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos1/00098-ΑΓΗΝΩΡ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos1/00098-ΑΓΗΝΩΡ_copy_256x320.png",
     "photos": []
   },
   {
@@ -6412,8 +6440,8 @@
     "sprite": "titan-male",
     "ring": true,
     "glow": 0.45,
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΑΛΛΑΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΑΛΛΑΣ.png",
     "photos": []
   },
   {
@@ -6438,8 +6466,8 @@
     "sprite": "titan-female",
     "ring": true,
     "glow": 0.45,
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΣΤΕΡΙΑ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΑΣΤΕΡΙΑ.png",
     "photos": []
   },
   {
@@ -6520,8 +6548,8 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΤΡΙΠΤΟΛΕΜΟΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΤΡΙΠΤΟΛΕΜΟΣ.png",
     "photos": []
   },
   {
@@ -6575,8 +6603,8 @@
     "ring": false,
     "glow": 0.4,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΕΥΡΥΤΟΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΕΥΡΥΤΟΣ.png"
   },
   {
     "id": "HERO_CYCNUS_001",
@@ -6656,8 +6684,8 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00020-ΠΕΛΟΨ_copy_256x364.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00020-ΠΕΛΟΨ_copy_256x364_1.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos2/00020-ΠΕΛΟΨ_copy_256x364.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00094-ΠΕΛΟΨ_copy_256x320.png",
     "photos": []
   },
   {
@@ -6971,8 +6999,8 @@
     "sprite": "hero",
     "ring": false,
     "glow": 0.4,
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00101-ΑΜΦΙΟΝ_copy_256x320.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00101-ΑΜΦΙΟΝ_copy_256x320.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00101-ΑΜΦΙΟΝ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00101-ΑΜΦΙΟΝ_copy_256x320.png",
     "photos": []
   },
   {
@@ -6998,8 +7026,8 @@
     "ring": false,
     "glow": 0.4,
     "video": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROVIDSSMALL/ΓΑΝΥΜΗΔΗΣ.mp4",
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΓΑΝΥΜΗΔΗΣ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΓΑΝΥΜΗΔΗΣ.png",
     "photos": []
   },
   {
@@ -7025,8 +7053,8 @@
     "ring": false,
     "glow": 0.4,
     "video": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROVIDSSMALL/ΕΝΔΥΜΙΩΝ.mp4",
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΕΝΔΥΜΙΩΝ.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΕΝΔΥΜΙΩΝ.png",
     "photos": []
   },
   {
@@ -7080,8 +7108,8 @@
     "ring": false,
     "glow": 0.4,
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_female.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΦΑΙΔΡΑ.jpg",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΦΑΙΔΡΑ.jpg"
   },
   {
     "id": "HERO_HIPPOLYTUS_001",
@@ -7221,9 +7249,9 @@
     "sprite": "titan-male",
     "ring": true,
     "glow": 0.45,
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΕΡΣΗΣ.png",
     "video": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROVIDSSMALL/ΠΕΡΣΕΑΣ.mp4",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/god_male.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΠΕΡΣΗΣ.png",
     "photos": []
   },
   {
@@ -7648,9 +7676,9 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/hero_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΑΜΦΙΑΡΑΟΣ.png",
     "photos": [],
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/hero_male.png"
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΑΜΦΙΑΡΑΟΣ.png"
   },
   {
     "id": "HERO_LEANDER_001",
@@ -7670,9 +7698,9 @@
     "sprite": "hero",
     "ring": "",
     "glow": "",
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/hero_male.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΛΕΑΝΔΡΟΣ.png",
     "photos": [],
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/hero_male.png"
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/HEROES_SMALL/ΛΕΑΝΔΡΟΣ.png"
   },
   {
     "id": "PRIM_AION_001",
@@ -7937,8 +7965,8 @@
     "glow": "",
     "Summary": "",
     "photos": [],
-    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/hero_male.png",
-    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/From_Main/hero_male.png"
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΙΦΙΚΛΗΣ.jpg",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/MISSING_SMALL/ΙΦΙΚΛΗΣ.jpg"
   },
   {
     "id": "MORTAL_DEIDAMIA_001",
@@ -7984,8 +8012,8 @@
     "ring": "",
     "glow": "",
     "Summary": "",
-    "photo": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00114-ΚΑΛΥΔΩΝΙΟΣ_copy_256x320.png",
-    "focusPhoto": "https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Photos_Small/00114-ΚΑΛΥΔΩΝΙΟΣ_copy_256x320.png",
+    "photo": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00114-ΚΑΛΥΔΩΝΙΟΣ_copy_256x320.png",
+    "focusPhoto": "https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Photos3/00114-ΚΑΛΥΔΩΝΙΟΣ_copy_256x320.png",
     "photos": []
   }
 ]
