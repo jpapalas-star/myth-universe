@@ -2295,46 +2295,69 @@ function _pickN(arr, n){
   return shuffled.slice(0, Math.min(n, shuffled.length));
 }
 
-// Preload pool — keeps video elements alive so browser caches the data
+// ── VIDEO AUDIO FADE via Web Audio API (eliminates click/pop) ──────
+var _vidAC = null;    // AudioContext for video
+var _vidGain = null;  // GainNode
+var _vidSource = null; // MediaElementSourceNode
+
+function _getVidAC(){
+  if(_vidAC) return _vidAC;
+  try{
+    _vidAC = new (window.AudioContext||window.webkitAudioContext)();
+    _vidGain = _vidAC.createGain();
+    _vidGain.gain.value = 0;
+    _vidGain.connect(_vidAC.destination);
+  }catch(e){ _vidAC=null; }
+  return _vidAC;
+}
+
+function _connectVideoToAC(lv){
+  var ac = _getVidAC();
+  if(!ac) return false;
+  try{
+    if(_vidSource){ _vidSource.disconnect(); _vidSource=null; }
+    _vidSource = ac.createMediaElementSource(lv);
+    _vidSource.connect(_vidGain);
+    return true;
+  }catch(e){ return false; }
+}
+
+function _vidFadeIn(ms){
+  var ac=_getVidAC(); if(!ac||!_vidGain) return;
+  _vidGain.gain.cancelScheduledValues(ac.currentTime);
+  _vidGain.gain.setValueAtTime(0, ac.currentTime);
+  _vidGain.gain.linearRampToValueAtTime(0.85, ac.currentTime + ms/1000);
+}
+
+function _vidFadeOut(ms, cb){
+  var ac=_getVidAC();
+  if(!ac||!_vidGain){ if(cb) setTimeout(cb, ms); return; }
+  _vidGain.gain.cancelScheduledValues(ac.currentTime);
+  _vidGain.gain.setValueAtTime(_vidGain.gain.value, ac.currentTime);
+  _vidGain.gain.linearRampToValueAtTime(0, ac.currentTime + ms/1000);
+  setTimeout(cb||function(){}, ms);
+}
+
+// Preload pool
 var _preloadPool = {};
 function _preloadVideo(src){
   if(!src || _preloadPool[src]) return;
   try{
     var v = document.createElement('video');
-    v.preload = 'auto';
-    v.muted = true;
-    v.src = src;
-    v.load();
+    v.preload = 'auto'; v.muted = true; v.src = src; v.load();
     _preloadPool[src] = v;
-    // Release after 60s
     setTimeout(function(){ v.src=''; delete _preloadPool[src]; }, 60000);
   }catch(e){}
 }
 
-// Fade video volume to 0 over ms, then call cb
-function _fadeOutVideo(lv, ms, cb){
-  if(!lv){ cb(); return; }
-  var steps = 12, step = 0, startVol = lv.volume || 0;
-  if(startVol < 0.01){ lv.volume=0; cb(); return; }
-  var iv = setInterval(function(){
-    step++;
-    lv.volume = Math.max(0, startVol * (1 - step/steps));
-    if(step >= steps){ clearInterval(iv); lv.volume=0; cb(); }
-  }, ms/steps);
-}
-
-// Play a list of videos in sequence, then call onDone
+// Play a list of videos in sequence
 function _playVideoSequence(srcs, onDone){
-  if(!srcs || srcs.length===0){ onDone(); return; }
+  if(!srcs||srcs.length===0){ onDone(); return; }
   var idx=0;
-  // Aggressively preload first 3
-  for(var pi=0; pi<Math.min(3,srcs.length); pi++){
-    if(srcs[pi]) _preloadVideo(srcs[pi]);
-  }
+  for(var pi=0;pi<Math.min(3,srcs.length);pi++) if(srcs[pi]) _preloadVideo(srcs[pi]);
   function playNext(){
     if(idx>=srcs.length){ onDone(); return; }
     var src=srcs[idx++];
-    // Preload next 2 while current plays
     if(srcs[idx])   _preloadVideo(srcs[idx]);
     if(srcs[idx+1]) _preloadVideo(srcs[idx+1]);
     _playOneVideo(src, playNext);
@@ -2342,68 +2365,79 @@ function _playVideoSequence(srcs, onDone){
   playNext();
 }
 
+var _videoConnected = false; // track if MediaElementSource was created
+
 function _playOneVideo(src, onDone){
-  var ov=document.getElementById('videoOverlay');
-  var lv=document.getElementById('videoEl');
+  var ov = document.getElementById('videoOverlay');
+  var lv = document.getElementById('videoEl');
   if(!ov||!lv){ onDone(); return; }
 
   var _done=false;
   function finish(){ if(_done)return; _done=true; setTimeout(onDone,50); }
 
-  function _loadAndPlay(){
-    lv.volume=0.85;
-    lv.src=src;
+  function _doLoad(){
+    // Resume AudioContext if suspended (iOS)
+    var ac=_getVidAC();
+    if(ac && ac.state==='suspended') ac.resume();
+
+    // Connect video element to Web Audio once
+    if(!_videoConnected){
+      _videoConnected = _connectVideoToAC(lv);
+    }
+    // Mute HTML volume — audio goes through GainNode
+    lv.muted = _videoConnected ? false : false;
+    lv.volume = _videoConnected ? 1.0 : 0.85;
+
+    lv.src = src;
     lv.load();
 
-    // Stall guard: if canplay doesn't fire in 8s, try playing anyway
-    var _stallTimer = setTimeout(function(){
-      if(!_done){ lv.play().catch(finish); lv.style.opacity='1'; }
+    // Stall guard: force play after 8s if canplay never fires
+    var _stall = setTimeout(function(){
+      if(!_done){ lv.play().catch(finish); _vidFadeIn(300); lv.style.opacity='1'; }
     }, 8000);
 
     lv.addEventListener('canplay', function onCP(){
       lv.removeEventListener('canplay', onCP);
-      clearTimeout(_stallTimer);
-      // Small ramp-up to avoid click on start
-      lv.volume=0;
+      clearTimeout(_stall);
       lv.play().catch(finish);
       lv.style.opacity='1';
-      // Fade in audio
-      var vi=0, vsteps=8;
-      var viv=setInterval(function(){
-        vi++;
-        lv.volume=Math.min(0.85, 0.85*(vi/vsteps));
-        if(vi>=vsteps){ clearInterval(viv); lv.volume=0.85; }
-      }, 20);
+      _vidFadeIn(200); // smooth audio fade in
     });
-    lv.onerror=function(){ clearTimeout(_stallTimer); finish(); };
-    lv.onended=function(){
-      clearTimeout(_stallTimer);
-      // Fade out audio before calling onDone to avoid pop
-      _fadeOutVideo(lv, 180, finish);
+
+    lv.onerror = function(){ clearTimeout(_stall); finish(); };
+
+    lv.onended = function(){
+      clearTimeout(_stall);
+      // Smooth fade out THEN advance to next
+      _vidFadeOut(200, finish);
     };
-    var skipBtn=document.getElementById('videoSkip');
-    if(skipBtn) skipBtn.onclick=function(){
-      _fadeOutVideo(lv, 120, finish);
+
+    var skipBtn = document.getElementById('videoSkip');
+    if(skipBtn) skipBtn.onclick = function(){
+      _vidFadeOut(150, function(){
+        lv.pause();
+        finish();
+      });
     };
+
     setTimeout(function(){ if(!_done) finish(); }, 30000);
   }
 
   if(ov.style.display==='flex'){
-    // Overlay already open — fade out audio, then swap src (no visual gap)
-    lv.style.transition='opacity 0.25s';
-    _fadeOutVideo(lv, 220, function(){
-      lv.style.opacity='0';
+    // Overlay open — fade out audio then swap src (no visual flicker)
+    lv.style.opacity='0';
+    _vidFadeOut(200, function(){
       lv.pause();
-      setTimeout(_loadAndPlay, 80);
+      _doLoad();
     });
   } else {
-    // Open overlay with fade in
+    // First video — show overlay
     ov.style.display='flex';
     ov.style.opacity='0';
     requestAnimationFrame(function(){
       requestAnimationFrame(function(){ ov.style.opacity='1'; });
     });
-    _loadAndPlay();
+    _doLoad();
   }
 }
 
@@ -2490,9 +2524,8 @@ function enterFocus(id){
   }
 
   focusedId=id;
-  // Duck music + pause spacecraft sounds in focus mode
-  _setMusicVolume(_MUSIC_VOL_FOCUS);
-  _pauseSpacecraft();
+  // Pause music + spacecraft sounds completely in focus mode
+  _pauseMusicForFocus();
   const relatives=getRelativesSet(id);
 
   Object.values(nodes).forEach(function(n){
@@ -2596,9 +2629,8 @@ function enterFocus(id){
 function resetFocus(fromPop){
   focusedId=null;
   window._ttsFocusToken = (window._ttsFocusToken||0) + 1; // cancel any pending TTS
-  // Restore music volume + resume spacecraft sounds
-  _setMusicVolume(_MUSIC_VOL_NORMAL);
-  _resumeSpacecraft();
+  // Resume music + spacecraft sounds
+  _resumeMusicAfterFocus();
   if(typeof closeVideo==='function') closeVideo();
   // Stop ALL speech
   if(window.speechSynthesis) window.speechSynthesis.cancel();
@@ -3676,10 +3708,22 @@ function _shuffleArray(arr){
 }
 
 var _MUSIC_VOL_NORMAL = 0.55;
-var _MUSIC_VOL_FOCUS  = 0.18; // quieter in focus mode
 
-function _setMusicVolume(vol){
-  try{ if(_musicAudio) _musicAudio.volume = vol; }catch(e){}
+function _pauseMusicForFocus(){
+  try{ if(_musicAudio && !_musicAudio.paused) _musicAudio.pause(); }catch(e){}
+  _pauseSpacecraft();
+}
+
+function _resumeMusicAfterFocus(){
+  try{
+    if(_musicOn && _musicAudio && _musicAudio.paused && _musicAudio.src){
+      _musicAudio.volume = _MUSIC_VOL_NORMAL;
+      _musicAudio.play().catch(function(){});
+    } else if(_musicAudio){
+      _musicAudio.volume = _MUSIC_VOL_NORMAL;
+    }
+  }catch(e){}
+  _resumeSpacecraft();
 }
 
 function _pauseSpacecraft(){
@@ -3929,29 +3973,30 @@ window.skipLaunch = function(){
 </script>
 
 <!-- VIDEO OVERLAY -->
-<div id="videoOverlay" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.92);flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s;">
-  <!-- Fixed gold card - portrait/vertical -->
+<div id="videoOverlay" style="display:none;position:fixed;inset:0;z-index:8000;background:#000;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s;">
+  <!-- Full-screen gold border frame -->
   <div style="
-    position:relative;
-    width:min(380px,95vw);
-    height:min(640px,88vh);
-    border-radius:18px;
-    padding:6px;
-    background:linear-gradient(135deg,#8B6914,#FFD700,#8B6914,#FFD700,#8B6914);
-    box-shadow:0 0 40px 10px rgba(255,200,50,0.35),0 0 80px 20px rgba(0,0,0,0.8);
-    flex-shrink:0;
-  ">
-    <div style="border-radius:13px;overflow:hidden;background:#000;width:100%;height:100%;position:relative;">
-      <video id="videoEl" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:1;transition:opacity 0.3s;" playsinline preload="auto"></video>
-    </div>
-    <div style="position:absolute;top:4px;left:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
-    <div style="position:absolute;top:4px;right:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
-    <div style="position:absolute;bottom:4px;left:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
-    <div style="position:absolute;bottom:4px;right:8px;color:#FFD700;font-size:11px;font-weight:bold;text-shadow:0 0 6px #ff8800;opacity:0.8;">✦</div>
-  </div>
+    position:fixed;
+    inset:0;
+    padding:10px;
+    background:transparent;
+    box-sizing:border-box;
+    pointer-events:none;
+    z-index:8002;
+    border:10px solid;
+    border-image:linear-gradient(135deg,#8B6914,#FFD700,#8B6914,#FFD700,#8B6914) 1;
+    box-shadow:inset 0 0 0 2px rgba(255,200,50,0.4), 0 0 60px 8px rgba(255,200,50,0.25);
+  "></div>
+  <!-- Video fills entire screen -->
+  <video id="videoEl" style="position:fixed;inset:0;width:100%;height:100%;object-fit:fill;opacity:1;z-index:8001;" playsinline preload="auto"></video>
+  <!-- Corner decorations -->
+  <div style="pointer-events:none;position:fixed;top:14px;left:14px;color:#FFD700;font-size:22px;font-weight:bold;text-shadow:0 0 10px #ff8800;z-index:8003;line-height:1;">✦</div>
+  <div style="pointer-events:none;position:fixed;top:14px;right:14px;color:#FFD700;font-size:22px;font-weight:bold;text-shadow:0 0 10px #ff8800;z-index:8003;line-height:1;">✦</div>
+  <div style="pointer-events:none;position:fixed;bottom:14px;left:14px;color:#FFD700;font-size:22px;font-weight:bold;text-shadow:0 0 10px #ff8800;z-index:8003;line-height:1;">✦</div>
+  <div style="pointer-events:none;position:fixed;bottom:14px;right:14px;color:#FFD700;font-size:22px;font-weight:bold;text-shadow:0 0 10px #ff8800;z-index:8003;line-height:1;">✦</div>
   <!-- Skip button -->
-  <button id="videoSkip" type="button" onclick="closeVideo()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.25);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:8001;letter-spacing:1px;">SKIP ✕</button>
-<button id="ttsStop" type="button" onclick="stopSpeak()" style="position:fixed;top:18px;right:110px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,160,60,0.4);border-radius:10px;color:#ffa040;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:7000;letter-spacing:1px;display:none;">🔊 Stop</button>
+  <button id="videoSkip" type="button" onclick="closeVideo()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.25);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:8010;letter-spacing:1px;">SKIP ✕</button>
+  <button id="ttsStop" type="button" onclick="stopSpeak()" style="position:fixed;top:18px;right:110px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,160,60,0.4);border-radius:10px;color:#ffa040;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:8010;letter-spacing:1px;display:none;">🔊 Stop</button>
 </div>
 
 <script>
@@ -3973,13 +4018,12 @@ function playEntityVideo(d){
 function closeVideo(){
   var ov=document.getElementById('videoOverlay');
   var vid=document.getElementById('videoEl');
-  ov.style.transition='opacity 0.3s';
-  ov.style.opacity='0';
-  setTimeout(function(){
+  _vidFadeOut(250, function(){
     vid.pause(); vid.src='';
-    ov.style.display='none';
-    vid.volume=1;
-  }, 320);
+    ov.style.transition='opacity 0.25s';
+    ov.style.opacity='0';
+    setTimeout(function(){ ov.style.display='none'; }, 280);
+  });
 }
 </script>
 
