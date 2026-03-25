@@ -294,34 +294,16 @@ window.soundChoice = function(enabled){
     }catch(e){}
   }
 
-  // ── 3. Create ping-pong video elements + Web Audio chain ─────────
-  // MUST happen inside user gesture so MediaElementSource has audio permission
-  if(ac){
-    var ov = document.getElementById('videoOverlay');
-    if(ov && !_vidEls[0]){
-      for(var vi=0;vi<2;vi++){
-        (function(i){
-          try{
-            var v = document.createElement('video');
-            v.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:fill;z-index:8001;opacity:0;';
-            v.setAttribute('playsinline','');
-            v.preload='auto';
-            v.muted=false;
-            v.volume=1; // controlled by GainNode
-            ov.insertBefore(v, ov.firstChild);
-            _vidEls[i]=v;
-
-            // Connect to Web Audio immediately (inside user gesture)
-            var src = ac.createMediaElementSource(v);
-            var gain = ac.createGain();
-            gain.gain.value = 0; // start silent
-            src.connect(gain);
-            gain.connect(ac.destination);
-            _vidGains[i] = gain;
-            _vidSrcs[i]  = src;
-          }catch(e){ console.warn('Video WebAudio setup failed:',e); }
-        })(vi);
-      }
+  // ── 3. Pre-create ping-pong video elements ───────────────────────
+  var ov2 = document.getElementById('videoOverlay');
+  if(ov2 && !_vidEls[0]){
+    for(var vi=0;vi<2;vi++){
+      var vel = document.createElement('video');
+      vel.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:fill;z-index:8001;opacity:0;';
+      vel.setAttribute('playsinline','');
+      vel.preload='auto'; vel.muted=false; vel.volume=0;
+      ov2.insertBefore(vel, ov2.firstChild);
+      _vidEls[vi]=vel;
     }
   }
 
@@ -2342,14 +2324,13 @@ function _pickN(arr, n){
   return shuffled.slice(0, Math.min(n, shuffled.length));
 }
 
-// ── PING-PONG DOUBLE VIDEO BUFFER with Web Audio ────────────────────
-var _vidEls   = [null, null]; // two <video> elements
-var _vidGains = [null, null]; // one GainNode per element
-var _vidSrcs  = [null, null]; // MediaElementSourceNode per element
+// ── PING-PONG DOUBLE VIDEO BUFFER ───────────────────────────────────
+var _vidEls   = [null, null]; // two <video> elements (ping-pong)
+var _vidGains = [null, null]; // unused - kept for compat
+var _vidSrcs  = [null, null]; // unused - kept for compat
 var _vidSeqAbort = false;
 
 function _ensureVidEls(){
-  // Fallback: create without Web Audio if soundChoice wasn't called
   var ov = document.getElementById('videoOverlay');
   if(!ov || _vidEls[0]) return;
   for(var i=0;i<2;i++){
@@ -2359,7 +2340,6 @@ function _ensureVidEls(){
     v.preload='auto'; v.muted=false; v.volume=0;
     ov.insertBefore(v, ov.firstChild);
     _vidEls[i]=v;
-    // No GainNode here — fallback uses HTML volume
   }
 }
 
@@ -2434,10 +2414,8 @@ function _playVideoSequence(srcs, onDone){
   if(skipBtn) skipBtn.onclick = function(){
     _vidSeqAbort = true;
     for(var si=0;si<2;si++){
-      var g=_vidGains[si], v=_vidEls[si];
-      var ac=_beepCtx||window._earlyAC;
-      if(g&&ac){ try{ g.gain.linearRampToValueAtTime(0,ac.currentTime+0.15); }catch(e){} }
-      if(v){ setTimeout(function(vv){ vv.pause(); vv.src=''; vv.style.opacity='0'; },160,v); }
+      var v=_vidEls[si];
+      if(v){ _rampVol(v,v.volume,0,150,function(){}); setTimeout(function(vv){ vv.pause(); vv.src=''; vv.style.opacity='0'; },160,v); }
     }
     setTimeout(function(){
       if(ov){ ov.style.opacity='0'; setTimeout(function(){ ov.style.display='none'; },280); }
@@ -2449,17 +2427,7 @@ function _playVideoSequence(srcs, onDone){
   requestAnimationFrame(function(){ requestAnimationFrame(function(){ ov.style.opacity='1'; }); });
 
   function _fadeGain(idx, from, to, ms, cb){
-    var g=_vidGains[idx], ac=_beepCtx||window._earlyAC;
-    if(g&&ac){
-      try{
-        if(ac.state==='suspended') ac.resume();
-        g.gain.cancelScheduledValues(ac.currentTime);
-        g.gain.setValueAtTime(from, ac.currentTime);
-        g.gain.linearRampToValueAtTime(to, ac.currentTime+ms/1000);
-        if(cb) setTimeout(cb, ms+10); return;
-      }catch(e){}
-    }
-    // fallback: HTML volume
+    // Pure HTML volume ramp - simple and reliable
     var v=_vidEls[idx]; if(v) _rampVol(v, from, to, ms, cb); else if(cb) cb();
   }
 
@@ -2488,7 +2456,7 @@ function _playVideoSequence(srcs, onDone){
     function _advance(){
       if(_advanced) return; _advanced=true;
       curEl.style.opacity='0';
-      if(!_fading) _fadeGain(cur, _vidGains[cur]?_vidGains[cur].gain.value:curEl.volume, 0, 50, null);
+      if(!_fading) curEl.volume=0;
       playAt(i+1);
     }
 
@@ -2521,8 +2489,7 @@ function _playVideoSequence(srcs, onDone){
 
   function _seqDone(){
     for(var si=0;si<2;si++){
-      if(_vidEls[si]){ _vidEls[si].pause(); _vidEls[si].src=''; _vidEls[si].style.opacity='0'; }
-      if(_vidGains[si]) try{ _vidGains[si].gain.value=0; }catch(e){}
+      if(_vidEls[si]){ _vidEls[si].pause(); _vidEls[si].src=''; _vidEls[si].style.opacity='0'; _vidEls[si].volume=0; }
     }
     onDone();
   }
