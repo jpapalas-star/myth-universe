@@ -443,6 +443,7 @@ var _velZoom=1;            // zoom inertia (multiplier per frame)
 var _inertia2=false;       // 2-finger inertia active
 var _warpLevel=0;          // 0..1 warp intensity // false=slow, true=fast
 var _lastInfoD=null;
+window._ttsFocusToken=0;
 const canvas=document.getElementById('renderCanvas');
 const infoEl=document.getElementById('info');
 const homeBtn=document.getElementById('homeBtn');
@@ -2294,31 +2295,48 @@ function _pickN(arr, n){
   return shuffled.slice(0, Math.min(n, shuffled.length));
 }
 
-// Preload a video URL in background
+// Preload pool — keeps video elements alive so browser caches the data
+var _preloadPool = {};
 function _preloadVideo(src){
-  if(!src) return;
+  if(!src || _preloadPool[src]) return;
   try{
     var v = document.createElement('video');
     v.preload = 'auto';
+    v.muted = true;
     v.src = src;
     v.load();
-    // Keep ref briefly then release
-    setTimeout(function(){ v.src=''; }, 15000);
+    _preloadPool[src] = v;
+    // Release after 60s
+    setTimeout(function(){ v.src=''; delete _preloadPool[src]; }, 60000);
   }catch(e){}
+}
+
+// Fade video volume to 0 over ms, then call cb
+function _fadeOutVideo(lv, ms, cb){
+  if(!lv){ cb(); return; }
+  var steps = 12, step = 0, startVol = lv.volume || 0;
+  if(startVol < 0.01){ lv.volume=0; cb(); return; }
+  var iv = setInterval(function(){
+    step++;
+    lv.volume = Math.max(0, startVol * (1 - step/steps));
+    if(step >= steps){ clearInterval(iv); lv.volume=0; cb(); }
+  }, ms/steps);
 }
 
 // Play a list of videos in sequence, then call onDone
 function _playVideoSequence(srcs, onDone){
   if(!srcs || srcs.length===0){ onDone(); return; }
   var idx=0;
-  // Preload first 2 immediately
-  if(srcs[0]) _preloadVideo(srcs[0]);
-  if(srcs[1]) _preloadVideo(srcs[1]);
+  // Aggressively preload first 3
+  for(var pi=0; pi<Math.min(3,srcs.length); pi++){
+    if(srcs[pi]) _preloadVideo(srcs[pi]);
+  }
   function playNext(){
     if(idx>=srcs.length){ onDone(); return; }
     var src=srcs[idx++];
-    // Preload next while current plays
-    if(srcs[idx]) _preloadVideo(srcs[idx]);
+    // Preload next 2 while current plays
+    if(srcs[idx])   _preloadVideo(srcs[idx]);
+    if(srcs[idx+1]) _preloadVideo(srcs[idx+1]);
     _playOneVideo(src, playNext);
   }
   playNext();
@@ -2332,38 +2350,60 @@ function _playOneVideo(src, onDone){
   var _done=false;
   function finish(){ if(_done)return; _done=true; setTimeout(onDone,50); }
 
-  // Fade OUT current video (or if overlay was hidden, just show it)
-  lv.style.transition='opacity 0.3s';
-  lv.style.opacity='0';
-
   function _loadAndPlay(){
-    lv.src=src; lv.volume=0.85;
+    lv.volume=0.85;
+    lv.src=src;
     lv.load();
-    lv.addEventListener('canplay',function onCP(){
-      lv.removeEventListener('canplay',onCP);
+
+    // Stall guard: if canplay doesn't fire in 8s, try playing anyway
+    var _stallTimer = setTimeout(function(){
+      if(!_done){ lv.play().catch(finish); lv.style.opacity='1'; }
+    }, 8000);
+
+    lv.addEventListener('canplay', function onCP(){
+      lv.removeEventListener('canplay', onCP);
+      clearTimeout(_stallTimer);
+      // Small ramp-up to avoid click on start
+      lv.volume=0;
       lv.play().catch(finish);
-      // Fade IN new video
       lv.style.opacity='1';
+      // Fade in audio
+      var vi=0, vsteps=8;
+      var viv=setInterval(function(){
+        vi++;
+        lv.volume=Math.min(0.85, 0.85*(vi/vsteps));
+        if(vi>=vsteps){ clearInterval(viv); lv.volume=0.85; }
+      }, 20);
     });
-    lv.onerror=finish;
-    lv.onended=finish;
+    lv.onerror=function(){ clearTimeout(_stallTimer); finish(); };
+    lv.onended=function(){
+      clearTimeout(_stallTimer);
+      // Fade out audio before calling onDone to avoid pop
+      _fadeOutVideo(lv, 180, finish);
+    };
     var skipBtn=document.getElementById('videoSkip');
-    if(skipBtn) skipBtn.onclick=function(){ finish(); };
-    setTimeout(function(){ if(!_done) finish(); },30000);
+    if(skipBtn) skipBtn.onclick=function(){
+      _fadeOutVideo(lv, 120, finish);
+    };
+    setTimeout(function(){ if(!_done) finish(); }, 30000);
   }
 
   if(ov.style.display==='flex'){
-    // Already open — just swap src after fade out
-    setTimeout(_loadAndPlay, 320);
+    // Overlay already open — fade out audio, then swap src (no visual gap)
+    lv.style.transition='opacity 0.25s';
+    _fadeOutVideo(lv, 220, function(){
+      lv.style.opacity='0';
+      lv.pause();
+      setTimeout(_loadAndPlay, 80);
+    });
   } else {
     // Open overlay with fade in
     ov.style.display='flex';
+    ov.style.opacity='0';
     requestAnimationFrame(function(){
-      requestAnimationFrame(function(){
-        ov.style.opacity='1';
-      });
+      requestAnimationFrame(function(){ ov.style.opacity='1'; });
     });
-    setTimeout(_loadAndPlay, 50);
+    _loadAndPlay();
   }
 }
 
@@ -2543,9 +2583,11 @@ function enterFocus(id){
     var _bgSrc=(_d.photo||_d.focusPhoto||'');
     if(_bgEl){ _bgEl.src=_bgSrc; _bgEl.style.display=_bgSrc?'block':'none'; }
   }
-  // Auto-start TTS
+  // Auto-start TTS — use token so it cancels if focus changes before 400ms
+  var _ttsToken = ++window._ttsFocusToken;
   setTimeout(function(){
     if(_advActive) return;
+    if(window._ttsFocusToken !== _ttsToken) return; // focus changed
     if(typeof speakText==='function') speakText();
   }, 400);
   if(!suppressPop) history.pushState({focus:id},'');
@@ -2553,6 +2595,7 @@ function enterFocus(id){
 
 function resetFocus(fromPop){
   focusedId=null;
+  window._ttsFocusToken = (window._ttsFocusToken||0) + 1; // cancel any pending TTS
   // Restore music volume + resume spacecraft sounds
   _setMusicVolume(_MUSIC_VOL_NORMAL);
   _resumeSpacecraft();
