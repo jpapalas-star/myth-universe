@@ -3529,20 +3529,26 @@ function _elSpeak(text, onDone){
   var maxLen=800;
   if(text.length>maxLen) text=text.substring(0,maxLen)+'...';
 
+  // Timeout so slow EL doesn't block TTS indefinitely
+  var _elAbort = new AbortController();
+  var _elTimeout = setTimeout(function(){ _elAbort.abort(); }, 8000);
+
   fetch(_netlifyTTSUrl,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
+    signal: _elAbort.signal,
     body:JSON.stringify({
       text:text,
-      voice_id: appLang==='gr' ? _elVoiceId : null
+      voice_id: _elVoiceId   // always send — null causes 400
     })
   })
   .then(function(r){
+    clearTimeout(_elTimeout);
     if(!r.ok){
-      // 401/403 = auth error (bad/expired API key) — mark as permanently failed
-      if(r.status===401||r.status===403||r.status===422){
+      // 400/401/403/422 = permanent failure — skip EL from now on
+      if(r.status===400||r.status===401||r.status===403||r.status===422){
         _elFailed=true;
-        showToast('⚠️ ElevenLabs key error ('+r.status+') → fallback');
+        showToast('⚠️ ElevenLabs error ('+r.status+') → fallback');
       } else {
         showToast('⚠️ EL HTTP '+r.status+' → fallback');
       }
@@ -3561,8 +3567,14 @@ function _elSpeak(text, onDone){
     showToast('🔊 ElevenLabs: Takis');
   })
   .catch(function(err){
+    clearTimeout(_elTimeout);
     if(err==='http') return;
-    showToast('⚠️ EL error → fallback');
+    // AbortError = timeout (8s exceeded)
+    if(err && err.name==='AbortError'){
+      showToast('⚠️ EL timeout → fallback');
+    } else {
+      showToast('⚠️ EL error → fallback');
+    }
     _rvSpeak(text, onDone);
   });
 }
