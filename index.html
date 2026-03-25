@@ -2308,6 +2308,27 @@ function _pickN(arr, n){
   return shuffled.slice(0, Math.min(n, shuffled.length));
 }
 
+// ── PING-PONG DOUBLE VIDEO BUFFER (eliminates click between videos) ──
+var _vidEls = [null, null];
+var _vidActive = 0;
+var _vidSeqAbort = false; // set true to abort current sequence
+
+function _ensureVidEls(){
+  var ov = document.getElementById('videoOverlay');
+  if(!ov) return;
+  if(!_vidEls[0]){
+    for(var i=0;i<2;i++){
+      var v = document.createElement('video');
+      v.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:fill;z-index:8001;opacity:0;';
+      v.setAttribute('playsinline','');
+      v.preload='auto';
+      v.volume=0;
+      ov.insertBefore(v, ov.firstChild);
+      _vidEls[i]=v;
+    }
+  }
+}
+
 // Preload pool
 var _preloadPool = {};
 function _preloadVideo(src){
@@ -2316,51 +2337,11 @@ function _preloadVideo(src){
     var v = document.createElement('video');
     v.preload='auto'; v.muted=true; v.src=src; v.load();
     _preloadPool[src]=v;
-    setTimeout(function(){ v.src=''; delete _preloadPool[src]; },60000);
+    setTimeout(function(){ v.src=''; delete _preloadPool[src]; },90000);
   }catch(e){}
 }
 
-// ── VIDEO GAIN via Web Audio (created in soundChoice on unlocked ctx) ─
-var _vidGain = null;   // created in soundChoice()
-var _vidSrcNode = null;
-var _vidConnected = false;
-
-function _connectVidEl(lv){
-  if(_vidConnected) return true;
-  if(!_vidGain) return false;
-  var ac = _beepCtx || window._earlyAC;
-  if(!ac) return false;
-  try{
-    if(ac.state==='suspended') ac.resume();
-    _vidSrcNode = ac.createMediaElementSource(lv);
-    _vidSrcNode.connect(_vidGain);
-    _vidConnected = true;
-    lv.volume = 1;
-    return true;
-  }catch(e){ return false; }
-}
-
-function _vidFadeIn(ms){
-  if(!_vidGain) return;
-  var ac=_beepCtx||window._earlyAC; if(!ac) return;
-  if(ac.state==='suspended') ac.resume();
-  _vidGain.gain.cancelScheduledValues(ac.currentTime);
-  _vidGain.gain.setValueAtTime(0, ac.currentTime);
-  _vidGain.gain.linearRampToValueAtTime(0.9, ac.currentTime+ms/1000);
-}
-
-function _vidFadeOut(ms, cb){
-  if(!_vidGain){ if(cb) setTimeout(cb,ms); return; }
-  var ac=_beepCtx||window._earlyAC;
-  if(!ac){ if(cb) setTimeout(cb,ms); return; }
-  var cur=_vidGain.gain.value;
-  _vidGain.gain.cancelScheduledValues(ac.currentTime);
-  _vidGain.gain.setValueAtTime(cur, ac.currentTime);
-  _vidGain.gain.linearRampToValueAtTime(0, ac.currentTime+ms/1000);
-  setTimeout(cb||function(){}, ms+20);
-}
-
-// Simple HTML-volume ramp fallback
+// Smooth volume ramp
 function _rampVol(lv, from, to, ms, cb){
   var steps=16, s=0;
   try{ lv.volume=Math.max(0,Math.min(1,from)); }catch(e){}
@@ -2372,95 +2353,113 @@ function _rampVol(lv, from, to, ms, cb){
   return iv;
 }
 
-// Play a list of videos in sequence
+// Play a list of videos in sequence using ping-pong buffering
 function _playVideoSequence(srcs, onDone){
   if(!srcs||srcs.length===0){ onDone(); return; }
+  _ensureVidEls();
+  var ov = document.getElementById('videoOverlay');
+  if(!ov){ onDone(); return; }
+
   var idx=0;
+  // Preload first 3 eagerly
   for(var pi=0;pi<Math.min(3,srcs.length);pi++) if(srcs[pi]) _preloadVideo(srcs[pi]);
-  function playNext(){
-    if(idx>=srcs.length){ onDone(); return; }
-    var src=srcs[idx++];
-    if(srcs[idx])   _preloadVideo(srcs[idx]);
-    if(srcs[idx+1]) _preloadVideo(srcs[idx+1]);
-    _playOneVideo(src, playNext);
-  }
-  playNext();
-}
 
-function _playOneVideo(src, onDone){
-  var ov=document.getElementById('videoOverlay');
-  var lv=document.getElementById('videoEl');
-  if(!ov||!lv){ onDone(); return; }
+  function playAt(i){
+    if(_vidSeqAbort || i>=srcs.length){ _sequenceDone(); return; }
+    var cur  = _vidEls[idx%2];
+    var next = _vidEls[(idx+1)%2];
+    idx++;
 
-  var _done=false;
-  function finish(){ if(_done)return; _done=true; setTimeout(onDone,50); }
+    var src = srcs[i];
+    // Preload the one after next
+    if(srcs[i+1]) _preloadVideo(srcs[i+1]);
+    if(srcs[i+2]) _preloadVideo(srcs[i+2]);
 
-  function _doLoad(){
-    lv.volume = 0;
-    lv.muted  = false;
-    lv.src    = src;
-    lv.load();
-
-    var _fadeStarted = false;
-    var _stall = setTimeout(function(){
-      if(!_done){ lv.play().catch(finish); _rampVol(lv,0,0.85,200); lv.style.opacity='1'; }
-    }, 8000);
-
-    function _startPlay(){
-      clearTimeout(_stall);
-      lv.play().catch(finish);
-      lv.style.opacity='1';
-      _rampVol(lv, 0, 0.85, 180);
+    // Preload into next buffer while current plays
+    if(srcs[i+1]){
+      next.src = srcs[i+1];
+      next.volume = 0;
+      next.load();
     }
 
-    // canplay OR loadeddata — whichever fires first
-    var _started = false;
-    function _onReady(){ if(_started) return; _started=true; lv.removeEventListener('canplay',_onReady); lv.removeEventListener('loadeddata',_onReady); _startPlay(); }
-    lv.addEventListener('canplay', _onReady);
-    lv.addEventListener('loadeddata', _onReady);
+    cur.src   = src;
+    cur.volume= 0;
+    cur.load();
 
-    lv.onerror = function(){ clearTimeout(_stall); finish(); };
+    var _started=false;
+    var _fadeStarted=false;
+    var _done2=false;
 
-    // timeupdate: start fade 0.4s before end to avoid click
-    lv.addEventListener('timeupdate', function onTU(){
-      if(_done||_fadeStarted) return;
-      if(lv.duration && lv.currentTime >= lv.duration - 0.4){
-        _fadeStarted = true;
-        lv.removeEventListener('timeupdate', onTU);
-        _rampVol(lv, lv.volume, 0, 380, function(){
-          if(!_done){ _done=true; setTimeout(onDone,30); }
-        });
+    function _onReady(){
+      if(_started) return; _started=true;
+      cur.removeEventListener('canplay',_onReady);
+      cur.removeEventListener('loadeddata',_onReady);
+      cur.play().catch(function(){ _advance(); });
+      cur.style.opacity='1';
+      _rampVol(cur, 0, 0.85, 180);
+    }
+
+    function _advance(){
+      if(_done2) return; _done2=true;
+      // Cross-fade: fade cur out, then advance
+      _rampVol(cur, cur.volume, 0, 220, function(){
+        cur.pause();
+        cur.style.opacity='0';
+        playAt(i+1);
+      });
+    }
+
+    cur.addEventListener('canplay', _onReady);
+    cur.addEventListener('loadeddata', _onReady);
+
+    // Start fade-out 0.5s before end
+    cur.addEventListener('timeupdate', function onTU(){
+      if(_done2||_fadeStarted) return;
+      if(cur.duration && cur.currentTime >= cur.duration-0.5){
+        _fadeStarted=true;
+        cur.removeEventListener('timeupdate', onTU);
+        _rampVol(cur, cur.volume, 0, 450, _advance);
       }
     });
 
-    // onended as safety net (in case timeupdate missed)
-    lv.onended = function(){
-      clearTimeout(_stall);
-      if(!_done){ _done=true; setTimeout(onDone,30); }
-    };
+    cur.onended = function(){ if(!_done2) _advance(); };
+    cur.onerror = function(){ _advance(); };
 
-    var skipBtn=document.getElementById('videoSkip');
-    if(skipBtn) skipBtn.onclick=function(){
-      _rampVol(lv, lv.volume, 0, 150, function(){ lv.pause(); finish(); });
-    };
-
-    setTimeout(function(){ if(!_done) finish(); }, 30000);
+    // Stall guard
+    var _stall=setTimeout(function(){ if(!_started){ _onReady(); } }, 8000);
+    cur.addEventListener('canplay', function(){ clearTimeout(_stall); },{once:true});
   }
 
-  if(ov.style.display==='flex'){
-    // Already open — fade out, pause, swap src
-    _rampVol(lv, lv.volume||0.85, 0, 200, function(){
-      lv.pause();
-      lv.style.opacity='0';
-      setTimeout(_doLoad, 50);
-    });
-  } else {
-    // First video — show overlay
-    ov.style.display='flex';
-    ov.style.opacity='0';
-    requestAnimationFrame(function(){ requestAnimationFrame(function(){ ov.style.opacity='1'; }); });
-    _doLoad();
+  function _sequenceDone(){
+    // Hide both video els
+    _vidEls.forEach(function(v){ if(v){ v.pause(); v.src=''; v.style.opacity='0'; } });
+    onDone();
   }
+
+  // Show overlay then start
+  ov.style.display='flex';
+  ov.style.opacity='0';
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ ov.style.opacity='1'; }); });
+
+  _vidSeqAbort = false;
+
+  // Wire SKIP button to abort whole sequence
+  var skipBtn = document.getElementById('videoSkip');
+  if(skipBtn) skipBtn.onclick = function(){
+    _vidSeqAbort = true;
+    _vidEls.forEach(function(v){ if(v){ _rampVol(v,v.volume,0,150,function(){ v.pause(); v.src=''; v.style.opacity='0'; }); } });
+    setTimeout(function(){
+      var ov2=document.getElementById('videoOverlay');
+      if(ov2){ ov2.style.opacity='0'; setTimeout(function(){ ov2.style.display='none'; },280); }
+      onDone();
+    }, 200);
+  };
+
+  playAt(0);
+}
+
+function _playOneVideo(src, onDone){
+  _playVideoSequence([src], onDone);
 }
 
 // Build and play the full cinematic sequence for a focus/adventure step
@@ -2470,43 +2469,56 @@ var _usedCinematicVideos = new Set(); // tracks used videos during adventure
 
 function _playCinematicSequence(entityVideo, onDone){
   _fetchCinematic(function(cache){
-    var availableThemes = [1,2,3].filter(function(t){
-      return cache.landing[t].length>0 || cache.searching[t].length>0 || cache.finding[t].length>0;
-    });
-    
-    var queue = [];
-    if(availableThemes.length > 0){
-      var theme = _rand(availableThemes);
 
-      // Pick unused random video from pool
-      function pickUnused(arr){
-        var unused = arr.filter(function(v){ return !_usedCinematicVideos.has(v); });
-        // If all used, reset pool for this type
-        if(unused.length===0){ unused = arr.slice(); }
-        var pick = _rand(unused);
-        _usedCinematicVideos.add(pick);
-        return pick;
+    // Themes that have at least a landing video
+    var availableThemes = [1,2,3].filter(function(t){
+      return cache.landing[t] && cache.landing[t].length>0;
+    });
+    // Fallback: any theme with any video
+    if(availableThemes.length===0){
+      availableThemes = [1,2,3].filter(function(t){
+        return (cache.searching[t]&&cache.searching[t].length>0);
+      });
+    }
+
+    var queue = [];
+
+    if(availableThemes.length > 0){
+      // Pick ONE random theme — ALL videos come from same theme
+      var theme = availableThemes[Math.floor(Math.random()*availableThemes.length)];
+
+      function pickRand(arr){
+        if(!arr||arr.length===0) return null;
+        return arr[Math.floor(Math.random()*arr.length)];
+      }
+      function pickN(arr, n){
+        if(!arr||arr.length===0) return [];
+        var s=arr.slice().sort(function(){return Math.random()-0.5;});
+        return s.slice(0,Math.min(n,s.length));
       }
 
-      var l = cache.landing[theme];
-      if(l.length>0) queue.push(pickUnused(l));
-      var s = cache.searching[theme];
-      _pickN(s.filter(function(v){ return !_usedCinematicVideos.has(v); }).length>0
-        ? s.filter(function(v){ return !_usedCinematicVideos.has(v); })
-        : s, 2).forEach(function(v){ _usedCinematicVideos.add(v); queue.push(v); });
-      var f = cache.finding[theme];
-      if(f.length>0) queue.push(pickUnused(f));
+      // 1 landing
+      var lv = pickRand(cache.landing[theme]);
+      if(lv) queue.push(lv);
+
+      // 2 searching (same theme)
+      pickN(cache.searching[theme], 2).forEach(function(v){ queue.push(v); });
+
+      // 1 finding (same theme, if available)
+      var fv = pickRand(cache.finding[theme]);
+      if(fv) queue.push(fv);
     }
+
+    // Entity video or photo last
     if(entityVideo) queue.push(entityVideo);
-    
+
     if(queue.length===0){ onDone(); return; }
+
     window._cinematicPlaying = true;
     _playVideoSequence(queue, function(){
       window._cinematicPlaying = false;
-      // Fade OUT overlay 0.3s then hide
       var ov=document.getElementById('videoOverlay');
-      var lv=document.getElementById('videoEl');
-      if(lv){ lv.pause(); lv.src=''; }
+      _vidEls.forEach(function(v){ if(v){ v.pause(); v.src=''; v.style.opacity='0'; } });
       if(ov){
         ov.style.transition='opacity 0.3s';
         ov.style.opacity='0';
@@ -4108,13 +4120,16 @@ function playEntityVideo(d){
 }
 function closeVideo(){
   var ov=document.getElementById('videoOverlay');
-  var vid=document.getElementById('videoEl');
-  _rampVol(vid, vid.volume||0.85, 0, 220, function(){
-    vid.pause(); vid.src='';
-    ov.style.transition='opacity 0.25s';
-    ov.style.opacity='0';
-    setTimeout(function(){ ov.style.display='none'; },280);
+  _vidEls.forEach(function(v){
+    if(v){ _rampVol(v,v.volume,0,220,function(){ v.pause(); v.src=''; v.style.opacity='0'; }); }
   });
+  if(ov){
+    setTimeout(function(){
+      ov.style.transition='opacity 0.25s';
+      ov.style.opacity='0';
+      setTimeout(function(){ ov.style.display='none'; },280);
+    },200);
+  }
 }
 </script>
 
