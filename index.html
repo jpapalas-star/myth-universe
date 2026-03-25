@@ -241,9 +241,9 @@ html,body{
 </head>
 <body>
 <button id="indexBtn" type="button">Index</button>
-<div id="topRow2" style="position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:200;display:flex;gap:8px;align-items:center;">
+<div id="topRow2" style="position:fixed;top:48px;left:50%;transform:translateX(-50%);z-index:200;display:flex;gap:6px;align-items:center;white-space:nowrap;">
   <button id="navSpeedBtn" type="button" onclick="toggleNavSpeed()" style="background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🐢 Slow</button>
-  <button id="homeBtn" type="button" style="background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;backdrop-filter:blur(6px);">Επανεστίαση</button>
+  <button id="homeBtn" type="button" style="background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;font-size:11px;font-weight:bold;padding:5px 10px;cursor:pointer;backdrop-filter:blur(6px);">↩ Reset</button>
   <button id="driveModeBtn" type="button" onclick="toggleDriveMode()" style="background:rgba(20,10,40,0.85);border:1px solid rgba(255,220,60,0.5);border-radius:16px;color:#ffe040;font-size:12px;font-weight:bold;padding:6px 12px;cursor:pointer;letter-spacing:0.5px;">🚀 Drive</button>
 </div>
 <button id="langBtn" onclick="toggleLang()" style="display:none;">GR / EN</button>
@@ -273,6 +273,14 @@ window.soundChoice = function(enabled){
     var ac=new(window.AudioContext||window.webkitAudioContext)();
     ac.resume();
     window._earlyAC=ac;
+    // Play beep immediately using oscillator (zero latency, no file needed)
+    var osc=ac.createOscillator();
+    var gain=ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.frequency.value=880;
+    gain.gain.setValueAtTime(0.3,ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.15);
+    osc.start(ac.currentTime); osc.stop(ac.currentTime+0.15);
   }catch(e){}
   var sd = document.getElementById('soundDialog');
   if(sd){ sd.style.transition='opacity 0.3s'; sd.style.opacity='0'; setTimeout(function(){sd.style.display='none';},300); }
@@ -2925,18 +2933,26 @@ function toggleDriveMode(){
     var tgt=camera.target.clone();
     var frames4=0,maxF4=40;
     var sA4=camera.alpha,sB4=camera.beta,sR4=camera.radius;
+    // Target: saved state if exists, otherwise default overview
+    var tA4 = savedCameraState ? savedCameraState.alpha : -Math.PI/2;
+    var tB4 = savedCameraState ? savedCameraState.beta  : Math.PI/3.1;
+    var tR4 = savedCameraState ? savedCameraState.radius: 760;
+    var tTx4= savedCameraState ? savedCameraState.target.x : 0;
+    var tTy4= savedCameraState ? savedCameraState.target.y : 0;
+    var tTz4= savedCameraState ? savedCameraState.target.z : 0;
+    if(savedCameraState) savedCameraState=null;
     _animToken++; var myTok4=_animToken;
     function stepExit(){
       if(_animToken!==myTok4)return;
       frames4++;
       var p=Math.min(frames4/maxF4,1);
       p=p<0.5?2*p*p:1-2*(1-p)*(1-p);
-      camera.alpha=sA4+((-Math.PI/2)-sA4)*p;
-      camera.beta=sB4+((Math.PI/2.5)-sB4)*p;
-      camera.radius=sR4+((navFast?600:400)-sR4)*p;
-      camera.target.x=tgt.x;
-      camera.target.y=tgt.y*(1-p);
-      camera.target.z=tgt.z;
+      camera.alpha  = sA4+(tA4-sA4)*p;
+      camera.beta   = sB4+(tB4-sB4)*p;
+      camera.radius = sR4+(tR4-sR4)*p;
+      camera.target.x = camera.target.x*(1-p)+tTx4*p;
+      camera.target.y = camera.target.y*(1-p)+tTy4*p;
+      camera.target.z = camera.target.z*(1-p)+tTz4*p;
       if(frames4<maxF4)setTimeout(stepExit,16);
     }
     stepExit();
@@ -3207,6 +3223,16 @@ window.addEventListener('resize',()=>engine.resize());
 // Play countdown on page load (before start button)
 var _introAudio = null;
 (function(){
+  // Try to fetch any mp3 from SOUNDS/LAUNCH_COUNTDOWN/ on R2
+  var _cdFiles = ['Rocket%20Launch%20Countdown(1).mp3','countdown.mp3','launch.mp3'];
+  function _tryNextCd(idx){
+    if(idx>=_cdFiles.length) return;
+    var a = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/'+_cdFiles[idx]);
+    a.onerror = function(){ _tryNextCd(idx+1); };
+    a.oncanplaythrough = function(){ _introAudio = a; if(window._playIntroWhenReady) a.play().catch(function(){}); };
+    a.load();
+  }
+  _tryNextCd(0);
   try{
     _introAudio = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/Rocket%20Launch%20Countdown(1).mp3');
     _introAudio.volume = 0.7;
