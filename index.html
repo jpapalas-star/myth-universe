@@ -279,13 +279,12 @@ window.soundChoice = function(enabled){
     ac = new(window.AudioContext||window.webkitAudioContext)();
     window._earlyAC = ac;
     _beepCtx = ac;
+    ac.resume();
   }catch(e){}
 
-  // ── 2. Beep IMMEDIATELY — before resume() so it fires right away ──
+  // ── 2. Beep immediately via oscillator ───────────────────────────
   if(ac){
     try{
-      // resume() is async on iOS but oscillator still schedules ok
-      ac.resume();
       var osc=ac.createOscillator(), g=ac.createGain();
       osc.type='sine'; osc.frequency.value=880;
       g.gain.setValueAtTime(0.4, ac.currentTime);
@@ -293,18 +292,40 @@ window.soundChoice = function(enabled){
       osc.connect(g); g.connect(ac.destination);
       osc.start(ac.currentTime); osc.stop(ac.currentTime+0.18);
     }catch(e){}
-
-    // ── 3. Pre-create GainNode for videos on this same unlocked context
-    try{
-      if(!_vidGain){
-        _vidGain = ac.createGain();
-        _vidGain.gain.value = 0;
-        _vidGain.connect(ac.destination);
-      }
-    }catch(e){}
   }
 
-  // ── 4. Launch MP3 — inside gesture so autoplay is allowed ─────────
+  // ── 3. Create ping-pong video elements + Web Audio chain ─────────
+  // MUST happen inside user gesture so MediaElementSource has audio permission
+  if(ac){
+    var ov = document.getElementById('videoOverlay');
+    if(ov && !_vidEls[0]){
+      for(var vi=0;vi<2;vi++){
+        (function(i){
+          try{
+            var v = document.createElement('video');
+            v.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:fill;z-index:8001;opacity:0;';
+            v.setAttribute('playsinline','');
+            v.preload='auto';
+            v.muted=false;
+            v.volume=1; // controlled by GainNode
+            ov.insertBefore(v, ov.firstChild);
+            _vidEls[i]=v;
+
+            // Connect to Web Audio immediately (inside user gesture)
+            var src = ac.createMediaElementSource(v);
+            var gain = ac.createGain();
+            gain.gain.value = 0; // start silent
+            src.connect(gain);
+            gain.connect(ac.destination);
+            _vidGains[i] = gain;
+            _vidSrcs[i]  = src;
+          }catch(e){ console.warn('Video WebAudio setup failed:',e); }
+        })(vi);
+      }
+    }
+  }
+
+  // ── 4. Launch MP3 — inside gesture so autoplay is allowed ────────
   if(enabled){
     try{
       var la=new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/590318main_ringtone_135_launch.mp3');
@@ -2284,18 +2305,31 @@ function _fetchCinematic(cb){
   fetch('https://myth-tts-api.vercel.app/api/videos')
     .then(function(r){ return r.json(); })
     .then(function(data){
+      // Debug: show what API returns
+      showToast('🎬 Videos API: L='+(data.landing?JSON.stringify(Object.keys(data.landing)):'?')+' S='+(data.searching?JSON.stringify(Object.keys(data.searching)):'?'));
+      console.log('Videos API response:', JSON.stringify(data));
+
+      // API may use numeric keys 1/2/3 or string keys — handle both
+      function getTheme(obj, t){
+        if(!obj) return [];
+        return obj[t] || obj[String(t)] || [];
+      }
+
       var cache = {
-        landing: { 1: data.landing[1]||[], 2: data.landing[2]||[], 3: data.landing[3]||[] },
-        searching: { 1: data.searching[1]||[], 2: data.searching[2]||[], 3: data.searching[3]||[] },
-        finding: { 1: [], 2: [], 3: [] }
+        landing:   { 1: getTheme(data.landing,1),   2: getTheme(data.landing,2),   3: getTheme(data.landing,3)   },
+        searching: { 1: getTheme(data.searching,1),  2: getTheme(data.searching,2),  3: getTheme(data.searching,3)  },
+        finding:   { 1: getTheme(data.finding,1)||[], 2: getTheme(data.finding,2)||[], 3: getTheme(data.finding,3)||[] }
       };
       _cinematicCache = cache;
+      // Log counts
       [1,2,3].forEach(function(t){
-        var l=cache.landing[t]; if(l.length>0) _preloadVideo(l[0]);
+        console.log('Theme '+t+': L='+cache.landing[t].length+' S='+cache.searching[t].length+' F='+cache.finding[t].length);
       });
       cb(cache);
     })
-    .catch(function(){
+    .catch(function(err){
+      console.error('Videos API error:', err);
+      showToast('⚠️ Videos API error');
       _cinematicCache={landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}};
       cb(_cinematicCache);
     });
@@ -2308,25 +2342,56 @@ function _pickN(arr, n){
   return shuffled.slice(0, Math.min(n, shuffled.length));
 }
 
-// ── PING-PONG DOUBLE VIDEO BUFFER (eliminates click between videos) ──
-var _vidEls = [null, null];
-var _vidActive = 0;
-var _vidSeqAbort = false; // set true to abort current sequence
+// ── PING-PONG DOUBLE VIDEO BUFFER with Web Audio ────────────────────
+var _vidEls   = [null, null]; // two <video> elements
+var _vidGains = [null, null]; // one GainNode per element
+var _vidSrcs  = [null, null]; // MediaElementSourceNode per element
+var _vidSeqAbort = false;
 
 function _ensureVidEls(){
+  // Fallback: create without Web Audio if soundChoice wasn't called
   var ov = document.getElementById('videoOverlay');
-  if(!ov) return;
-  if(!_vidEls[0]){
-    for(var i=0;i<2;i++){
-      var v = document.createElement('video');
-      v.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:fill;z-index:8001;opacity:0;';
-      v.setAttribute('playsinline','');
-      v.preload='auto';
-      v.volume=0;
-      ov.insertBefore(v, ov.firstChild);
-      _vidEls[i]=v;
-    }
+  if(!ov || _vidEls[0]) return;
+  for(var i=0;i<2;i++){
+    var v = document.createElement('video');
+    v.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:fill;z-index:8001;opacity:0;';
+    v.setAttribute('playsinline','');
+    v.preload='auto'; v.muted=false; v.volume=0;
+    ov.insertBefore(v, ov.firstChild);
+    _vidEls[i]=v;
+    // No GainNode here — fallback uses HTML volume
   }
+}
+
+// Fade a video's GainNode (or HTML volume as fallback)
+function _vidGainFade(idx, from, to, ms, cb){
+  var gain = _vidGains[idx];
+  var ac   = _beepCtx || window._earlyAC;
+  if(gain && ac){
+    try{
+      if(ac.state==='suspended') ac.resume();
+      gain.gain.cancelScheduledValues(ac.currentTime);
+      gain.gain.setValueAtTime(from, ac.currentTime);
+      gain.gain.linearRampToValueAtTime(to, ac.currentTime + ms/1000);
+      if(cb) setTimeout(cb, ms+10);
+      return;
+    }catch(e){}
+  }
+  // Fallback: HTML volume ramp
+  var lv=_vidEls[idx]; if(!lv){ if(cb) cb(); return; }
+  _rampVol(lv, from, to, ms, cb);
+}
+
+// Simple HTML-volume ramp
+function _rampVol(lv, from, to, ms, cb){
+  var steps=16, s=0;
+  try{ lv.volume=Math.max(0,Math.min(1,from)); }catch(e){}
+  var iv=setInterval(function(){
+    s++; var p=s/steps;
+    try{ lv.volume=Math.max(0,Math.min(1,from+(to-from)*p)); }catch(e){}
+    if(s>=steps){ clearInterval(iv); if(cb) cb(); }
+  }, ms/steps);
+  return iv;
 }
 
 // Preload pool
@@ -2353,107 +2418,114 @@ function _rampVol(lv, from, to, ms, cb){
   return iv;
 }
 
-// Play a list of videos in sequence using ping-pong buffering
+// Play a list of videos in sequence using ping-pong buffering + Web Audio GainNodes
 function _playVideoSequence(srcs, onDone){
   if(!srcs||srcs.length===0){ onDone(); return; }
   _ensureVidEls();
   var ov = document.getElementById('videoOverlay');
   if(!ov){ onDone(); return; }
 
-  var idx=0;
-  // Preload first 3 eagerly
-  for(var pi=0;pi<Math.min(3,srcs.length);pi++) if(srcs[pi]) _preloadVideo(srcs[pi]);
-
-  function playAt(i){
-    if(_vidSeqAbort || i>=srcs.length){ _sequenceDone(); return; }
-    var cur  = _vidEls[idx%2];
-    var next = _vidEls[(idx+1)%2];
-    idx++;
-
-    var src = srcs[i];
-    // Preload the one after next
-    if(srcs[i+1]) _preloadVideo(srcs[i+1]);
-    if(srcs[i+2]) _preloadVideo(srcs[i+2]);
-
-    // Preload into next buffer while current plays
-    if(srcs[i+1]){
-      next.src = srcs[i+1];
-      next.volume = 0;
-      next.load();
-    }
-
-    cur.src   = src;
-    cur.volume= 0;
-    cur.load();
-
-    var _started=false;
-    var _fadeStarted=false;
-    var _done2=false;
-
-    function _onReady(){
-      if(_started) return; _started=true;
-      cur.removeEventListener('canplay',_onReady);
-      cur.removeEventListener('loadeddata',_onReady);
-      cur.play().catch(function(){ _advance(); });
-      cur.style.opacity='1';
-      _rampVol(cur, 0, 0.85, 180);
-    }
-
-    function _advance(){
-      if(_done2) return; _done2=true;
-      // Cross-fade: fade cur out, then advance
-      _rampVol(cur, cur.volume, 0, 220, function(){
-        cur.pause();
-        cur.style.opacity='0';
-        playAt(i+1);
-      });
-    }
-
-    cur.addEventListener('canplay', _onReady);
-    cur.addEventListener('loadeddata', _onReady);
-
-    // Start fade-out 0.5s before end
-    cur.addEventListener('timeupdate', function onTU(){
-      if(_done2||_fadeStarted) return;
-      if(cur.duration && cur.currentTime >= cur.duration-0.5){
-        _fadeStarted=true;
-        cur.removeEventListener('timeupdate', onTU);
-        _rampVol(cur, cur.volume, 0, 450, _advance);
-      }
-    });
-
-    cur.onended = function(){ if(!_done2) _advance(); };
-    cur.onerror = function(){ _advance(); };
-
-    // Stall guard
-    var _stall=setTimeout(function(){ if(!_started){ _onReady(); } }, 8000);
-    cur.addEventListener('canplay', function(){ clearTimeout(_stall); },{once:true});
-  }
-
-  function _sequenceDone(){
-    // Hide both video els
-    _vidEls.forEach(function(v){ if(v){ v.pause(); v.src=''; v.style.opacity='0'; } });
-    onDone();
-  }
-
-  // Show overlay then start
-  ov.style.display='flex';
-  ov.style.opacity='0';
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){ ov.style.opacity='1'; }); });
-
+  var seqIdx=0, bufIdx=0;
   _vidSeqAbort = false;
 
-  // Wire SKIP button to abort whole sequence
+  for(var pi=0;pi<Math.min(3,srcs.length);pi++) if(srcs[pi]) _preloadVideo(srcs[pi]);
+
   var skipBtn = document.getElementById('videoSkip');
   if(skipBtn) skipBtn.onclick = function(){
     _vidSeqAbort = true;
-    _vidEls.forEach(function(v){ if(v){ _rampVol(v,v.volume,0,150,function(){ v.pause(); v.src=''; v.style.opacity='0'; }); } });
+    for(var si=0;si<2;si++){
+      var g=_vidGains[si], v=_vidEls[si];
+      var ac=_beepCtx||window._earlyAC;
+      if(g&&ac){ try{ g.gain.linearRampToValueAtTime(0,ac.currentTime+0.15); }catch(e){} }
+      if(v){ setTimeout(function(vv){ vv.pause(); vv.src=''; vv.style.opacity='0'; },160,v); }
+    }
     setTimeout(function(){
-      var ov2=document.getElementById('videoOverlay');
-      if(ov2){ ov2.style.opacity='0'; setTimeout(function(){ ov2.style.display='none'; },280); }
+      if(ov){ ov.style.opacity='0'; setTimeout(function(){ ov.style.display='none'; },280); }
       onDone();
-    }, 200);
+    },200);
   };
+
+  ov.style.display='flex'; ov.style.opacity='0';
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ ov.style.opacity='1'; }); });
+
+  function _fadeGain(idx, from, to, ms, cb){
+    var g=_vidGains[idx], ac=_beepCtx||window._earlyAC;
+    if(g&&ac){
+      try{
+        if(ac.state==='suspended') ac.resume();
+        g.gain.cancelScheduledValues(ac.currentTime);
+        g.gain.setValueAtTime(from, ac.currentTime);
+        g.gain.linearRampToValueAtTime(to, ac.currentTime+ms/1000);
+        if(cb) setTimeout(cb, ms+10); return;
+      }catch(e){}
+    }
+    // fallback: HTML volume
+    var v=_vidEls[idx]; if(v) _rampVol(v, from, to, ms, cb); else if(cb) cb();
+  }
+
+  function playAt(i){
+    if(_vidSeqAbort||i>=srcs.length){ _seqDone(); return; }
+    var cur=bufIdx%2, nxt=(bufIdx+1)%2; bufIdx++;
+    var curEl=_vidEls[cur], nxtEl=_vidEls[nxt];
+    if(!curEl){ _seqDone(); return; }
+
+    // Preload next into nxt buffer
+    if(srcs[i+1]&&nxtEl){
+      nxtEl.src=srcs[i+1];
+      if(_vidGains[nxt]) _vidGains[nxt].gain.value=0; else nxtEl.volume=0;
+      nxtEl.load();
+    }
+    if(srcs[i+2]) _preloadVideo(srcs[i+2]);
+
+    // Load current
+    curEl.src=srcs[i];
+    if(_vidGains[cur]) _vidGains[cur].gain.value=0; else curEl.volume=0;
+    curEl.load();
+    curEl.style.opacity='1';
+
+    var _started=false, _fading=false, _advanced=false;
+
+    function _advance(){
+      if(_advanced) return; _advanced=true;
+      curEl.style.opacity='0';
+      if(!_fading) _fadeGain(cur, _vidGains[cur]?_vidGains[cur].gain.value:curEl.volume, 0, 50, null);
+      playAt(i+1);
+    }
+
+    function _onReady(){
+      if(_started) return; _started=true;
+      curEl.removeEventListener('canplay',_onReady);
+      curEl.removeEventListener('loadeddata',_onReady);
+      clearTimeout(_stall);
+      curEl.play().catch(function(){ _advance(); });
+      _fadeGain(cur, 0, 0.85, 200); // smooth fade in via GainNode
+    }
+
+    curEl.addEventListener('canplay', _onReady);
+    curEl.addEventListener('loadeddata', _onReady);
+    curEl.onerror=function(){ clearTimeout(_stall); _advance(); };
+
+    // Fade out 0.5s before end (clean exit, no click)
+    curEl.addEventListener('timeupdate', function onTU(){
+      if(_fading||_advanced) return;
+      if(curEl.duration && curEl.currentTime>=curEl.duration-0.5){
+        _fading=true;
+        curEl.removeEventListener('timeupdate',onTU);
+        _fadeGain(cur, 0.85, 0, 480, _advance);
+      }
+    });
+    curEl.onended=function(){ if(!_advanced) _advance(); };
+
+    var _stall=setTimeout(function(){ if(!_started) _onReady(); }, 8000);
+  }
+
+  function _seqDone(){
+    for(var si=0;si<2;si++){
+      if(_vidEls[si]){ _vidEls[si].pause(); _vidEls[si].src=''; _vidEls[si].style.opacity='0'; }
+      if(_vidGains[si]) try{ _vidGains[si].gain.value=0; }catch(e){}
+    }
+    onDone();
+  }
 
   playAt(0);
 }
