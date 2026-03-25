@@ -273,32 +273,41 @@ var _soundEnabled = true;
 window.soundChoice = function(enabled){
   _soundEnabled = enabled;
 
-  // ── 1. Init AudioContext INSIDE user gesture ──────────────────────
+  // ── 1. Init AudioContext INSIDE user gesture — MUST be first ─────
+  var ac;
   try{
-    var ac = new(window.AudioContext||window.webkitAudioContext)();
-    ac.resume();
+    ac = new(window.AudioContext||window.webkitAudioContext)();
     window._earlyAC = ac;
     _beepCtx = ac;
   }catch(e){}
 
-  // ── 2. Beep via oscillator — zero latency ─────────────────────────
-  try{
-    var ctx2 = _beepCtx || window._earlyAC;
-    if(ctx2){
-      var osc=ctx2.createOscillator(), g=ctx2.createGain();
+  // ── 2. Beep IMMEDIATELY — before resume() so it fires right away ──
+  if(ac){
+    try{
+      // resume() is async on iOS but oscillator still schedules ok
+      ac.resume();
+      var osc=ac.createOscillator(), g=ac.createGain();
       osc.type='sine'; osc.frequency.value=880;
-      g.gain.setValueAtTime(0.35, ctx2.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime+0.18);
-      osc.connect(g); g.connect(ctx2.destination);
-      osc.start(ctx2.currentTime); osc.stop(ctx2.currentTime+0.18);
-    }
-  }catch(e){}
+      g.gain.setValueAtTime(0.4, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.18);
+      osc.connect(g); g.connect(ac.destination);
+      osc.start(ac.currentTime); osc.stop(ac.currentTime+0.18);
+    }catch(e){}
 
-  // ── 3. Launch MP3 — play inside gesture so autoplay is allowed ────
+    // ── 3. Pre-create GainNode for videos on this same unlocked context
+    try{
+      if(!_vidGain){
+        _vidGain = ac.createGain();
+        _vidGain.gain.value = 0;
+        _vidGain.connect(ac.destination);
+      }
+    }catch(e){}
+  }
+
+  // ── 4. Launch MP3 — inside gesture so autoplay is allowed ─────────
   if(enabled){
     try{
-      var launchUrl='https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/590318main_ringtone_135_launch.mp3';
-      var la=new Audio(launchUrl);
+      var la=new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/590318main_ringtone_135_launch.mp3');
       la.volume=0.75; la.loop=false;
       window._introAudio=la;
       la.play().catch(function(){
@@ -307,7 +316,7 @@ window.soundChoice = function(enabled){
     }catch(e){}
   }
 
-  // ── 4. Hide dialog, show start screen ────────────────────────────
+  // ── 5. Hide dialog, show start screen ────────────────────────────
   var sd=document.getElementById('soundDialog');
   if(sd){ sd.style.transition='opacity 0.3s'; sd.style.opacity='0'; setTimeout(function(){sd.style.display='none';},300); }
   setTimeout(function(){
@@ -2308,55 +2317,44 @@ function _preloadVideo(src){
 }
 
 // ── VIDEO AUDIO via GainNode on shared _beepCtx ────────────────────
-// Reuses the AudioContext already unlocked in soundChoice() — no new ctx needed
-var _vidGain = null;
+// _vidGain is created in soundChoice() on the already-unlocked context
+var _vidGain = null;   // set in soundChoice()
 var _vidSrcNode = null;
 var _vidConnected = false;
 
-function _ensureVidGain(){
+function _connectVidEl(lv){
+  // _vidGain must already exist (created in soundChoice)
+  if(!_vidGain) return false;
+  if(_vidConnected) return true;
   var ac = _beepCtx || window._earlyAC;
   if(!ac) return false;
-  if(_vidGain) return true;
   try{
     if(ac.state==='suspended') ac.resume();
-    _vidGain = ac.createGain();
-    _vidGain.gain.value = 0;
-    _vidGain.connect(ac.destination);
-    return true;
-  }catch(e){ return false; }
-}
-
-function _connectVidEl(lv){
-  if(_vidConnected) return true;
-  if(!_ensureVidGain()) return false;
-  var ac = _beepCtx || window._earlyAC;
-  try{
     _vidSrcNode = ac.createMediaElementSource(lv);
     _vidSrcNode.connect(_vidGain);
     _vidConnected = true;
-    // HTML volume must be 1 — gain node controls level
-    lv.volume = 1;
+    lv.volume = 1; // gain node controls level, not HTML volume
     return true;
   }catch(e){ return false; }
 }
 
 function _vidFadeIn(ms){
-  if(!_vidGain){ return; }
-  var ac = _beepCtx || window._earlyAC; if(!ac) return;
+  if(!_vidGain) return;
+  var ac=_beepCtx||window._earlyAC; if(!ac) return;
   if(ac.state==='suspended') ac.resume();
   _vidGain.gain.cancelScheduledValues(ac.currentTime);
   _vidGain.gain.setValueAtTime(0, ac.currentTime);
-  _vidGain.gain.linearRampToValueAtTime(0.9, ac.currentTime + ms/1000);
+  _vidGain.gain.linearRampToValueAtTime(0.9, ac.currentTime+ms/1000);
 }
 
 function _vidFadeOut(ms, cb){
   if(!_vidGain){ if(cb) setTimeout(cb,ms); return; }
-  var ac = _beepCtx || window._earlyAC;
+  var ac=_beepCtx||window._earlyAC;
   if(!ac){ if(cb) setTimeout(cb,ms); return; }
-  var cur = _vidGain.gain.value;
+  var cur=_vidGain.gain.value;
   _vidGain.gain.cancelScheduledValues(ac.currentTime);
   _vidGain.gain.setValueAtTime(cur, ac.currentTime);
-  _vidGain.gain.linearRampToValueAtTime(0, ac.currentTime + ms/1000);
+  _vidGain.gain.linearRampToValueAtTime(0, ac.currentTime+ms/1000);
   setTimeout(cb||function(){}, ms+20);
 }
 
@@ -2495,12 +2493,74 @@ function _playCinematicSequence(entityVideo, onDone){
   });
 }
 
+function _showPhotoInOverlay(photoSrc, onDone){
+  var ov = document.getElementById('videoOverlay');
+  if(!ov){ onDone(); return; }
+
+  // Replace video with image temporarily
+  var lv = document.getElementById('videoEl');
+  if(lv){ lv.pause(); lv.src=''; lv.style.display='none'; }
+
+  var img = document.getElementById('_photoZoomImg');
+  if(!img){
+    img = document.createElement('img');
+    img.id = '_photoZoomImg';
+    img.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:8001;opacity:0;transition:opacity 0.4s;transform:scale(1);animation:none;';
+    ov.appendChild(img);
+  }
+
+  // Inject keyframe if not present
+  if(!document.getElementById('_zoomKF')){
+    var st=document.createElement('style');
+    st.id='_zoomKF';
+    st.textContent='@keyframes _photoZoom{from{transform:scale(1)}to{transform:scale(1.08)}}';
+    document.head.appendChild(st);
+  }
+
+  img.src = photoSrc;
+  img.style.opacity='0';
+  img.style.animation='none';
+  ov.style.display='flex';
+  ov.style.opacity='0';
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    ov.style.opacity='1';
+    img.style.opacity='1';
+    img.style.animation='_photoZoom 3s ease-in-out forwards';
+  }); });
+
+  var skipBtn=document.getElementById('videoSkip');
+  var _done=false;
+  function finish(){
+    if(_done) return; _done=true;
+    img.style.opacity='0';
+    ov.style.opacity='0';
+    setTimeout(function(){
+      ov.style.display='none';
+      img.style.display='none';
+      if(lv) lv.style.display='';
+      onDone();
+    }, 350);
+  }
+  if(skipBtn) skipBtn.onclick=finish;
+  // Auto-advance after 3.5s
+  setTimeout(finish, 3500);
+}
+
 function enterFocusWithLanding(id){
   var d = dataMap[id];
   var entityVid = d && d.video ? d.video : null;
-  _playCinematicSequence(entityVid, function(){
-    enterFocus(id);
-  });
+  var entityPhoto = d && (d.focusPhoto||d.photo) ? (d.focusPhoto||d.photo) : null;
+
+  // If no video but has photo → show photo zoom in gold border
+  if(!entityVid && entityPhoto && entityPhoto.indexOf('From_Main')<0 && entityPhoto.indexOf('.png')<0){
+    _playCinematicSequence(null, function(){
+      _showPhotoInOverlay(entityPhoto, function(){ enterFocus(id); });
+    });
+  } else {
+    _playCinematicSequence(entityVid, function(){
+      enterFocus(id);
+    });
+  }
 }
 
 function enterFocus(id){
@@ -3710,20 +3770,34 @@ function _shuffleArray(arr){
 var _MUSIC_VOL_NORMAL = 0.55;
 
 function _pauseMusicForFocus(){
-  try{ if(_musicAudio && !_musicAudio.paused) _musicAudio.pause(); }catch(e){}
   _pauseSpacecraft();
+  if(!_musicAudio || _musicAudio.paused) return;
+  // Fade out then pause
+  var vol = _musicAudio.volume;
+  var steps=10, s=0;
+  var iv=setInterval(function(){
+    s++;
+    try{ _musicAudio.volume=Math.max(0,vol*(1-s/steps)); }catch(e){}
+    if(s>=steps){ clearInterval(iv); try{ _musicAudio.pause(); _musicAudio.volume=_MUSIC_VOL_NORMAL; }catch(e){} }
+  },30);
 }
 
 function _resumeMusicAfterFocus(){
+  _resumeSpacecraft();
+  if(!_musicOn) return;
   try{
-    if(_musicOn && _musicAudio && _musicAudio.paused && _musicAudio.src){
-      _musicAudio.volume = _MUSIC_VOL_NORMAL;
+    if(_musicAudio && _musicAudio.paused && _musicAudio.src){
+      _musicAudio.volume=0;
       _musicAudio.play().catch(function(){});
-    } else if(_musicAudio){
-      _musicAudio.volume = _MUSIC_VOL_NORMAL;
+      // Fade in
+      var s=0;
+      var iv=setInterval(function(){
+        s++;
+        try{ _musicAudio.volume=Math.min(_MUSIC_VOL_NORMAL,_MUSIC_VOL_NORMAL*(s/12)); }catch(e){}
+        if(s>=12){ clearInterval(iv); }
+      },40);
     }
   }catch(e){}
-  _resumeSpacecraft();
 }
 
 function _pauseSpacecraft(){
