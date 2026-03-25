@@ -2476,20 +2476,31 @@ function _playVideoSequence(srcs, onDone){
     // Fade out 0.5s before end (clean exit, no click)
     curEl.addEventListener('timeupdate', function onTU(){
       if(_fading||_advanced) return;
-      if(curEl.duration && curEl.currentTime>=curEl.duration-0.5){
+      // Start fade 1.2s before end — gives enough time to reach 0 smoothly
+      if(curEl.duration && curEl.currentTime>=curEl.duration-1.2){
         _fading=true;
         curEl.removeEventListener('timeupdate',onTU);
-        _fadeGain(cur, 0.85, 0, 480, _advance);
+        _fadeGain(cur, curEl.volume||0.85, 0, 1100, _advance);
       }
     });
-    curEl.onended=function(){ if(!_advanced) _advance(); };
+    curEl.onended=function(){
+      // Safety: if timeupdate missed, cut volume then advance
+      curEl.volume=0;
+      if(!_advanced) _advance();
+    };
 
     var _stall=setTimeout(function(){ if(!_started) _onReady(); }, 8000);
   }
 
   function _seqDone(){
     for(var si=0;si<2;si++){
-      if(_vidEls[si]){ _vidEls[si].pause(); _vidEls[si].src=''; _vidEls[si].style.opacity='0'; _vidEls[si].volume=0; }
+      if(_vidEls[si]){
+        // Always ramp to 0 before pause to avoid click
+        try{ _vidEls[si].volume=0; }catch(e){}
+        try{ _vidEls[si].pause(); }catch(e){}
+        _vidEls[si].src='';
+        _vidEls[si].style.opacity='0';
+      }
     }
     onDone();
   }
