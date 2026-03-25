@@ -2295,49 +2295,6 @@ function _pickN(arr, n){
   return shuffled.slice(0, Math.min(n, shuffled.length));
 }
 
-// ── VIDEO AUDIO FADE via Web Audio API (eliminates click/pop) ──────
-var _vidAC = null;    // AudioContext for video
-var _vidGain = null;  // GainNode
-var _vidSource = null; // MediaElementSourceNode
-
-function _getVidAC(){
-  if(_vidAC) return _vidAC;
-  try{
-    _vidAC = new (window.AudioContext||window.webkitAudioContext)();
-    _vidGain = _vidAC.createGain();
-    _vidGain.gain.value = 0;
-    _vidGain.connect(_vidAC.destination);
-  }catch(e){ _vidAC=null; }
-  return _vidAC;
-}
-
-function _connectVideoToAC(lv){
-  var ac = _getVidAC();
-  if(!ac) return false;
-  try{
-    if(_vidSource){ _vidSource.disconnect(); _vidSource=null; }
-    _vidSource = ac.createMediaElementSource(lv);
-    _vidSource.connect(_vidGain);
-    return true;
-  }catch(e){ return false; }
-}
-
-function _vidFadeIn(ms){
-  var ac=_getVidAC(); if(!ac||!_vidGain) return;
-  _vidGain.gain.cancelScheduledValues(ac.currentTime);
-  _vidGain.gain.setValueAtTime(0, ac.currentTime);
-  _vidGain.gain.linearRampToValueAtTime(0.85, ac.currentTime + ms/1000);
-}
-
-function _vidFadeOut(ms, cb){
-  var ac=_getVidAC();
-  if(!ac||!_vidGain){ if(cb) setTimeout(cb, ms); return; }
-  _vidGain.gain.cancelScheduledValues(ac.currentTime);
-  _vidGain.gain.setValueAtTime(_vidGain.gain.value, ac.currentTime);
-  _vidGain.gain.linearRampToValueAtTime(0, ac.currentTime + ms/1000);
-  setTimeout(cb||function(){}, ms);
-}
-
 // Preload pool
 var _preloadPool = {};
 function _preloadVideo(src){
@@ -2348,6 +2305,19 @@ function _preloadVideo(src){
     _preloadPool[src] = v;
     setTimeout(function(){ v.src=''; delete _preloadPool[src]; }, 60000);
   }catch(e){}
+}
+
+// Smooth volume ramp — avoids click by never jumping
+function _rampVol(lv, from, to, ms, cb){
+  var steps=16, step=0;
+  try{ lv.volume=Math.max(0,Math.min(1,from)); }catch(e){}
+  var iv=setInterval(function(){
+    step++;
+    var p=step/steps;
+    try{ lv.volume=Math.max(0,Math.min(1, from+(to-from)*p)); }catch(e){}
+    if(step>=steps){ clearInterval(iv); if(cb) cb(); }
+  }, ms/steps);
+  return iv;
 }
 
 // Play a list of videos in sequence
@@ -2365,8 +2335,6 @@ function _playVideoSequence(srcs, onDone){
   playNext();
 }
 
-var _videoConnected = false; // track if MediaElementSource was created
-
 function _playOneVideo(src, onDone){
   var ov = document.getElementById('videoOverlay');
   var lv = document.getElementById('videoEl');
@@ -2376,62 +2344,44 @@ function _playOneVideo(src, onDone){
   function finish(){ if(_done)return; _done=true; setTimeout(onDone,50); }
 
   function _doLoad(){
-    // Resume AudioContext if suspended (iOS)
-    var ac=_getVidAC();
-    if(ac && ac.state==='suspended') ac.resume();
-
-    // Connect video element to Web Audio once
-    if(!_videoConnected){
-      _videoConnected = _connectVideoToAC(lv);
-    }
-    // Mute HTML volume — audio goes through GainNode
-    lv.muted = _videoConnected ? false : false;
-    lv.volume = _videoConnected ? 1.0 : 0.85;
-
-    lv.src = src;
+    lv.src=src;
+    lv.volume=0; // start silent, ramp up
     lv.load();
 
-    // Stall guard: force play after 8s if canplay never fires
-    var _stall = setTimeout(function(){
-      if(!_done){ lv.play().catch(finish); _vidFadeIn(300); lv.style.opacity='1'; }
-    }, 8000);
+    // Stall guard
+    var _stall=setTimeout(function(){ if(!_done){ lv.play().catch(finish); _rampVol(lv,0,0.85,200); lv.style.opacity='1'; } },8000);
 
     lv.addEventListener('canplay', function onCP(){
-      lv.removeEventListener('canplay', onCP);
+      lv.removeEventListener('canplay',onCP);
       clearTimeout(_stall);
       lv.play().catch(finish);
       lv.style.opacity='1';
-      _vidFadeIn(200); // smooth audio fade in
+      _rampVol(lv, 0, 0.85, 180); // fade in
     });
 
-    lv.onerror = function(){ clearTimeout(_stall); finish(); };
+    lv.onerror=function(){ clearTimeout(_stall); finish(); };
 
-    lv.onended = function(){
+    lv.onended=function(){
       clearTimeout(_stall);
-      // Smooth fade out THEN advance to next
-      _vidFadeOut(200, finish);
+      _rampVol(lv, lv.volume, 0, 180, finish); // fade out then next
     };
 
-    var skipBtn = document.getElementById('videoSkip');
-    if(skipBtn) skipBtn.onclick = function(){
-      _vidFadeOut(150, function(){
-        lv.pause();
-        finish();
-      });
+    var skipBtn=document.getElementById('videoSkip');
+    if(skipBtn) skipBtn.onclick=function(){
+      _rampVol(lv, lv.volume, 0, 150, function(){ lv.pause(); finish(); });
     };
 
     setTimeout(function(){ if(!_done) finish(); }, 30000);
   }
 
   if(ov.style.display==='flex'){
-    // Overlay open — fade out audio then swap src (no visual flicker)
-    lv.style.opacity='0';
-    _vidFadeOut(200, function(){
+    // Fade out current audio, then swap
+    _rampVol(lv, lv.volume, 0, 180, function(){
       lv.pause();
-      _doLoad();
+      lv.style.opacity='0';
+      setTimeout(_doLoad, 60);
     });
   } else {
-    // First video — show overlay
     ov.style.display='flex';
     ov.style.opacity='0';
     requestAnimationFrame(function(){
@@ -3763,6 +3713,8 @@ document.addEventListener('click', _unlockMusic);
 
 function _playMusicTrack(idx){
   if(!_musicOn) return;
+  // Don't start a new track while in focus/adventure mode
+  if(focusedId || _advActive) return;
   var track;
   if(idx < _musicTracks.length){
     track = _musicTracks[idx];
@@ -4018,7 +3970,7 @@ function playEntityVideo(d){
 function closeVideo(){
   var ov=document.getElementById('videoOverlay');
   var vid=document.getElementById('videoEl');
-  _vidFadeOut(250, function(){
+  _rampVol(vid, vid.volume||0.85, 0, 220, function(){
     vid.pause(); vid.src='';
     ov.style.transition='opacity 0.25s';
     ov.style.opacity='0';
