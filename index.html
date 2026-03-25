@@ -2316,16 +2316,14 @@ function _preloadVideo(src){
   }catch(e){}
 }
 
-// ── VIDEO AUDIO via GainNode on shared _beepCtx ────────────────────
-// _vidGain is created in soundChoice() on the already-unlocked context
-var _vidGain = null;   // set in soundChoice()
+// ── VIDEO GAIN via Web Audio (created in soundChoice on unlocked ctx) ─
+var _vidGain = null;   // created in soundChoice()
 var _vidSrcNode = null;
 var _vidConnected = false;
 
 function _connectVidEl(lv){
-  // _vidGain must already exist (created in soundChoice)
-  if(!_vidGain) return false;
   if(_vidConnected) return true;
+  if(!_vidGain) return false;
   var ac = _beepCtx || window._earlyAC;
   if(!ac) return false;
   try{
@@ -2333,7 +2331,7 @@ function _connectVidEl(lv){
     _vidSrcNode = ac.createMediaElementSource(lv);
     _vidSrcNode.connect(_vidGain);
     _vidConnected = true;
-    lv.volume = 1; // gain node controls level, not HTML volume
+    lv.volume = 1;
     return true;
   }catch(e){ return false; }
 }
@@ -2356,6 +2354,18 @@ function _vidFadeOut(ms, cb){
   _vidGain.gain.setValueAtTime(cur, ac.currentTime);
   _vidGain.gain.linearRampToValueAtTime(0, ac.currentTime+ms/1000);
   setTimeout(cb||function(){}, ms+20);
+}
+
+// Simple HTML-volume ramp fallback
+function _rampVol(lv, from, to, ms, cb){
+  var steps=16, s=0;
+  try{ lv.volume=Math.max(0,Math.min(1,from)); }catch(e){}
+  var iv=setInterval(function(){
+    s++; var p=s/steps;
+    try{ lv.volume=Math.max(0,Math.min(1,from+(to-from)*p)); }catch(e){}
+    if(s>=steps){ clearInterval(iv); if(cb) cb(); }
+  }, ms/steps);
+  return iv;
 }
 
 // Play a list of videos in sequence
@@ -2382,56 +2392,48 @@ function _playOneVideo(src, onDone){
   function finish(){ if(_done)return; _done=true; setTimeout(onDone,50); }
 
   function _doLoad(){
-    // Connect to gain node (once only) — resume ctx if needed
-    var acOk = _connectVidEl(lv);
-    var ac = _beepCtx || window._earlyAC;
-    if(ac && ac.state==='suspended') ac.resume();
-
-    // If Web Audio not available, fall back to HTML volume
-    if(!acOk) lv.volume = 0;
-
-    lv.src = src;
+    lv.volume = 0;   // start silent
+    lv.muted  = false;
+    lv.src    = src;
     lv.load();
 
+    // Stall guard: force play after 8s if canplay never fires
     var _stall=setTimeout(function(){
-      if(!_done){
-        lv.play().catch(finish);
-        lv.style.opacity='1';
-        if(acOk) _vidFadeIn(200); else lv.volume=0.85;
-      }
+      if(!_done){ lv.play().catch(finish); _rampVol(lv,0,0.85,250); lv.style.opacity='1'; }
     }, 8000);
 
     lv.addEventListener('canplay', function onCP(){
-      lv.removeEventListener('canplay',onCP);
+      lv.removeEventListener('canplay', onCP);
       clearTimeout(_stall);
       lv.play().catch(finish);
       lv.style.opacity='1';
-      if(acOk) _vidFadeIn(220);
-      else{ var vi=0; var iv=setInterval(function(){ lv.volume=Math.min(0.85,lv.volume+0.06); if(++vi>=15) clearInterval(iv); },15); }
+      _rampVol(lv, 0, 0.85, 220); // smooth fade in — no click
     });
 
     lv.onerror=function(){ clearTimeout(_stall); finish(); };
 
     lv.onended=function(){
       clearTimeout(_stall);
-      if(acOk) _vidFadeOut(200, finish);
-      else finish();
+      _rampVol(lv, 0.85, 0, 200, finish); // fade out before next
     };
 
     var skipBtn=document.getElementById('videoSkip');
     if(skipBtn) skipBtn.onclick=function(){
-      if(acOk) _vidFadeOut(150, function(){ lv.pause(); finish(); });
-      else { lv.pause(); finish(); }
+      _rampVol(lv, lv.volume, 0, 150, function(){ lv.pause(); finish(); });
     };
 
-    setTimeout(function(){ if(!_done) finish(); },30000);
+    setTimeout(function(){ if(!_done) finish(); }, 30000);
   }
 
   if(ov.style.display==='flex'){
-    // Already playing — fade out then swap
-    if(_vidConnected) _vidFadeOut(200, function(){ lv.pause(); lv.style.opacity='0'; setTimeout(_doLoad,50); });
-    else { lv.pause(); lv.style.opacity='0'; setTimeout(_doLoad,50); }
+    // Already open — fade out, pause, swap src
+    _rampVol(lv, lv.volume||0.85, 0, 200, function(){
+      lv.pause();
+      lv.style.opacity='0';
+      setTimeout(_doLoad, 50);
+    });
   } else {
+    // First video — show overlay
     ov.style.display='flex';
     ov.style.opacity='0';
     requestAnimationFrame(function(){ requestAnimationFrame(function(){ ov.style.opacity='1'; }); });
@@ -4094,7 +4096,7 @@ function playEntityVideo(d){
 function closeVideo(){
   var ov=document.getElementById('videoOverlay');
   var vid=document.getElementById('videoEl');
-  _vidFadeOut(220, function(){
+  _rampVol(vid, vid.volume||0.85, 0, 220, function(){
     vid.pause(); vid.src='';
     ov.style.transition='opacity 0.25s';
     ov.style.opacity='0';
