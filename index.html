@@ -1588,6 +1588,8 @@ function speakText(){
 }
 
 function stopSpeak(){
+  // Cancel in-flight ElevenLabs fetch if any
+  if(_elAbortCtrl){ try{_elAbortCtrl.abort();}catch(e){} _elAbortCtrl=null; }
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   if(window.responsiveVoice) responsiveVoice.cancel();
   if(_elAudio){ try{_elAudio.pause(); _elAudio.src='';}catch(e){} _elAudio=null; }
@@ -2394,29 +2396,47 @@ function _playOneVideo(src, onDone){
   function finish(){ if(_done)return; _done=true; setTimeout(onDone,50); }
 
   function _doLoad(){
-    lv.volume = 0;   // start silent
+    lv.volume = 0;
     lv.muted  = false;
     lv.src    = src;
     lv.load();
 
-    // Stall guard: force play after 8s if canplay never fires
-    var _stall=setTimeout(function(){
-      if(!_done){ lv.play().catch(finish); _rampVol(lv,0,0.85,250); lv.style.opacity='1'; }
+    var _fadeStarted = false;
+    var _stall = setTimeout(function(){
+      if(!_done){ lv.play().catch(finish); _rampVol(lv,0,0.85,200); lv.style.opacity='1'; }
     }, 8000);
 
-    lv.addEventListener('canplay', function onCP(){
-      lv.removeEventListener('canplay', onCP);
+    function _startPlay(){
       clearTimeout(_stall);
       lv.play().catch(finish);
       lv.style.opacity='1';
-      _rampVol(lv, 0, 0.85, 220); // smooth fade in — no click
+      _rampVol(lv, 0, 0.85, 180);
+    }
+
+    // canplay OR loadeddata — whichever fires first
+    var _started = false;
+    function _onReady(){ if(_started) return; _started=true; lv.removeEventListener('canplay',_onReady); lv.removeEventListener('loadeddata',_onReady); _startPlay(); }
+    lv.addEventListener('canplay', _onReady);
+    lv.addEventListener('loadeddata', _onReady);
+
+    lv.onerror = function(){ clearTimeout(_stall); finish(); };
+
+    // timeupdate: start fade 0.4s before end to avoid click
+    lv.addEventListener('timeupdate', function onTU(){
+      if(_done||_fadeStarted) return;
+      if(lv.duration && lv.currentTime >= lv.duration - 0.4){
+        _fadeStarted = true;
+        lv.removeEventListener('timeupdate', onTU);
+        _rampVol(lv, lv.volume, 0, 380, function(){
+          if(!_done){ _done=true; setTimeout(onDone,30); }
+        });
+      }
     });
 
-    lv.onerror=function(){ clearTimeout(_stall); finish(); };
-
-    lv.onended=function(){
+    // onended as safety net (in case timeupdate missed)
+    lv.onended = function(){
       clearTimeout(_stall);
-      _rampVol(lv, 0.85, 0, 200, finish); // fade out before next
+      if(!_done){ _done=true; setTimeout(onDone,30); }
     };
 
     var skipBtn=document.getElementById('videoSkip');
@@ -2552,10 +2572,12 @@ function _showPhotoInOverlay(photoSrc, onDone){
 
 function enterFocusWithLanding(id){
   var d = dataMap[id];
+  // Pause music immediately when user taps a planet
+  _pauseMusicForFocus();
+
   var entityVid = d && d.video ? d.video : null;
   var entityPhoto = d && (d.focusPhoto||d.photo) ? (d.focusPhoto||d.photo) : null;
 
-  // If no video but has photo → show photo zoom in gold border
   if(!entityVid && entityPhoto && entityPhoto.indexOf('From_Main')<0 && entityPhoto.indexOf('.png')<0){
     _playCinematicSequence(null, function(){
       _showPhotoInOverlay(entityPhoto, function(){ enterFocus(id); });
@@ -2588,8 +2610,8 @@ function enterFocus(id){
   }
 
   focusedId=id;
-  // Pause music + spacecraft sounds completely in focus mode
-  _pauseMusicForFocus();
+  // Info card opens → resume music
+  _resumeMusicAfterFocus();
   const relatives=getRelativesSet(id);
 
   Object.values(nodes).forEach(function(n){
@@ -3671,37 +3693,34 @@ function _removeNeuralMode(){
 var _elVoiceId = 'KDImLuG6RkuyuX5httC7'; // Takis - Greek Male
 var _netlifyTTSUrl = 'https://myth-tts-api.vercel.app/api/tts';
 var _elAudio = null;
-var _elFailed = false;      // true ONLY on 401/403 (wrong API key) — permanent
-var _elFailCount = 0;       // consecutive failures — reset on success
+var _elFailed = false;
+var _elFailCount = 0;
+var _elAbortCtrl = null; // global — cancelled by stopSpeak()
 
 function _elSpeak(text, onDone){
   stopSpeak();
-  if(_elAudio){ try{_elAudio.pause();}catch(e){} _elAudio=null; }
   if(!text||text==='-'){ if(onDone) setTimeout(onDone,200); return; }
-
-  // Only skip if API key is confirmed bad (401/403)
+  // EN: ElevenLabs only has Greek voice — go straight to RV
+  if(appLang==='en'){ _rvSpeak(text, onDone); return; }
   if(_elFailed){ _rvSpeak(text, onDone); return; }
 
   var maxLen=800;
   if(text.length>maxLen) text=text.substring(0,maxLen)+'...';
 
-  // 20s timeout — EL can be slow on cold start
-  var _elAbort = new AbortController();
-  var _elTimeout = setTimeout(function(){ _elAbort.abort(); }, 20000);
+  // Create new abort controller for this request
+  _elAbortCtrl = new AbortController();
+  var _elTimeout = setTimeout(function(){ if(_elAbortCtrl) _elAbortCtrl.abort(); }, 20000);
 
   fetch(_netlifyTTSUrl,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    signal: _elAbort.signal,
-    body:JSON.stringify({
-      text: text,
-      voice_id: _elVoiceId
-    })
+    signal: _elAbortCtrl.signal,
+    body:JSON.stringify({ text: text, voice_id: _elVoiceId })
   })
   .then(function(r){
     clearTimeout(_elTimeout);
     if(!r.ok){
-      // Only 401/403 = bad API key → disable EL permanently this session
+      clearTimeout(_elTimeout); _elAbortCtrl=null;
       if(r.status===401||r.status===403){
         _elFailed=true;
         showToast('⚠️ ElevenLabs API key error → RV');
@@ -3714,12 +3733,12 @@ function _elSpeak(text, onDone){
     return r.json();
   })
   .then(function(data){
+    clearTimeout(_elTimeout); _elAbortCtrl=null;
     if(!data||!data.audio){
       _elFailCount++;
       showToast('⚠️ EL no audio → RV fallback');
       _rvSpeak(text,onDone); return;
     }
-    // Success — reset fail counter
     _elFailCount=0;
     var audioSrc='data:'+data.contentType+';base64,'+data.audio;
     _elAudio=new Audio(audioSrc);
@@ -3730,14 +3749,12 @@ function _elSpeak(text, onDone){
     showToast('🔊 ElevenLabs: Takis');
   })
   .catch(function(err){
-    clearTimeout(_elTimeout);
+    clearTimeout(_elTimeout); _elAbortCtrl=null;
     if(err==='http') return;
+    // AbortError = cancelled by stopSpeak() → silent, no fallback
+    if(err && err.name==='AbortError') return;
     _elFailCount++;
-    if(err && err.name==='AbortError'){
-      showToast('⚠️ EL timeout (20s) → RV fallback');
-    } else {
-      showToast('⚠️ EL error → RV fallback');
-    }
+    showToast('⚠️ EL error → RV fallback');
     _rvSpeak(text, onDone);
   });
 }
