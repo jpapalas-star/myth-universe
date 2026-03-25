@@ -1808,6 +1808,7 @@ function _advEnd(){
   _hideAdvOverlay();
   stopSpeak();
   _releaseWakeLock();
+  _resumeMusicAfterFocus(); // resume music after adventure ends
   var isEN=appLang==='en';
   var msg=isEN?"That was my family. Nice to meet you!":"Αυτή ήταν η οικογένειά μου. Χάρηκα που γνωριστήκαμε!";
   showToast('🌟 '+msg);
@@ -1830,6 +1831,7 @@ function stopFamilyAdventure(){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   _releaseWakeLock();
   _usedCinematicVideos.clear();
+  _resumeMusicAfterFocus(); // resume music after adventure stops
 }
 
 var _voiceIndex = 0;
@@ -2850,6 +2852,7 @@ document.addEventListener('click',e=>{
 });
 
 homeBtn.addEventListener('click',function(){
+  var wasFocused = !!focusedId;
   focusedId=null;
   _focusFromDrive=false;
   _t1=null; _multi=false; _tf=null; _mdn=null;
@@ -2872,6 +2875,8 @@ homeBtn.addEventListener('click',function(){
   });
   resetInfo();
   hideSearchResults();
+  // Resume music if we were in focus
+  if(wasFocused) _resumeMusicAfterFocus();
   // Smooth animate back to default view centered on Chaos
   var frames3=0, maxF3=40;
   var sA3=camera.alpha, sB3=camera.beta, sR3=camera.radius;
@@ -3839,14 +3844,12 @@ document.addEventListener('click', _unlockMusic);
 
 function _playMusicTrack(idx){
   if(!_musicOn) return;
-  // Don't start a new track while in focus/adventure mode
-  if(focusedId || _advActive) return;
+  if(focusedId || _advActive) return; // never start during focus/adventure
   var track;
   if(idx < _musicTracks.length){
     track = _musicTracks[idx];
     _musicIndex = idx;
   } else {
-    // After first 3, shuffle remaining (all 3 again randomized)
     if(!_shuffledTracks) _shuffledTracks = _shuffleArray(_musicTracks);
     var si = (idx - _musicTracks.length) % _shuffledTracks.length;
     if(si === 0) _shuffledTracks = _shuffleArray(_musicTracks);
@@ -3854,10 +3857,10 @@ function _playMusicTrack(idx){
     _musicIndex = idx;
   }
   _musicAudio.src = track;
-  _musicAudio.volume = 0.55;
+  _musicAudio.volume = _MUSIC_VOL_NORMAL;
   _musicAudio.play().catch(function(){});
   _musicAudio.onended = function(){
-    if(_musicOn) _playMusicTrack(_musicIndex + 1);
+    if(_musicOn && !focusedId && !_advActive) _playMusicTrack(_musicIndex + 1);
   };
 }
 
