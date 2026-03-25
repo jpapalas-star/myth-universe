@@ -3775,34 +3775,25 @@ function _shuffleArray(arr){
 }
 
 var _MUSIC_VOL_NORMAL = 0.55;
+var _musicWasPaused = false; // track if WE paused it (not user)
 
 function _pauseMusicForFocus(){
   _pauseSpacecraft();
-  if(!_musicAudio || _musicAudio.paused) return;
-  // Fade out then pause
-  var vol = _musicAudio.volume;
-  var steps=10, s=0;
-  var iv=setInterval(function(){
-    s++;
-    try{ _musicAudio.volume=Math.max(0,vol*(1-s/steps)); }catch(e){}
-    if(s>=steps){ clearInterval(iv); try{ _musicAudio.pause(); _musicAudio.volume=_MUSIC_VOL_NORMAL; }catch(e){} }
-  },30);
+  _musicWasPaused = true;
+  try{
+    _musicAudio.volume = 0;
+    _musicAudio.pause();
+  }catch(e){}
 }
 
 function _resumeMusicAfterFocus(){
+  _musicWasPaused = false;
   _resumeSpacecraft();
   if(!_musicOn) return;
   try{
-    if(_musicAudio && _musicAudio.paused && _musicAudio.src){
-      _musicAudio.volume=0;
+    _musicAudio.volume = _MUSIC_VOL_NORMAL;
+    if(_musicAudio.paused && _musicAudio.src){
       _musicAudio.play().catch(function(){});
-      // Fade in
-      var s=0;
-      var iv=setInterval(function(){
-        s++;
-        try{ _musicAudio.volume=Math.min(_MUSIC_VOL_NORMAL,_MUSIC_VOL_NORMAL*(s/12)); }catch(e){}
-        if(s>=12){ clearInterval(iv); }
-      },40);
     }
   }catch(e){}
 }
@@ -3817,6 +3808,7 @@ function _resumeSpacecraft(){
 
 function startMusic(){
   if(!_musicOn) return;
+  if(_musicWasPaused) return; // don't start if we paused for focus
   _musicIndex = 0;
   _playMusicTrack(0);
   _scheduleSpacecraft();
@@ -3830,6 +3822,7 @@ function _unlockMusic(){
   _initBeepCtx();
   if(_beepCtx) _beepCtx.resume();
   _loadBeepBuffer();
+  if(_musicWasPaused) return; // don't start if paused for focus
   if(window._pendingMusic && _musicOn){
     window._pendingMusic = false;
     startMusic();
@@ -3860,7 +3853,7 @@ function _playMusicTrack(idx){
   _musicAudio.volume = _MUSIC_VOL_NORMAL;
   _musicAudio.play().catch(function(){});
   _musicAudio.onended = function(){
-    if(_musicOn && !focusedId && !_advActive) _playMusicTrack(_musicIndex + 1);
+    if(_musicOn && !focusedId && !_advActive && !_musicWasPaused) _playMusicTrack(_musicIndex + 1);
   };
 }
 
