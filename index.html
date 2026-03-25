@@ -201,16 +201,21 @@ html,body{
 .infoLink:hover{color:#c7ecff}
 
 @media (max-width:900px){
+  #topRow2{
+    top:48px;
+    /* Ensure buttons stay compact and don't wrap onto search bar */
+    font-size:11px;
+  }
   #searchBox{
     left:10px;
     right:10px;
     width:auto;
-    top:58px
+    top:90px
   }
   #searchResults{
     left:10px;
     right:10px;
-    top:104px;
+    top:136px;
     width:auto;
     max-height:180px
   }
@@ -218,7 +223,7 @@ html,body{
     left:10px;
     right:10px;
     width:auto;
-    top:106px
+    top:140px
   }
   #info{
     left:10px;
@@ -273,6 +278,8 @@ window.soundChoice = function(enabled){
     var ac=new(window.AudioContext||window.webkitAudioContext)();
     ac.resume();
     window._earlyAC=ac;
+    // Share with the main beep system immediately (zero latency from here on)
+    _beepCtx=ac;
     // Play beep immediately using oscillator (zero latency, no file needed)
     var osc=ac.createOscillator();
     var gain=ac.createGain();
@@ -281,6 +288,8 @@ window.soundChoice = function(enabled){
     gain.gain.setValueAtTime(0.3,ac.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.15);
     osc.start(ac.currentTime); osc.stop(ac.currentTime+0.15);
+    // Start loading the WAV beep buffer in the background
+    _loadBeepBuffer();
   }catch(e){}
   var sd = document.getElementById('soundDialog');
   if(sd){ sd.style.transition='opacity 0.3s'; sd.style.opacity='0'; setTimeout(function(){sd.style.display='none';},300); }
@@ -1254,7 +1263,20 @@ function createNode(d,x,y,z,familyRingColor){
     sphere.isPickable   = true; // still pickable for tap
     sphere.renderingGroupId = 1;
 
-    var photoTex=new BABYLON.Texture(d.photo,scene,true,false,null,null,null,BABYLON.Texture.BILINEAR_SAMPLINGMODE);
+    var photoTex=new BABYLON.Texture(d.photo,scene,true,false,
+      BABYLON.Texture.BILINEAR_SAMPLINGMODE,
+      null, // onLoad
+      function(){ // onError - photo URL broken, hide disc and show sphere
+        if(disc) disc.setEnabled(false);
+        sm.alpha = 1.0;
+        sm.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
+        sm.diffuseColor  = tint.scale(0.55);
+        sm.emissiveColor = tint.scale(0.45);
+        sm.specularColor = tint.scale(0.3);
+        // Update metadata so focus logic treats it as no-photo
+        sphere.metadata.hasPhoto = false;
+      }
+    );
     photoTex.hasAlpha=false;
 
     var discMat=new BABYLON.StandardMaterial('discmat_'+d.id,scene);
@@ -2903,6 +2925,8 @@ function toggleDriveMode(){
   var slowBtn=document.getElementById('navSpeedBtn');
   var gearBtn=document.getElementById('gearBtn');
   if(driveMode){
+    // Save camera BEFORE entering drive mode so we can restore on exit
+    if(!focusedId) saveCameraState();
     btn.style.color='#ff8866';btn.style.borderColor='rgba(255,80,80,0.7)';
     if(ov)ov.style.display='block';
     if(invertBtn) invertBtn.style.display='block';
@@ -3223,25 +3247,25 @@ window.addEventListener('resize',()=>engine.resize());
 // Play countdown on page load (before start button)
 var _introAudio = null;
 (function(){
-  // Try to fetch any mp3 from SOUNDS/LAUNCH_COUNTDOWN/ on R2
+  // Try mp3 files in order, use the first that loads
   var _cdFiles = ['Rocket%20Launch%20Countdown(1).mp3','countdown.mp3','launch.mp3'];
   function _tryNextCd(idx){
     if(idx>=_cdFiles.length) return;
     var a = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/'+_cdFiles[idx]);
+    a.volume = 0.7;
+    a.loop = false;
     a.onerror = function(){ _tryNextCd(idx+1); };
-    a.oncanplaythrough = function(){ _introAudio = a; if(window._playIntroWhenReady) a.play().catch(function(){}); };
+    a.oncanplaythrough = function(){
+      if(!_introAudio){
+        _introAudio = a;
+        if(window._playIntroWhenReady) a.play().catch(function(){});
+      }
+    };
     a.load();
+    // Set as candidate immediately so soundChoice can call play()
+    if(!_introAudio) _introAudio = a;
   }
   _tryNextCd(0);
-  try{
-    _introAudio = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/Rocket%20Launch%20Countdown(1).mp3');
-    _introAudio.volume = 0.7;
-    _introAudio.loop = false;
-    // If sound choice already made, play now
-    if(window._playIntroWhenReady){
-      _introAudio.play().catch(function(){});
-    }
-  }catch(e){}
 })();
 
 function _stopIntroMusic(){
@@ -3492,11 +3516,15 @@ function _removeNeuralMode(){
 var _elVoiceId = 'KDImLuG6RkuyuX5httC7'; // Iordanis - Greek Male
 var _netlifyTTSUrl = 'https://myth-tts-api.vercel.app/api/tts';
 var _elAudio = null;
+var _elFailed = false; // set to true on 401/422 so we skip EL and go straight to fallback
 
 function _elSpeak(text, onDone){
   stopSpeak();
   if(_elAudio){ try{_elAudio.pause();}catch(e){} _elAudio=null; }
   if(!text||text==='-'){ if(onDone) setTimeout(onDone,200); return; }
+
+  // If ElevenLabs previously returned auth error, skip straight to fallback
+  if(_elFailed){ _rvSpeak(text, onDone); return; }
 
   var maxLen=800;
   if(text.length>maxLen) text=text.substring(0,maxLen)+'...';
@@ -3510,7 +3538,16 @@ function _elSpeak(text, onDone){
     })
   })
   .then(function(r){
-    if(!r.ok){ showToast('⚠️ EL HTTP '+r.status+' → fallback'); _rvSpeak(text,onDone); return Promise.reject('http'); }
+    if(!r.ok){
+      // 401/403 = auth error (bad/expired API key) — mark as permanently failed
+      if(r.status===401||r.status===403||r.status===422){
+        _elFailed=true;
+        showToast('⚠️ ElevenLabs key error ('+r.status+') → fallback');
+      } else {
+        showToast('⚠️ EL HTTP '+r.status+' → fallback');
+      }
+      _rvSpeak(text,onDone); return Promise.reject('http');
+    }
     return r.json();
   })
   .then(function(data){
