@@ -470,7 +470,7 @@ window.skipLaunch = function(){
 
 <!-- Launch video overlay -->
 <div id="launchOverlay" style="position:fixed;inset:0;z-index:100002;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
-  <video id="launchVideo" style="width:100%;height:100%;object-fit:cover;background:#000;" playsinline></video>
+  <video id="launchVideo" style="width:100%;height:100%;object-fit:cover;background:#000;" playsinline webkit-playsinline x-webkit-airplay="deny" disablePictureInPicture controlsList="nofullscreen nodownload"></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
 
@@ -1876,22 +1876,45 @@ function _advStep(){
 
   // Play cinematic sequence (landing+searching+finding+entity video) then focus+speak
   var entityVid = d.video || null;
-  _playCinematicSequence(entityVid, function(){
+  var entityPhoto = d.focusPhoto||d.photo||null;
+  var hasRealPhoto = entityPhoto && entityPhoto.indexOf('r2.dev')>=0 && entityPhoto.indexOf('From_Main')<0;
+
+  function _afterCinematic(){
     if(!_advActive) return;
-    enterFocus(id);
+    // Show photo if no video
+    function _afterPhoto(){
+      if(!_advActive) return;
+      // Close overlay
+      var ov2=document.getElementById('videoOverlay');
+      if(ov2){ ov2.style.transition='opacity 0.3s'; ov2.style.opacity='0';
+        setTimeout(function(){ ov2.style.display='none'; ov2.style.opacity='0'; },320); }
 
-    var isEN=appLang==='en';
-    var name=isEN?(d.Name_EN||d.Name||d.id):(d.Name||d.id);
-    var txt=isEN?(d.FullText_EN||d.FullText||''):(d.FullText||d.FullText_EN||'');
-    var relLabel=_getRelationLabel(relType, d.Gender, isEN);
-    var cleanName=name.replace(/[.,;:!?]+$/,'');
-    var say=relLabel+' '+cleanName+(txt&&txt!=='-'?'. '+txt:'');
-    say=say.trim();
+      enterFocus(id, true); // visual focus only
 
-    _advSpeak(say, function(){
-      setTimeout(_advStep, 500);
-    });
-  });
+      var isEN=appLang==='en';
+      var name=isEN?(d.Name_EN||d.Name||d.id):(d.Name||d.id);
+      var txt=isEN?(d.FullText_EN||d.FullText||''):(d.FullText||d.FullText_EN||'');
+      var relLabel=_getRelationLabel(relType, d.Gender, isEN);
+      var cleanName=name.replace(/[.,;:!?]+$/,'');
+      var say=relLabel+' '+cleanName+(txt&&txt!=='-'?'. '+txt:'');
+      say=say.trim();
+
+      showInfo(dataMap[id]);
+      _resumeMusicAfterFocus();
+
+      _advSpeak(say, function(){
+        setTimeout(_advStep, 500);
+      });
+    }
+
+    if(!entityVid && hasRealPhoto){
+      _showPhotoInOverlay(entityPhoto, _afterPhoto);
+    } else {
+      _afterPhoto();
+    }
+  }
+
+  _playCinematicSequence(entityVid, _afterCinematic);
 }
 
 var _advTimer=null;
