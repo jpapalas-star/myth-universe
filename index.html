@@ -1549,23 +1549,39 @@ function toggleLang(){
   var hb = document.getElementById('homeBtn');
   if(hb) hb.textContent = appLang==='gr' ? 'Επανεστίαση' : 'Reset';
 
-  // Auto-switch voice to match language
+  // Stop speech + close any playing video
+  stopSpeak();
+  window._ttsFocusToken = (window._ttsFocusToken||0) + 1;
+  if(window._cinematicPlaying){
+    window._cinematicPlaying = false;
+    window._vidSeqAbort = true;
+  }
+  var ov2 = document.getElementById('videoOverlay');
+  if(ov2 && ov2.style.display!=='none'){
+    if(typeof closeVideo==='function') closeVideo();
+  }
+
+  // Auto-switch voice
   var isEN = appLang==='en';
   if(window.speechSynthesis){
     var voices = window.speechSynthesis.getVoices();
     var langFilter = isEN ? 'en' : 'el';
     var filtered = voices.filter(function(v){ return v.lang.toLowerCase().indexOf(langFilter)===0; });
     if(filtered.length>0){
-      // Pick first male if available, else first
       var male = filtered.find(function(v){ return v.name.toLowerCase().indexOf('male')>=0 && v.name.toLowerCase().indexOf('female')<0; });
       _selectedVoice = male || filtered[0];
       _voiceIndex = (window.speechSynthesis.getVoices()||[]).indexOf(_selectedVoice);
-      showToast('🔊 '+(isEN?'English':'Ελληνική')+': '+_selectedVoice.name);
     }
   }
 
   resetInfo();
   if(_lastInfoD) showInfo(_lastInfoD);
+  // Re-speak in new language if in focus
+  if(focusedId){
+    setTimeout(function(){
+      if(typeof speakText==='function') speakText();
+    }, 400);
+  }
 }
 
 function _getBestVoice(lang, preferMale){
@@ -2638,7 +2654,9 @@ function _showPhotoInOverlay(photoSrc, onDone){
 
 function enterFocusWithLanding(id){
   var d = dataMap[id];
-  // Pause music immediately when user taps a planet
+  // Stop speech + music immediately on planet tap
+  stopSpeak();
+  window._ttsFocusToken = (window._ttsFocusToken||0) + 1;
   _pauseMusicForFocus();
 
   var entityVid = d && d.video ? d.video : null;
@@ -2658,6 +2676,8 @@ function enterFocusWithLanding(id){
 function enterFocus(id){
   if(!nodes[id]) return;
   if(focusedId===id){resetFocus(false);return;}
+  // Cancel pending TTS token (in case of rapid planet switching)
+  window._ttsFocusToken = (window._ttsFocusToken||0) + 1;
   // Save ONLY if not already in focus mode (preserve original pre-focus state)
   if(!focusedId){
     saveCameraState();
