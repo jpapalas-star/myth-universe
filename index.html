@@ -4826,7 +4826,6 @@ function _quizAnswer(letter, btn){
   if(isRight){
     _quizScore += 10;
     document.getElementById('quizScoreVal').textContent = _quizScore;
-    // Submit to leaderboard
     _submitScore(_playerName, _quizScore);
   }
 
@@ -4837,7 +4836,7 @@ function _quizAnswer(letter, btn){
   fb.style.border = isRight ? '1px solid rgba(60,220,80,0.3)' : '1px solid rgba(220,60,60,0.3)';
   fb.style.padding = '10px 12px';
   fb.style.maxHeight = '120px';
-  fb.textContent = (isRight ? '✅ Σωστό! ' : '❌ Λάθος. ') + q.explanation;
+  fb.innerHTML = (isRight ? '<strong>✅ Σωστό! +10 πόντοι 🎉</strong><br>' : '❌ Λάθος.<br>') + q.explanation;
 
   document.getElementById('quizNextBtn').style.display = 'block';
 
