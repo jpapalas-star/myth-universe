@@ -466,7 +466,7 @@ window.skipLaunch = function(){
 
 <!-- Launch video overlay -->
 <div id="launchOverlay" style="position:fixed;inset:0;z-index:100002;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
-  <video id="launchVideo" style="width:100%;height:100%;object-fit:cover;background:#000;" playsinline webkit-playsinline x-webkit-airplay="deny" disablePictureInPicture controlsList="nofullscreen nodownload"></video>
+  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
 
@@ -503,7 +503,7 @@ window.skipLaunch = function(){
     <button onclick="toggleInstructions()" style="background:rgba(255,220,60,0.12);border:1px solid rgba(255,220,60,0.35);border-radius:12px;color:#ffe040;font-size:11px;padding:4px 10px;cursor:pointer;white-space:nowrap;">📖 Οδηγίες</button>
   </div>
   <div class="sub">Ελληνική Μυθολογία</div>
-  <div class="txt">Πάτα σε έναν πλανήτη για προσεδάφιση και εξερεύνηση. Πάτα ξανά ή «Επανεστίαση» για reset.</div>
+  <div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Επανεστίαση» για reset.</div>
   </div>
 </div>
 
@@ -1832,6 +1832,7 @@ function startFamilyAdventure(rootId, btn){
   _advQueue=queue;
   _advIndex=0;
   _requestWakeLock();
+  _usedCinematicVideos.clear(); // reset used videos for this adventure
 
   _showAdvOverlay();
 
@@ -1872,45 +1873,22 @@ function _advStep(){
 
   // Play cinematic sequence (landing+searching+finding+entity video) then focus+speak
   var entityVid = d.video || null;
-  var entityPhoto = d.focusPhoto||d.photo||null;
-  var hasRealPhoto = entityPhoto && entityPhoto.indexOf('r2.dev')>=0 && entityPhoto.indexOf('From_Main')<0;
-
-  function _afterCinematic(){
+  _playCinematicSequence(entityVid, function(){
     if(!_advActive) return;
-    // Show photo if no video
-    function _afterPhoto(){
-      if(!_advActive) return;
-      // Close overlay
-      var ov2=document.getElementById('videoOverlay');
-      if(ov2){ ov2.style.transition='opacity 0.3s'; ov2.style.opacity='0';
-        setTimeout(function(){ ov2.style.display='none'; ov2.style.opacity='0'; },320); }
+    enterFocus(id);
 
-      enterFocus(id, true); // visual focus only
+    var isEN=appLang==='en';
+    var name=isEN?(d.Name_EN||d.Name||d.id):(d.Name||d.id);
+    var txt=isEN?(d.FullText_EN||d.FullText||''):(d.FullText||d.FullText_EN||'');
+    var relLabel=_getRelationLabel(relType, d.Gender, isEN);
+    var cleanName=name.replace(/[.,;:!?]+$/,'');
+    var say=relLabel+' '+cleanName+(txt&&txt!=='-'?'. '+txt:'');
+    say=say.trim();
 
-      var isEN=appLang==='en';
-      var name=isEN?(d.Name_EN||d.Name||d.id):(d.Name||d.id);
-      var txt=isEN?(d.FullText_EN||d.FullText||''):(d.FullText||d.FullText_EN||'');
-      var relLabel=_getRelationLabel(relType, d.Gender, isEN);
-      var cleanName=name.replace(/[.,;:!?]+$/,'');
-      var say=relLabel+' '+cleanName+(txt&&txt!=='-'?'. '+txt:'');
-      say=say.trim();
-
-      showInfo(dataMap[id]);
-      _resumeMusicAfterFocus();
-
-      _advSpeak(say, function(){
-        setTimeout(_advStep, 500);
-      });
-    }
-
-    if(!entityVid && hasRealPhoto){
-      _showPhotoInOverlay(entityPhoto, _afterPhoto);
-    } else {
-      _afterPhoto();
-    }
-  }
-
-  _playCinematicSequence(entityVid, _afterCinematic);
+    _advSpeak(say, function(){
+      setTimeout(_advStep, 500);
+    });
+  });
 }
 
 var _advTimer=null;
@@ -1945,17 +1923,12 @@ function _wbSpeak(text, onDone){
   window.speechSynthesis.speak(utt);
 }
 
-var _advSpeakToken = 0;
-
 function _advSpeak(text, onDone){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   if(window.responsiveVoice) responsiveVoice.cancel();
   if(_elAudio){ try{_elAudio.pause();}catch(e){} _elAudio=null; }
-  if(_elAbortCtrl){ try{_elAbortCtrl.abort();}catch(e){} _elAbortCtrl=null; }
   if(_advTimer){ clearTimeout(_advTimer); _advTimer=null; }
   if(!text){if(onDone)setTimeout(onDone,300);return;}
-
-  var myToken = ++_advSpeakToken;
 
   var _done=false;
   function finish(){
@@ -1965,24 +1938,12 @@ function _advSpeak(text, onDone){
     if(_advActive&&onDone) onDone();
   }
 
-  // Safety timer
-  var estMs = Math.max(3000, text.length * 80);
+  // Safety timer fallback
+  var estMs = Math.max(3000, text.length * 95);
   _advTimer = setTimeout(finish, estMs);
 
-  // Split into sentences, send one by one
-  var sentences = text.split(/(?<=[.!?;])\s+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length>2; });
-  if(sentences.length===0){ finish(); return; }
-
-  var idx=0;
-  function nextSentence(){
-    if(!_advActive || myToken!==_advSpeakToken){ finish(); return; }
-    if(idx>=sentences.length){ finish(); return; }
-    _elSpeak(sentences[idx++], function(){
-      if(!_advActive || myToken!==_advSpeakToken) return;
-      nextSentence();
-    });
-  }
-  nextSentence();
+  // Send sentence by sentence to ElevenLabs
+  _elSpeakSentences(text, finish);
 }
 
 function advNext(){
@@ -2019,13 +1980,13 @@ function toggleInstructions(){
 
 function stopFamilyAdventure(){
   _advActive=false;
-  _advSpeakToken++; // cancel any in-flight _advSpeak
   if(_advTimer){clearTimeout(_advTimer);_advTimer=null;}
   _hideAdvOverlay();
   stopSpeak();
   if(window.responsiveVoice) responsiveVoice.cancel();
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   _releaseWakeLock();
+  _usedCinematicVideos.clear();
   _resumeMusicAfterFocus(); // resume music after adventure stops
 }
 
@@ -2095,8 +2056,8 @@ if(window.speechSynthesis){
 function resetInfo(){
   var isEN=appLang==='en';
   var sub = isEN ? 'Greek Mythology' : 'Ελληνική Μυθολογία';
-  var txt = isEN ? 'Tap a planet to land and explore. Tap again or «Reset» to go back.'
-                 : 'Πάτα σε έναν πλανήτη για προσεδάφιση και εξερεύνηση. Πάτα ξανά ή «Επανεστίαση» για reset.';
+  var txt = isEN ? 'Tap a planet for info. Tap again or tap «Reset» to reset.'
+                 : 'Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Επανεστίαση» για reset.';
   var bgEl=document.getElementById('infoBgImg');
   if(bgEl){bgEl.src='';bgEl.style.display='none';}
   var contentEl=document.getElementById('infoContent');
@@ -2474,7 +2435,8 @@ var _CINEMATIC_PATHS = {
 
 function _fetchCinematic(cb){
   if(_cinematicCache){ cb(_cinematicCache); return; }
-  var bust = '?t='+Math.floor(Date.now()/60000);
+  // Cache-bust to bypass Vercel CDN cache
+  var bust = '?t='+Math.floor(Date.now()/60000); // changes every minute
   fetch('https://myth-tts-api.vercel.app/api/videos'+bust)
     .then(function(r){ return r.json(); })
     .then(function(data){
@@ -2482,19 +2444,21 @@ function _fetchCinematic(cb){
         if(!obj) return [];
         return obj[t] || obj[String(t)] || [];
       }
+
       var cache = {
         landing:   { 1: getTheme(data.landing,1),   2: getTheme(data.landing,2),   3: getTheme(data.landing,3)   },
         searching: { 1: getTheme(data.searching,1),  2: getTheme(data.searching,2),  3: getTheme(data.searching,3)  },
         finding:   { 1: getTheme(data.finding,1)||[], 2: getTheme(data.finding,2)||[], 3: getTheme(data.finding,3)||[] }
       };
       _cinematicCache = cache;
+      // Aggressively preload first video of each theme immediately
       [1,2,3].forEach(function(t){
         if(cache.landing[t] && cache.landing[t][0]) _preloadVideo(cache.landing[t][0]);
         if(cache.searching[t] && cache.searching[t][0]) _preloadVideo(cache.searching[t][0]);
       });
       cb(cache);
     })
-    .catch(function(){
+    .catch(function(err){
       _cinematicCache={landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}};
       cb(_cinematicCache);
     });
@@ -4226,28 +4190,6 @@ var _musicTracks = [
   'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/Music/2.mp3',
   'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/Music/3.mp3'
 ];
-
-// Fetch full music list from R2 (public listing)
-(function(){
-  var R2 = 'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev';
-  fetch('https://myth-tts-api.vercel.app/api/videos')
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      if(data.music && Array.isArray(data.music) && data.music.length > 0){
-        // Sort so 1.mp3, 2.mp3, 3.mp3... play in order
-        _musicTracks = data.music.slice().sort(function(a,b){
-          var na = parseInt(a.split('/').pop()); 
-          var nb = parseInt(b.split('/').pop());
-          return (isNaN(na)?999:na) - (isNaN(nb)?999:nb);
-        });
-        // Restart music with new tracks if already playing
-        if(_musicOn && !_musicWasPaused && !_musicAudio.paused){
-          _musicIndex = 0; _playMusicTrack(0);
-        }
-      }
-    })
-    .catch(function(){});
-})();
 var _spacecraftSounds = [
   './Assets/Sounds/Spacecraft/578629main_hawquindar.mp3',
   './Assets/Sounds/Spacecraft/582367main_Mercury-6_Zero-G.mp3',
@@ -4298,14 +4240,8 @@ function _resumeMusicAfterFocus(){
   }catch(e){}
 }
 
-var _spacecraftCurrentSfx = null; // track currently playing spacecraft audio
-
 function _pauseSpacecraft(){
   if(_spacecraftTimer){ clearTimeout(_spacecraftTimer); _spacecraftTimer=null; }
-  if(_spacecraftCurrentSfx){
-    try{ _spacecraftCurrentSfx.pause(); _spacecraftCurrentSfx.currentTime=0; }catch(e){}
-    _spacecraftCurrentSfx = null;
-  }
 }
 
 function _resumeSpacecraft(){
@@ -4382,11 +4318,8 @@ function _scheduleSpacecraft(){
   var delay = (20 + Math.random()*10) * 1000;
   _spacecraftTimer = setTimeout(function(){
     if(!_musicOn) return;
-    if(focusedId || _musicWasPaused) { _scheduleSpacecraft(); return; } // no spacecraft during focus
     var sfx = new Audio(_spacecraftSounds[Math.floor(Math.random()*_spacecraftSounds.length)]);
-    sfx.volume = 0.70; // 70% volume
-    _spacecraftCurrentSfx = sfx;
-    sfx.onended = function(){ _spacecraftCurrentSfx = null; };
+    sfx.volume = 0.7 * (_musicAudio.volume||0.55);
     sfx.play().catch(function(){});
     _scheduleSpacecraft();
   }, delay);
@@ -4483,25 +4416,13 @@ document.addEventListener('click', function(e){
     // Eager: fetch cinematic API + preload first videos immediately
     if(typeof _fetchCinematic==='function'){
       _fetchCinematic(function(cache){
+        // Preload first landing video of each available theme
         [1,2,3].forEach(function(t){
           if(cache.landing[t]&&cache.landing[t][0]) _preloadVideo(cache.landing[t][0]);
           if(cache.searching[t]&&cache.searching[t][0]) _preloadVideo(cache.searching[t][0]);
         });
       });
     }
-    // Separate: fetch music list from R2 (via Vercel music endpoint)
-    fetch('https://myth-tts-api.vercel.app/api/music')
-      .then(function(r){ return r.json(); })
-      .then(function(d){
-        if(d.tracks && d.tracks.length > 0){
-          _musicTracks = d.tracks;
-          // Restart music with new tracks if playing
-          if(_musicOn && !_musicWasPaused && _musicAudio.paused){
-            _musicIndex = 0; _playMusicTrack(0);
-          }
-        }
-      })
-      .catch(function(){}); // silently fail - hardcoded fallback stays
     // Eager: load quiz data in background
     if(typeof _loadQuizData==='function') _loadQuizData(function(){});
     if(typeof _tryAutoStart==='function') _tryAutoStart();
