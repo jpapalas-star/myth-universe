@@ -1832,7 +1832,6 @@ function startFamilyAdventure(rootId, btn){
   _advQueue=queue;
   _advIndex=0;
   _requestWakeLock();
-  _usedCinematicVideos.clear(); // reset used videos for this adventure
 
   _showAdvOverlay();
 
@@ -1923,12 +1922,17 @@ function _wbSpeak(text, onDone){
   window.speechSynthesis.speak(utt);
 }
 
+var _advSpeakToken = 0;
+
 function _advSpeak(text, onDone){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   if(window.responsiveVoice) responsiveVoice.cancel();
   if(_elAudio){ try{_elAudio.pause();}catch(e){} _elAudio=null; }
+  if(_elAbortCtrl){ try{_elAbortCtrl.abort();}catch(e){} _elAbortCtrl=null; }
   if(_advTimer){ clearTimeout(_advTimer); _advTimer=null; }
   if(!text){if(onDone)setTimeout(onDone,300);return;}
+
+  var myToken = ++_advSpeakToken;
 
   var _done=false;
   function finish(){
@@ -1938,12 +1942,24 @@ function _advSpeak(text, onDone){
     if(_advActive&&onDone) onDone();
   }
 
-  // Safety timer fallback
-  var estMs = Math.max(3000, text.length * 95);
+  // Safety timer
+  var estMs = Math.max(3000, text.length * 80);
   _advTimer = setTimeout(finish, estMs);
 
-  // Send sentence by sentence to ElevenLabs
-  _elSpeakSentences(text, finish);
+  // Split into sentences, send one by one
+  var sentences = text.split(/(?<=[.!?;])\s+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length>2; });
+  if(sentences.length===0){ finish(); return; }
+
+  var idx=0;
+  function nextSentence(){
+    if(!_advActive || myToken!==_advSpeakToken){ finish(); return; }
+    if(idx>=sentences.length){ finish(); return; }
+    _elSpeak(sentences[idx++], function(){
+      if(!_advActive || myToken!==_advSpeakToken) return;
+      nextSentence();
+    });
+  }
+  nextSentence();
 }
 
 function advNext(){
@@ -1980,13 +1996,13 @@ function toggleInstructions(){
 
 function stopFamilyAdventure(){
   _advActive=false;
+  _advSpeakToken++; // cancel any in-flight _advSpeak
   if(_advTimer){clearTimeout(_advTimer);_advTimer=null;}
   _hideAdvOverlay();
   stopSpeak();
   if(window.responsiveVoice) responsiveVoice.cancel();
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   _releaseWakeLock();
-  _usedCinematicVideos.clear();
   _resumeMusicAfterFocus(); // resume music after adventure stops
 }
 
