@@ -269,10 +269,24 @@ html,body{
 <!-- Sound permission dialog - shown FIRST -->
 <script>
 // ── STARTUP STATE ─────────────────────────────────────────────────────
-var _soundEnabled = true;
+var _soundEnabled  = true;
 var _universeReady = false;
-var _soundChosen = false;
+var _soundChosen   = false;
 var _videoUnlocked = false;
+
+// Launch mp3 — preloaded immediately
+var _introAudio = (function(){
+  try{
+    var a=new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/590318main_ringtone_135_launch.mp3');
+    a.preload='auto'; a.volume=0.75; a.load(); return a;
+  }catch(e){ return null; }
+})();
+
+function _stopIntroMusic(){
+  if(_introAudio){
+    try{ _introAudio.pause(); _introAudio.currentTime=0; }catch(e){}
+  }
+}
 
 function _tryAutoStart(){
   if(!_soundChosen || !_universeReady || !_videoUnlocked) return;
@@ -4323,7 +4337,7 @@ document.addEventListener('click', function(e){
     _universeReady = true;
     var ls=document.getElementById('loadScreen');
     if(ls){ ls.style.opacity='0'; setTimeout(function(){ls.remove();},300); }
-    if(typeof _tryStartVideo==='function') _tryStartVideo();
+    if(typeof _tryAutoStart==='function') _tryAutoStart();
   };
 })();
 </script>
