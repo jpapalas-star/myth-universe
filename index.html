@@ -432,8 +432,6 @@ window.skipLaunch = function(){
   </div>
 </div>
 
-<div id="startScreen" style="position:fixed;inset:0;z-index:100000;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;">
-  <div style="color:#ffe040;font-family:Arial,sans-serif;font-size:28px;font-weight:bold;letter-spacing:3px;text-align:center;text-shadow:0 0 30px rgba(255,200,60,0.6);">MYTH UNIVERSE</div>
   <div style="color:#aaa;font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;text-align:center;">Explore Greek Mythology in 3D</div>
   <button onclick="startMythJourney()" style="margin-top:16px;background:linear-gradient(135deg,rgba(255,180,30,0.25),rgba(255,100,20,0.15));border:2px solid rgba(255,180,30,0.7);border-radius:30px;color:#ffe040;font-family:Arial,sans-serif;font-size:17px;font-weight:bold;padding:16px 36px;cursor:pointer;letter-spacing:2px;text-shadow:0 0 10px rgba(255,200,60,0.5);box-shadow:0 0 30px rgba(255,150,20,0.3);">
     🌟 Start your Myth Journey!
@@ -2420,8 +2418,6 @@ function _fetchCinematic(cb){
       cb(cache);
     })
     .catch(function(err){
-      console.error('Videos API error:', err);
-      showToast('⚠️ Videos API error');
       _cinematicCache={landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}};
       cb(_cinematicCache);
     });
@@ -2972,8 +2968,9 @@ function enterFocus(id, suppressInfoAndSpeak){
   }
 
   focusedId=id;
-  // Info card opens → resume music
-  _resumeMusicAfterFocus();
+  // Resume music only if NOT called from enterFocusWithLanding
+  // (which handles music resume itself after cinematics)
+  if(!suppressInfoAndSpeak) _resumeMusicAfterFocus();
   const relatives=getRelativesSet(id);
 
   Object.values(nodes).forEach(function(n){
@@ -4372,18 +4369,7 @@ document.addEventListener('click', function(e){
 <script>
 function playEntityVideo(d){
   if(!d||!d.video) return;
-  var ov=document.getElementById('videoOverlay');
-  var vid=document.getElementById('videoEl');
-  var tgr=document.getElementById('videoTitleGR');
-  var ten=document.getElementById('videoTitleEN');
-  tgr.textContent=d.Name||'';
-  ten.textContent=d.Name_EN||'';
-  vid.src=d.video;
-  vid.volume=1;
-  ov.style.opacity='1';
-  ov.style.display='flex';
-  vid.play();
-  vid.onended=function(){ closeVideo(); };
+  _playVideoSequence([d.video], function(){ closeVideo(); });
 }
 function closeVideo(){
   var ov=document.getElementById('videoOverlay');
