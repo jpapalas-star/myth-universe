@@ -703,7 +703,7 @@ canvas.addEventListener('touchmove', function(e) {
     } else {
       // Pan - same speed as 2-finger
       _velAlpha = 0; _velBeta = 0;
-      _panDelta(dmx2 * (navFast?6.5:3.5), dmy2 * (navFast?6.5:3.5));
+      _panDelta(dmx2 * (navFast?6.5:1.8), dmy2 * (navFast?6.5:1.8));
     }
     _t1.x = t.clientX; _t1.y = t.clientY;
 
@@ -729,7 +729,7 @@ canvas.addEventListener('touchmove', function(e) {
     var STILL = 4; // px — below this = "stationary"
     // Only pan if BOTH fingers moved, not just one
     if (d0 > STILL && d1 > STILL) {
-      _panDelta(dmx * (navFast ? 6.5 : 3.5), dmy * (navFast ? 6.5 : 3.5));
+      _panDelta(dmx * (navFast ? 6.5 : 1.8), dmy * (navFast ? 6.5 : 1.8));
     }
     // Update individual finger positions
     _tf.p0x = t0.clientX; _tf.p0y = t0.clientY;
@@ -744,7 +744,7 @@ canvas.addEventListener('touchmove', function(e) {
       var minR = 2;
       var maxR = 2000; // match actual galaxy size
       var t = Math.max(0, Math.min(1, (camera.radius - minR) / (maxR - minR)));
-      var dampMax = navFast ? 2.5 : 1.6;
+      var dampMax = navFast ? 2.5 : 1.0;
       var damping = 0.45 + t * (dampMax - 0.45);
 
       ratio = 1 + rawChange * damping;
@@ -2591,20 +2591,33 @@ function _playVideoSequence(srcs, onDone){
     curEl.addEventListener('loadeddata', _onReady);
     curEl.onerror=function(){ clearTimeout(_stall); clearTimeout(_stall2); _advance(); };
 
-    // Fade out 2s before end — long, visible fade
+    // Fade out 2s before end — audio fades to 0 BEFORE pause to avoid click
     curEl.addEventListener('timeupdate', function onTU(){
       if(_fading||_advanced) return;
       if(curEl.duration && curEl.currentTime>=curEl.duration-2.0){
         _fading=true;
         curEl.removeEventListener('timeupdate',onTU);
-        // Fade audio AND video opacity together
-        _fadeGain(cur, curEl.volume||0.85, 0, 1800, _advance);
+        // Visual fade
         curEl.style.transition='opacity 1.8s';
         curEl.style.opacity='0';
+        // Audio: smooth ramp to 0, then advance AFTER audio is silent
+        var _vol = curEl.volume || 0.85;
+        var _steps = 36, _s = 0;
+        var _iv = setInterval(function(){
+          _s++;
+          var newVol = Math.max(0, _vol * (1 - _s/_steps));
+          try{ curEl.volume = newVol; }catch(e){}
+          if(_s >= _steps){
+            clearInterval(_iv);
+            try{ curEl.volume = 0; }catch(e){}
+            _advance();
+          }
+        }, 50); // 36 steps × 50ms = 1800ms
       }
     });
     curEl.onended=function(){
-      curEl.volume=0; curEl.style.opacity='0';
+      try{ curEl.volume=0; }catch(e){}
+      curEl.style.opacity='0';
       if(!_advanced) _advance();
     };
 
@@ -2968,6 +2981,9 @@ function enterFocus(id, suppressInfoAndSpeak){
   }
 
   focusedId=id;
+  // Hide Drive button in focus mode
+  var _dmBtn=document.getElementById('driveModeBtn');
+  if(_dmBtn) _dmBtn.style.display='none';
   // Resume music only if NOT called from enterFocusWithLanding
   // (which handles music resume itself after cinematics)
   if(!suppressInfoAndSpeak) _resumeMusicAfterFocus();
@@ -3078,7 +3094,10 @@ function enterFocus(id, suppressInfoAndSpeak){
 
 function resetFocus(fromPop){
   focusedId=null;
-  window._ttsFocusToken = (window._ttsFocusToken||0) + 1; // cancel any pending TTS
+  window._ttsFocusToken = (window._ttsFocusToken||0) + 1;
+  // Show Drive button again
+  var _dmBtn=document.getElementById('driveModeBtn');
+  if(_dmBtn) _dmBtn.style.display='';
   // Resume music + spacecraft sounds
   _resumeMusicAfterFocus();
   if(typeof closeVideo==='function') closeVideo();
@@ -3643,7 +3662,7 @@ engine.runRenderLoop(()=>{
     _vel2x*=DAMP2; _vel2y*=DAMP2;
     _velZoom=1+(_velZoom-1)*DAMP2;
     if(Math.abs(_vel2x)>0.1){
-      _panDelta(_vel2x*(navFast?6.5:3.5), _vel2y*(navFast?6.5:3.5));
+      _panDelta(_vel2x*(navFast?6.5:1.8), _vel2y*(navFast?6.5:1.8));
     }
     if(Math.abs(_velZoom-1)>0.0001){
       camera.radius=_cr(camera.radius*_velZoom);
@@ -3749,7 +3768,7 @@ engine.runRenderLoop(()=>{
   // 2-finger inertia float
   if(_inertia2){
     var D2=0.94;_vel2x*=D2;_vel2y*=D2;_velZoom=1+(_velZoom-1)*D2;
-    if(Math.abs(_vel2x)>0.1)_panDelta(_vel2x*(navFast?6.5:3.5),_vel2y*(navFast?6.5:3.5));
+    if(Math.abs(_vel2x)>0.1)_panDelta(_vel2x*(navFast?6.5:1.8),_vel2y*(navFast?6.5:1.8));
     if(Math.abs(_velZoom-1)>0.0001)camera.radius=_cr(camera.radius*_velZoom);
     var sp2=Math.sqrt(_vel2x*_vel2x+_vel2y*_vel2y);
     if(!driveMode)_warpLevel=Math.min(1,_warpLevel*0.9+(sp2*0.3+Math.abs(_velZoom-1)*80)*0.1);
