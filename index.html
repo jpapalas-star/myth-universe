@@ -353,19 +353,38 @@ function _doPlayLaunchVideo(){
   var ldg=document.getElementById('launchLoading');
   if(ldg){ if(ldg._ldIv) clearInterval(ldg._ldIv); ldg.remove(); }
 
-  // Set src if not already set (mobile may not have preloaded)
-  if(!lv.src || lv.src.indexOf('YouCut')<0){
-    lv.src='https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Launch_Video/YouCut_20260326_155547561.mp4';
-    lv.load();
-  }
+  var _R2_LAUNCH = 'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Launch_Video/YouCut_20260326_155547561.mp4';
+
+  // Always set src fresh
+  lv.src = _R2_LAUNCH;
   lv.muted = !_soundEnabled;
   lv.volume = 0.8;
+  lv.load();
 
-  lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
-  lv.addEventListener('playing',function onP(){ lv.removeEventListener('playing',onP); if(_soundEnabled) _stopIntroMusic(); },{once:true});
-  lv.onended=function(){ skipLaunch(); };
-  lv.onerror=function(){ skipLaunch(); };
-  setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); },40000);
+  var _played = false;
+  function tryPlay(){
+    if(_played) return; _played = true;
+    lv.play().catch(function(){
+      lv.muted=true;
+      lv.play().catch(function(){ skipLaunch(); });
+    });
+  }
+
+  lv.addEventListener('canplay', function onCP(){ lv.removeEventListener('canplay',onCP); tryPlay(); }, {once:true});
+  lv.addEventListener('loadeddata', function onLD(){ lv.removeEventListener('loadeddata',onLD); tryPlay(); }, {once:true});
+
+  lv.addEventListener('playing', function onP(){
+    lv.removeEventListener('playing',onP);
+    if(_soundEnabled) _stopIntroMusic();
+  },{once:true});
+
+  lv.onended = function(){ skipLaunch(); };
+  lv.onerror = function(){ skipLaunch(); };
+
+  // Stall guard: if canplay never fires in 6s, try playing anyway
+  setTimeout(function(){ tryPlay(); }, 6000);
+  // Hard timeout: if still running after 45s, skip
+  setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); }, 180000);
 }
 
 window.startMythJourney = function(){ _soundChosen=true; _tryAutoStart(); };
