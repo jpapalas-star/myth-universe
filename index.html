@@ -285,10 +285,6 @@ html,body{
 <script>
 // ── PLAYER NAME ───────────────────────────────────────────────────────
 var _playerName = '';
-// Declare early so soundChoice can use before main script loads
-var _vidEls = [null, null];
-var _vidGains = [null, null];
-var _vidSrcs  = [null, null];
 window._startWithName = function(enabled){
   if(enabled === undefined) enabled = _soundEnabled;
   var inp = document.getElementById('playerNameInput');
@@ -444,7 +440,22 @@ window.skipLaunch = function(){
   if(lo){ lo.style.transition='opacity 0.5s'; lo.style.opacity='0'; setTimeout(function(){ lo.style.display='none'; lo.style.opacity='1'; },500); }
   if(!_musicUnlocked){ _musicUnlocked=true; _initBeepCtx(); if(_beepCtx) _beepCtx.resume(); _loadBeepBuffer(); }
   _musicWasPaused=false;
-  setTimeout(function(){ if(_musicOn) startMusic(); },700);
+  setTimeout(function(){
+    if(!_musicOn) return;
+    // Try to start music, retry once on failure
+    _musicIndex=0; _shuffledTracks=null;
+    var t0 = _musicTracks[0];
+    _musicAudio.src = t0;
+    _musicAudio.volume = _MUSIC_VOL_NORMAL;
+    _musicAudio.load();
+    _musicAudio.play().catch(function(){
+      setTimeout(function(){ _musicAudio.play().catch(function(){}); }, 500);
+    });
+    _musicAudio.onended = function(){
+      if(_musicOn&&!focusedId&&!_advActive&&!_musicWasPaused) _playMusicTrack(1);
+    };
+    _scheduleSpacecraft();
+  },700);
 };
 </script>
 <div id="soundDialog" style="position:fixed;inset:0;z-index:200001;background:#000;display:flex;align-items:center;justify-content:center;">
@@ -2481,7 +2492,9 @@ function _pickN(arr, n){
 }
 
 // ── PING-PONG DOUBLE VIDEO BUFFER ───────────────────────────────────
-// _vidEls declared early in startup script above
+var _vidEls   = [null, null]; // two <video> elements (ping-pong)
+var _vidGains = [null, null]; // unused - kept for compat
+var _vidSrcs  = [null, null]; // unused - kept for compat
 var _vidSeqAbort = false;
 
 function _ensureVidEls(){
@@ -2807,7 +2820,7 @@ function _playCinematicSequence(entityVideo, onDone){
 
     if(entityVideo) queue.push({src:entityVideo, type:'entity', theme:theme});
 
-    if(queue.length===0){ onDone(); return; }
+    if(queue.length===0){ showToast('⚠️ Κανένα βίντεο διαθέσιμο'); onDone(); return; }
 
     // Pre-fetch spokens in background
     var lang2 = appLang==='en' ? 'en' : 'el';
