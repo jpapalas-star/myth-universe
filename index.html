@@ -444,11 +444,7 @@ window.skipLaunch = function(){
   if(typeof _stopIntroMusic==='function') _stopIntroMusic();
   if(lo){ lo.style.transition='opacity 0.5s'; lo.style.opacity='0'; setTimeout(function(){ lo.style.display='none'; lo.style.opacity='1'; },500); }
   if(!_musicUnlocked){ _musicUnlocked=true; _initBeepCtx(); if(_beepCtx) _beepCtx.resume(); _loadBeepBuffer(); }
-  // Always start fresh music after launch
-  setTimeout(function(){
-    _musicWasPaused = false; // ensure music can start
-    if(_musicOn) startMusic();
-  },700);
+  setTimeout(function(){ if(_musicOn&&_musicAudio&&_musicAudio.paused) startMusic(); },700);
 };
 </script>
 <div id="soundDialog" style="position:fixed;inset:0;z-index:200001;background:#000;display:flex;align-items:center;justify-content:center;">
@@ -2478,11 +2474,9 @@ var _CINEMATIC_PATHS = {
 
 function _fetchCinematic(cb){
   if(_cinematicCache){ cb(_cinematicCache); return; }
-  fetch('https://myth-tts-api.vercel.app/api/videos')
-    .then(function(r){
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      return r.json();
-    })
+  var bust = '?t='+Math.floor(Date.now()/60000);
+  fetch('https://myth-tts-api.vercel.app/api/videos'+bust)
+    .then(function(r){ return r.json(); })
     .then(function(data){
       function getTheme(obj, t){
         if(!obj) return [];
@@ -2493,14 +2487,16 @@ function _fetchCinematic(cb){
         searching: { 1: getTheme(data.searching,1),  2: getTheme(data.searching,2),  3: getTheme(data.searching,3)  },
         finding:   { 1: getTheme(data.finding,1)||[], 2: getTheme(data.finding,2)||[], 3: getTheme(data.finding,3)||[] }
       };
-      // Only cache if we got actual data
-      var hasData = cache.landing[1].length>0 || cache.landing[2].length>0 || cache.landing[3].length>0;
-      if(hasData) _cinematicCache = cache;
+      _cinematicCache = cache;
+      [1,2,3].forEach(function(t){
+        if(cache.landing[t] && cache.landing[t][0]) _preloadVideo(cache.landing[t][0]);
+        if(cache.searching[t] && cache.searching[t][0]) _preloadVideo(cache.searching[t][0]);
+      });
       cb(cache);
     })
     .catch(function(){
-      // Don't cache on failure — allow retry next time
-      cb({landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}});
+      _cinematicCache={landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}};
+      cb(_cinematicCache);
     });
 }
 
@@ -4318,15 +4314,7 @@ function _resumeSpacecraft(){
 
 function startMusic(){
   if(!_musicOn) return;
-  if(_musicWasPaused) return;
-  if(!_musicTracks || !_musicTracks.length){
-    // Fallback hardcoded tracks
-    _musicTracks = [
-      'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/Music/1.mp3',
-      'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/Music/2.mp3',
-      'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/Music/3.mp3'
-    ];
-  }
+  if(_musicWasPaused) return; // don't start if we paused for focus
   _musicIndex = 0;
   _playMusicTrack(0);
   _scheduleSpacecraft();
@@ -4355,20 +4343,23 @@ document.addEventListener('click', _unlockMusic);
 
 function _playMusicTrack(idx){
   if(!_musicOn) return;
-  if(focusedId || _advActive) return;
-  if(!_musicTracks.length) return;
-
-  // Play in order: 0,1,2,3,...,N-1, then loop from 0
-  var trackIdx = idx % _musicTracks.length;
-  _musicIndex = idx;
-
-  _musicAudio.src = _musicTracks[trackIdx];
+  if(focusedId || _advActive) return; // never start during focus/adventure
+  var track;
+  if(idx < _musicTracks.length){
+    track = _musicTracks[idx];
+    _musicIndex = idx;
+  } else {
+    if(!_shuffledTracks) _shuffledTracks = _shuffleArray(_musicTracks);
+    var si = (idx - _musicTracks.length) % _shuffledTracks.length;
+    if(si === 0) _shuffledTracks = _shuffleArray(_musicTracks);
+    track = _shuffledTracks[si];
+    _musicIndex = idx;
+  }
+  _musicAudio.src = track;
   _musicAudio.volume = _MUSIC_VOL_NORMAL;
   _musicAudio.play().catch(function(){});
   _musicAudio.onended = function(){
-    if(_musicOn && !focusedId && !_advActive && !_musicWasPaused){
-      _playMusicTrack(_musicIndex + 1);
-    }
+    if(_musicOn && !focusedId && !_advActive && !_musicWasPaused) _playMusicTrack(_musicIndex + 1);
   };
 }
 
