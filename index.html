@@ -4334,9 +4334,19 @@ document.addEventListener('click', function(e){
     _universeReady = true;
     var ls=document.getElementById('loadScreen');
     if(ls){ ls.style.opacity='0'; setTimeout(function(){ls.remove();},300); }
-    // Show info panel now that universe is ready
+    // Show info panel
     var inf=document.getElementById('info');
     if(inf) inf.style.display='';
+    // Eager: fetch cinematic API + preload first videos immediately
+    if(typeof _fetchCinematic==='function'){
+      _fetchCinematic(function(cache){
+        // Preload first landing video of each available theme
+        [1,2,3].forEach(function(t){
+          if(cache.landing[t]&&cache.landing[t][0]) _preloadVideo(cache.landing[t][0]);
+          if(cache.searching[t]&&cache.searching[t][0]) _preloadVideo(cache.searching[t][0]);
+        });
+      });
+    }
     if(typeof _tryAutoStart==='function') _tryAutoStart();
   };
 })();
