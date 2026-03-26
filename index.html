@@ -2479,6 +2479,10 @@ function _playVideoSequence(srcs, onDone){
       _fadeGain(cur, 0, 0.85, 300); // fade in audio
       curEl.style.transition='opacity 0.4s';
       curEl.style.opacity='1'; // fade in visually
+      // Fire spoken phrase for this video type
+      if(window._cinematicOnFirstStart){
+        window._cinematicOnFirstStart(i);
+      }
     }
 
     curEl.addEventListener('canplay', _onReady);
@@ -2535,7 +2539,71 @@ function _playOneVideo(src, onDone){
 // Build and play the full cinematic sequence for a focus/adventure step
 // entityVideo: path to entity's own video (or null)
 // onDone: called when all videos done
-var _usedCinematicVideos = new Set(); // tracks used videos during adventure
+
+// ── PER-FOLDER VIDEO ROTATION ────────────────────────────────────────
+// Each folder has its own shuffled queue. When exhausted → reshuffle.
+var _folderQueues = {}; // key = 'landing|1', 'searching|2', etc.
+
+function _nextFromFolder(type, theme, allVideos){
+  var key = type+'|'+theme;
+  if(!_folderQueues[key] || _folderQueues[key].length===0){
+    // Reshuffle all videos for this folder
+    var arr = allVideos.slice().sort(function(){ return Math.random()-0.5; });
+    _folderQueues[key] = arr;
+  }
+  return _folderQueues[key].shift() || null;
+}
+
+// ── SPOKEN PHRASES (from GitHub) ─────────────────────────────────────
+var _spokensCache = {}; // key = 'landing|1|EL' -> {lines:[], idx:0}
+var _GITHUB_RAW = 'https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/Assets/Videos';
+
+// One Spokens file per category type (landing/searching/finding)
+var _SPOKEN_PATHS = {
+  'landing':   'Landing_videos',
+  'searching': 'Searching_videos',
+  'finding':   'Finding_videos',
+};
+
+function _fetchSpokens(type, lang, cb){
+  var key = type+'|'+lang;
+  if(_spokensCache[key]){ cb(_spokensCache[key]); return; }
+
+  var folder = _SPOKEN_PATHS[type];
+  if(!folder){ _spokensCache[key]={lines:[],idx:0}; cb(_spokensCache[key]); return; }
+
+  var fname = lang==='en' ? 'Spokens_EN.txt' : 'Spokens_EL.txt';
+  var url = _GITHUB_RAW+'/'+folder+'/'+fname;
+
+  fetch(url)
+    .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); })
+    .then(function(txt){
+      var lines = txt.split('\n')
+        .map(function(l){ return l.replace(/^\s*\d+[\.\)]\s*/,'').trim(); })
+        .filter(function(l){ return l.length>0; });
+      var obj = {lines:lines, idx:0};
+      _spokensCache[key] = obj;
+      cb(obj);
+    })
+    .catch(function(){
+      _spokensCache[key]={lines:[],idx:0};
+      cb(_spokensCache[key]);
+    });
+}
+
+function _speakNextSpoken(type){
+  var lang = appLang==='en' ? 'en' : 'el';
+  _fetchSpokens(type, lang, function(obj){
+    if(!obj.lines.length) return;
+    var text = obj.lines[obj.idx % obj.lines.length];
+    obj.idx++;
+    if(lang==='en'){
+      _rvSpeak(text, null);
+    } else {
+      _elSpeak(text, null);
+    }
+  });
+}
 
 function _playCinematicSequence(entityVideo, onDone){
   _fetchCinematic(function(cache){
@@ -2544,7 +2612,6 @@ function _playCinematicSequence(entityVideo, onDone){
     var availableThemes = [1,2,3].filter(function(t){
       return cache.landing[t] && cache.landing[t].length>0;
     });
-    // Fallback: any theme with any video
     if(availableThemes.length===0){
       availableThemes = [1,2,3].filter(function(t){
         return (cache.searching[t]&&cache.searching[t].length>0);
@@ -2552,41 +2619,56 @@ function _playCinematicSequence(entityVideo, onDone){
     }
 
     var queue = [];
+    var theme = null;
 
     if(availableThemes.length > 0){
-      // Pick ONE random theme — ALL videos come from same theme
-      var theme = availableThemes[Math.floor(Math.random()*availableThemes.length)];
+      theme = availableThemes[Math.floor(Math.random()*availableThemes.length)];
 
-      function pickRand(arr){
-        if(!arr||arr.length===0) return null;
-        return arr[Math.floor(Math.random()*arr.length)];
+      // 1 landing — from rotation queue
+      var lv = _nextFromFolder('landing', theme, cache.landing[theme]);
+      if(lv) queue.push({src:lv, type:'landing', theme:theme});
+
+      // 2 searching — from rotation queue
+      for(var si=0; si<2; si++){
+        var sv = _nextFromFolder('searching', theme, cache.searching[theme]);
+        if(sv) queue.push({src:sv, type:'searching', theme:theme});
       }
-      function pickN(arr, n){
-        if(!arr||arr.length===0) return [];
-        var s=arr.slice().sort(function(){return Math.random()-0.5;});
-        return s.slice(0,Math.min(n,s.length));
+
+      // 1 finding — from rotation queue
+      if(cache.finding[theme] && cache.finding[theme].length>0){
+        var fv = _nextFromFolder('finding', theme, cache.finding[theme]);
+        if(fv) queue.push({src:fv, type:'finding', theme:theme});
       }
-
-      // 1 landing
-      var lv = pickRand(cache.landing[theme]);
-      if(lv) queue.push(lv);
-
-      // 2 searching (same theme)
-      pickN(cache.searching[theme], 2).forEach(function(v){ queue.push(v); });
-
-      // 1 finding (same theme, if available)
-      var fv = pickRand(cache.finding[theme]);
-      if(fv) queue.push(fv);
     }
 
-    // Entity video or photo last
-    if(entityVideo) queue.push(entityVideo);
+    if(entityVideo) queue.push({src:entityVideo, type:'entity', theme:theme});
 
     if(queue.length===0){ onDone(); return; }
 
+    // Pre-fetch spoken for landing (background)
+    var lang2 = appLang==='en' ? 'en' : 'el';
+    _fetchSpokens('landing', lang2, function(){});
+
+    var srcs = queue.map(function(q){ return q.src; });
+    var types = queue.map(function(q){ return q.type; });
+
     window._cinematicPlaying = true;
-    _playVideoSequence(queue, function(){
+
+    // Track which types have already spoken
+    var _spokenTypes = {};
+    function _onVideoStart(idx){
+      var type = types[idx];
+      if(!type || type==='entity' || _spokenTypes[type]) return;
+      if(type==='landing' || type==='searching' || type==='finding'){
+        _spokenTypes[type] = true;
+        _speakNextSpoken(type);
+      }
+    }
+    window._cinematicOnFirstStart = _onVideoStart;
+
+    _playVideoSequence(srcs, function(){
       window._cinematicPlaying = false;
+      window._cinematicOnFirstStart = null;
       var ov=document.getElementById('videoOverlay');
       _vidEls.forEach(function(v){ if(v){ v.pause(); v.src=''; v.style.opacity='0'; } });
       if(ov){
