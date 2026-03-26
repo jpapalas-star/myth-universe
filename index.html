@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="screen-orientation" content="portrait">
 <title>Myth Universe Final Focus</title>
 <link rel="preconnect" href="https://cdn.babylonjs.com">
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -228,18 +229,32 @@ html,body{
     left:10px;
     right:10px;
     top:auto;
-    bottom:10px;
+    bottom:6vh;
     width:auto;
-    max-height:34vh
+    max-height:38vh
   }
   #infoBg{
     left:10px;
     right:10px;
     top:auto;
-    bottom:10px;
+    bottom:6vh;
     width:auto;
-    max-height:34vh
+    max-height:38vh
   }
+}
+
+/* Lock portrait orientation */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  body::before {
+    content: "Παρακαλώ περιστρέψτε το κινητό σας σε κατακόρυφη θέση";
+    position: fixed; inset: 0; z-index: 999999;
+    background: #000; color: #ffe040;
+    display: flex; align-items: center; justify-content: center;
+    font-family: Arial, sans-serif; font-size: 16px;
+    text-align: center; padding: 20px;
+    white-space: pre-wrap;
+  }
+  body > *:not(style) { visibility: hidden !important; }
 }
 </style>
 </head>
@@ -3006,9 +3021,11 @@ function enterFocus(id, suppressInfoAndSpeak){
   }
 
   focusedId=id;
-  // Hide Drive button in focus mode
+  // Hide Drive + Invert buttons in focus mode
   var _dmBtn=document.getElementById('driveModeBtn');
   if(_dmBtn) _dmBtn.style.display='none';
+  var _invBtn=document.getElementById('invertBtn');
+  if(_invBtn) _invBtn.style.display='none';
   // Resume music only if NOT called from enterFocusWithLanding
   // (which handles music resume itself after cinematics)
   if(!suppressInfoAndSpeak) _resumeMusicAfterFocus();
@@ -3124,6 +3141,9 @@ function resetFocus(fromPop){
   // Show Drive button again
   var _dmBtn=document.getElementById('driveModeBtn');
   if(_dmBtn) _dmBtn.style.display='';
+  // Restore invertBtn only if we're in drive mode
+  var _invBtn2=document.getElementById('invertBtn');
+  if(_invBtn2) _invBtn2.style.display = driveMode ? 'block' : 'none';
   // Resume music + spacecraft sounds
   _resumeMusicAfterFocus();
   if(typeof closeVideo==='function') closeVideo();
