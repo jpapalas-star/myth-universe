@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="screen-orientation" content="portrait">
 <title>Myth Universe Final Focus</title>
 <link rel="preconnect" href="https://cdn.babylonjs.com">
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -229,35 +228,18 @@ html,body{
     left:10px;
     right:10px;
     top:auto;
-    bottom:0;
+    bottom:10px;
     width:auto;
-    max-height:52vh;
-    border-radius:16px 16px 0 0;
-    padding:14px 14px 20px 14px;
+    max-height:34vh
   }
   #infoBg{
     left:10px;
     right:10px;
     top:auto;
-    bottom:0;
+    bottom:10px;
     width:auto;
-    max-height:52vh;
-    border-radius:16px 16px 0 0;
+    max-height:34vh
   }
-}
-
-/* Lock portrait orientation */
-@media screen and (orientation: landscape) and (max-height: 500px) {
-  body::before {
-    content: "Παρακαλώ περιστρέψτε το κινητό σας σε κατακόρυφη θέση";
-    position: fixed; inset: 0; z-index: 999999;
-    background: #000; color: #ffe040;
-    display: flex; align-items: center; justify-content: center;
-    font-family: Arial, sans-serif; font-size: 16px;
-    text-align: center; padding: 20px;
-    white-space: pre-wrap;
-  }
-  body > *:not(style) { visibility: hidden !important; }
 }
 </style>
 </head>
@@ -3024,13 +3006,9 @@ function enterFocus(id, suppressInfoAndSpeak){
   }
 
   focusedId=id;
-  // Hide Drive + Invert + Slow buttons in focus mode
+  // Hide Drive button in focus mode
   var _dmBtn=document.getElementById('driveModeBtn');
   if(_dmBtn) _dmBtn.style.display='none';
-  var _invBtn=document.getElementById('invertBtn');
-  if(_invBtn) _invBtn.style.display='none';
-  var _slowBtn=document.getElementById('navSpeedBtn');
-  if(_slowBtn) _slowBtn.style.display='none';
   // Resume music only if NOT called from enterFocusWithLanding
   // (which handles music resume itself after cinematics)
   if(!suppressInfoAndSpeak) _resumeMusicAfterFocus();
@@ -3141,15 +3119,11 @@ function enterFocus(id, suppressInfoAndSpeak){
 
 function resetFocus(fromPop){
   focusedId=null;
-  _quizPendingId = null;
+  _quizPendingId = null; // cancel pending quiz on reset
   window._ttsFocusToken = (window._ttsFocusToken||0) + 1;
-  // Restore all buttons hidden during focus
+  // Show Drive button again
   var _dmBtn=document.getElementById('driveModeBtn');
   if(_dmBtn) _dmBtn.style.display='';
-  var _invBtn2=document.getElementById('invertBtn');
-  if(_invBtn2) _invBtn2.style.display = driveMode ? 'block' : 'none';
-  var _slowBtn=document.getElementById('navSpeedBtn');
-  if(_slowBtn) _slowBtn.style.display='';
   // Resume music + spacecraft sounds
   _resumeMusicAfterFocus();
   if(typeof closeVideo==='function') closeVideo();
@@ -3332,13 +3306,8 @@ homeBtn.addEventListener('click',function(){
   });
   resetInfo();
   hideSearchResults();
-  // Restore buttons if we were in focus
-  if(wasFocused){
-    _resumeMusicAfterFocus();
-    var _dm=document.getElementById('driveModeBtn'); if(_dm) _dm.style.display='';
-    var _iv=document.getElementById('invertBtn'); if(_iv) _iv.style.display=driveMode?'block':'none';
-    var _sl=document.getElementById('navSpeedBtn'); if(_sl) _sl.style.display='';
-  }
+  // Resume music if we were in focus
+  if(wasFocused) _resumeMusicAfterFocus();
   // Smooth animate back to default view centered on Chaos
   var frames3=0, maxF3=40;
   var sA3=camera.alpha, sB3=camera.beta, sR3=camera.radius;
@@ -4826,6 +4795,7 @@ function _quizAnswer(letter, btn){
   if(isRight){
     _quizScore += 10;
     document.getElementById('quizScoreVal').textContent = _quizScore;
+    // Submit to leaderboard
     _submitScore(_playerName, _quizScore);
   }
 
@@ -4836,7 +4806,7 @@ function _quizAnswer(letter, btn){
   fb.style.border = isRight ? '1px solid rgba(60,220,80,0.3)' : '1px solid rgba(220,60,60,0.3)';
   fb.style.padding = '10px 12px';
   fb.style.maxHeight = '120px';
-  fb.innerHTML = (isRight ? '<strong>✅ Σωστό! +10 πόντοι 🎉</strong><br>' : '❌ Λάθος.<br>') + q.explanation;
+  fb.textContent = (isRight ? '✅ Σωστό! ' : '❌ Λάθος. ') + q.explanation;
 
   document.getElementById('quizNextBtn').style.display = 'block';
 
