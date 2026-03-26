@@ -353,48 +353,65 @@ function _doPlayLaunchVideo(){
   var ldg=document.getElementById('launchLoading');
   if(ldg){ if(ldg._ldIv) clearInterval(ldg._ldIv); ldg.remove(); }
 
-  var _R2_LAUNCH = 'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Launch_Video/YouCut_20260326_155547561.mp4';
-  var _LOCAL_LAUNCH = './Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
+  function _playVideoSrc(src){
+    lv.src = src;
+    lv.muted = !_soundEnabled;
+    lv.volume = 0.8;
+    lv.load();
 
-  // Always set src fresh
-  lv.src = _R2_LAUNCH;
-  lv.muted = !_soundEnabled;
-  lv.volume = 0.8;
-  lv.load();
+    var _played = false;
+    function tryPlay(){
+      if(_played) return; _played = true;
+      lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
+    }
 
-  var _played = false;
-  function tryPlay(){
-    if(_played) return; _played = true;
-    lv.play().catch(function(){
-      lv.muted=true;
-      lv.play().catch(function(){ skipLaunch(); });
-    });
+    lv.addEventListener('canplay',  function onCP(){ lv.removeEventListener('canplay',onCP);   tryPlay(); },{once:true});
+    lv.addEventListener('loadeddata',function onLD(){ lv.removeEventListener('loadeddata',onLD); tryPlay(); },{once:true});
+    lv.addEventListener('playing', function onP(){
+      lv.removeEventListener('playing',onP);
+      if(_soundEnabled) _stopIntroMusic();
+    },{once:true});
+
+    lv.onended = function(){ skipLaunch(); };
+    lv.onerror = function(){
+      // Fallback to local
+      if(lv.src.indexOf('./Assets')!==0){
+        _playVideoSrc('./Assets/Launch_Video/YouCut_20260323_1657186262.mp4');
+      } else { skipLaunch(); }
+    };
+
+    // Stall watchdog
+    var _lastTime=-1, _stallCount=0;
+    var _wdog=setInterval(function(){
+      if(!lo||lo.style.display==='none'){ clearInterval(_wdog); return; }
+      if(!_played) return;
+      var t=lv.currentTime;
+      if(t===_lastTime && !lv.paused && !lv.ended){ if(++_stallCount>=5){ clearInterval(_wdog); skipLaunch(); } }
+      else { _stallCount=0; _lastTime=t; }
+    },1000);
+
+    setTimeout(function(){ if(!_played) tryPlay(); }, 8000);
+    setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); }, 180000);
   }
 
-  lv.addEventListener('canplay', function onCP(){ lv.removeEventListener('canplay',onCP); tryPlay(); }, {once:true});
-  lv.addEventListener('loadeddata', function onLD(){ lv.removeEventListener('loadeddata',onLD); tryPlay(); }, {once:true});
-
-  lv.addEventListener('playing', function onP(){
-    lv.removeEventListener('playing',onP);
-    if(_soundEnabled) _stopIntroMusic();
-  },{once:true});
-
-  lv.onended = function(){ skipLaunch(); };
-  lv.onerror = function(){
-    // R2 failed — try local fallback
-    if(lv.src.indexOf('r2.dev')>=0){
-      lv.src = _LOCAL_LAUNCH;
-      lv.load();
-      lv.play().catch(function(){ skipLaunch(); });
-    } else {
-      skipLaunch();
-    }
-  };
-
-  // Stall guard: if canplay never fires in 8s, try playing anyway
-  setTimeout(function(){ if(!_played) tryPlay(); }, 8000);
-  // Hard timeout
-  setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); }, 180000);
+  // Fetch launch video list from API (already cached from _fetchCinematic)
+  var bust = '?t='+Math.floor(Date.now()/60000);
+  fetch('https://myth-tts-api.vercel.app/api/videos'+bust)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var launches = data.launch && data.launch.length > 0 ? data.launch : [];
+      if(launches.length > 0){
+        // Pick random
+        var pick = launches[Math.floor(Math.random()*launches.length)];
+        _playVideoSrc(pick);
+      } else {
+        // Fallback to local
+        _playVideoSrc('./Assets/Launch_Video/YouCut_20260323_1657186262.mp4');
+      }
+    })
+    .catch(function(){
+      _playVideoSrc('./Assets/Launch_Video/YouCut_20260323_1657186262.mp4');
+    });
 }
 
 window.startMythJourney = function(){ _soundChosen=true; _tryAutoStart(); };
