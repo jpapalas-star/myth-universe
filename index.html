@@ -350,8 +350,13 @@ function _doPlayLaunchVideo(){
   var lv=document.getElementById('launchVideo');
   if(!lo||!lv){ skipLaunch(); return; }
 
+  // Remove loading indicator
   var ldg=document.getElementById('launchLoading');
   if(ldg){ if(ldg._ldIv) clearInterval(ldg._ldIv); ldg.remove(); }
+
+  // Keep overlay visible
+  lo.style.display='flex';
+  lo.style.opacity='1';
 
   function _playVideoSrc(src){
     lv.src = src;
@@ -365,7 +370,7 @@ function _doPlayLaunchVideo(){
       lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
     }
 
-    lv.addEventListener('canplay',  function onCP(){ lv.removeEventListener('canplay',onCP);   tryPlay(); },{once:true});
+    lv.addEventListener('canplay',   function onCP(){ lv.removeEventListener('canplay',onCP);    tryPlay(); },{once:true});
     lv.addEventListener('loadeddata',function onLD(){ lv.removeEventListener('loadeddata',onLD); tryPlay(); },{once:true});
     lv.addEventListener('playing', function onP(){
       lv.removeEventListener('playing',onP);
@@ -373,45 +378,23 @@ function _doPlayLaunchVideo(){
     },{once:true});
 
     lv.onended = function(){ skipLaunch(); };
-    lv.onerror = function(){
-      // Fallback to local
-      if(lv.src.indexOf('./Assets')!==0){
-        _playVideoSrc('./Assets/Launch_Video/YouCut_20260323_1657186262.mp4');
-      } else { skipLaunch(); }
-    };
+    lv.onerror = function(){ skipLaunch(); };
 
-    // Stall watchdog
-    var _lastTime=-1, _stallCount=0;
-    var _wdog=setInterval(function(){
-      if(!lo||lo.style.display==='none'){ clearInterval(_wdog); return; }
+    // Stall watchdog — if video freezes for 6s, skip
+    var _lastT=-1, _sc=0;
+    var _wd=setInterval(function(){
+      if(!lo||lo.style.display==='none'){ clearInterval(_wd); return; }
       if(!_played) return;
       var t=lv.currentTime;
-      if(t===_lastTime && !lv.paused && !lv.ended){ if(++_stallCount>=5){ clearInterval(_wdog); skipLaunch(); } }
-      else { _stallCount=0; _lastTime=t; }
+      if(t===_lastT && !lv.paused && !lv.ended){ if(++_sc>=6){ clearInterval(_wd); skipLaunch(); } }
+      else { _sc=0; _lastT=t; }
     },1000);
 
-    setTimeout(function(){ if(!_played) tryPlay(); }, 8000);
+    setTimeout(function(){ if(!_played) tryPlay(); }, 6000);
     setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); }, 180000);
   }
 
-  // Fetch launch video list from API (already cached from _fetchCinematic)
-  var bust = '?t='+Math.floor(Date.now()/60000);
-  fetch('https://myth-tts-api.vercel.app/api/videos'+bust)
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      var launches = data.launch && data.launch.length > 0 ? data.launch : [];
-      if(launches.length > 0){
-        // Pick random
-        var pick = launches[Math.floor(Math.random()*launches.length)];
-        _playVideoSrc(pick);
-      } else {
-        // Fallback to local
-        _playVideoSrc('./Assets/Launch_Video/YouCut_20260323_1657186262.mp4');
-      }
-    })
-    .catch(function(){
-      _playVideoSrc('./Assets/Launch_Video/YouCut_20260323_1657186262.mp4');
-    });
+  _playVideoSrc('./Assets/Launch_Video/YouCut_20260326_155547561.mp4');
 }
 
 window.startMythJourney = function(){ _soundChosen=true; _tryAutoStart(); };
