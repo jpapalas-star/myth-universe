@@ -2771,8 +2771,13 @@ function _showPhotoInOverlay(photoSrc, onDone){
   var ov = document.getElementById('videoOverlay');
   if(!ov){ onDone(); return; }
 
-  // Hide ping-pong video elements
-  _vidEls.forEach(function(v){ if(v){ v.pause(); v.src=''; v.style.opacity='0'; } });
+  // Hide ping-pong video elements (overlay stays OPEN)
+  _vidEls.forEach(function(v){ if(v){ try{v.pause();}catch(e){} v.volume=0; v.style.opacity='0'; } });
+
+  // Ensure overlay is visible
+  ov.style.display='flex';
+  ov.style.opacity='1';
+  ov.style.transition='none';
 
   // Get or create photo img
   var img = document.getElementById('_photoZoomImg');
@@ -2784,10 +2789,10 @@ function _showPhotoInOverlay(photoSrc, onDone){
   }
   img.style.display='block';
   img.style.opacity='0';
+  img.style.animation='none';
   img.style.transform='scale(1)';
   img.style.transition='none';
 
-  // Inject keyframe if not present
   if(!document.getElementById('_zoomKF')){
     var st=document.createElement('style');
     st.id='_zoomKF';
@@ -2796,10 +2801,6 @@ function _showPhotoInOverlay(photoSrc, onDone){
   }
 
   img.src = photoSrc;
-
-  // Show overlay
-  ov.style.display='flex';
-  ov.style.opacity='0';
 
   var _done=false;
   function finish(){
@@ -2817,11 +2818,9 @@ function _showPhotoInOverlay(photoSrc, onDone){
   }
 
   img.onload = function(){
-    // Fade in overlay + start zoom
+    // Overlay already open — just fade in the image and zoom
     requestAnimationFrame(function(){ requestAnimationFrame(function(){
-      ov.style.transition='opacity 0.4s';
-      ov.style.opacity='1';
-      img.style.transition='opacity 0.4s';
+      img.style.transition='opacity 0.5s';
       img.style.opacity='1';
       img.style.animation='_photoZoom 3.5s ease-in-out forwards';
     }); });
@@ -2830,7 +2829,7 @@ function _showPhotoInOverlay(photoSrc, onDone){
 
   var skipBtn=document.getElementById('videoSkip');
   if(skipBtn) skipBtn.onclick=finish;
-  setTimeout(finish, 4000);
+  setTimeout(finish, 4500);
 }
 
 function enterFocusWithLanding(id){
