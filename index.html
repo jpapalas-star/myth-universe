@@ -2305,7 +2305,9 @@ var _CINEMATIC_PATHS = {
 
 function _fetchCinematic(cb){
   if(_cinematicCache){ cb(_cinematicCache); return; }
-  fetch('https://myth-tts-api.vercel.app/api/videos')
+  // Cache-bust to bypass Vercel CDN cache
+  var bust = '?t='+Math.floor(Date.now()/60000); // changes every minute
+  fetch('https://myth-tts-api.vercel.app/api/videos'+bust)
     .then(function(r){ return r.json(); })
     .then(function(data){
       function getTheme(obj, t){
@@ -2319,6 +2321,8 @@ function _fetchCinematic(cb){
         finding:   { 1: getTheme(data.finding,1)||[], 2: getTheme(data.finding,2)||[], 3: getTheme(data.finding,3)||[] }
       };
       _cinematicCache = cache;
+      // Debug toast — remove after confirming finding works
+      showToast('🎬 F1:'+cache.finding[1].length+' F2:'+cache.finding[2].length+' F3:'+cache.finding[3].length);
       // Aggressively preload first video of each theme immediately
       [1,2,3].forEach(function(t){
         if(cache.landing[t] && cache.landing[t][0]) _preloadVideo(cache.landing[t][0]);
