@@ -241,6 +241,19 @@ html,body{
     max-height:34vh
   }
 }
+
+/* Lock portrait orientation */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  body::before {
+    content: "Παρακαλώ περιστρέψτε το κινητό σας σε κατακόρυφη θέση";
+    position: fixed; inset: 0; z-index: 999999;
+    background: #000; color: #ffe040;
+    display: flex; align-items: center; justify-content: center;
+    font-family: Arial, sans-serif; font-size: 16px;
+    text-align: center; padding: 20px;
+  }
+  body > *:not(style) { visibility: hidden !important; }
+}
 </style>
 </head>
 <body>
@@ -448,7 +461,7 @@ window.skipLaunch = function(){
 
 <!-- Launch video overlay -->
 <div id="launchOverlay" style="position:fixed;inset:0;z-index:100002;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
-  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline></video>
+  <video id="launchVideo" style="width:100%;height:100%;object-fit:cover;background:#000;" playsinline webkit-playsinline disablePictureInPicture controlsList="nofullscreen nodownload"></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
 
@@ -485,7 +498,7 @@ window.skipLaunch = function(){
     <button onclick="toggleInstructions()" style="background:rgba(255,220,60,0.12);border:1px solid rgba(255,220,60,0.35);border-radius:12px;color:#ffe040;font-size:11px;padding:4px 10px;cursor:pointer;white-space:nowrap;">📖 Οδηγίες</button>
   </div>
   <div class="sub">Ελληνική Μυθολογία</div>
-  <div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Επανεστίαση» για reset.</div>
+  <div class="txt">Πάτα σε έναν πλανήτη για προσεδάφιση και εξερεύνηση. Πάτα ξανά ή «Επανεστίαση» για reset.</div>
   </div>
 </div>
 
@@ -1814,7 +1827,6 @@ function startFamilyAdventure(rootId, btn){
   _advQueue=queue;
   _advIndex=0;
   _requestWakeLock();
-  _usedCinematicVideos.clear(); // reset used videos for this adventure
 
   _showAdvOverlay();
 
@@ -1855,22 +1867,31 @@ function _advStep(){
 
   // Play cinematic sequence (landing+searching+finding+entity video) then focus+speak
   var entityVid = d.video || null;
-  _playCinematicSequence(entityVid, function(){
+  var entityPhoto = d.focusPhoto||d.photo||null;
+  var hasRealPhoto = entityPhoto && entityPhoto.indexOf('r2.dev')>=0 && entityPhoto.indexOf('From_Main')<0;
+  function _afterCinematic(){
     if(!_advActive) return;
-    enterFocus(id);
-
-    var isEN=appLang==='en';
-    var name=isEN?(d.Name_EN||d.Name||d.id):(d.Name||d.id);
-    var txt=isEN?(d.FullText_EN||d.FullText||''):(d.FullText||d.FullText_EN||'');
-    var relLabel=_getRelationLabel(relType, d.Gender, isEN);
-    var cleanName=name.replace(/[.,;:!?]+$/,'');
-    var say=relLabel+' '+cleanName+(txt&&txt!=='-'?'. '+txt:'');
-    say=say.trim();
-
-    _advSpeak(say, function(){
-      setTimeout(_advStep, 500);
-    });
-  });
+    function _afterPhoto(){
+      if(!_advActive) return;
+      var ov2=document.getElementById('videoOverlay');
+      if(ov2){ ov2.style.transition='opacity 0.3s'; ov2.style.opacity='0';
+        setTimeout(function(){ ov2.style.display='none'; ov2.style.opacity='0'; },320); }
+      enterFocus(id, true);
+      showInfo(dataMap[id]);
+      _resumeMusicAfterFocus();
+      var isEN=appLang==='en';
+      var name=isEN?(d.Name_EN||d.Name||d.id):(d.Name||d.id);
+      var txt=isEN?(d.FullText_EN||d.FullText||''):(d.FullText||d.FullText_EN||'');
+      var relLabel=_getRelationLabel(relType, d.Gender, isEN);
+      var cleanName=name.replace(/[.,;:!?]+$/,'');
+      var say=relLabel+' '+cleanName+(txt&&txt!=='-'?'. '+txt:'');
+      say=say.trim();
+      _advSpeak(say, function(){ setTimeout(_advStep, 500); });
+    }
+    if(!entityVid && hasRealPhoto){ _showPhotoInOverlay(entityPhoto, _afterPhoto); }
+    else { _afterPhoto(); }
+  }
+  _playCinematicSequence(entityVid, _afterCinematic);
 }
 
 var _advTimer=null;
@@ -1905,6 +1926,7 @@ function _wbSpeak(text, onDone){
   window.speechSynthesis.speak(utt);
 }
 
+var _advSpeakToken=0;
 function _advSpeak(text, onDone){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   if(window.responsiveVoice) responsiveVoice.cancel();
@@ -1962,13 +1984,13 @@ function toggleInstructions(){
 
 function stopFamilyAdventure(){
   _advActive=false;
+  _advSpeakToken++;
   if(_advTimer){clearTimeout(_advTimer);_advTimer=null;}
   _hideAdvOverlay();
   stopSpeak();
   if(window.responsiveVoice) responsiveVoice.cancel();
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   _releaseWakeLock();
-  _usedCinematicVideos.clear();
   _resumeMusicAfterFocus(); // resume music after adventure stops
 }
 
@@ -2038,8 +2060,8 @@ if(window.speechSynthesis){
 function resetInfo(){
   var isEN=appLang==='en';
   var sub = isEN ? 'Greek Mythology' : 'Ελληνική Μυθολογία';
-  var txt = isEN ? 'Tap a planet for info. Tap again or tap «Reset» to reset.'
-                 : 'Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Επανεστίαση» για reset.';
+  var txt = isEN ? 'Tap a planet to land and explore. Tap again or «Reset» to go back.'
+                 : 'Πάτα σε έναν πλανήτη για προσεδάφιση και εξερεύνηση. Πάτα ξανά ή «Επανεστίαση» για reset.';
   var bgEl=document.getElementById('infoBgImg');
   if(bgEl){bgEl.src='';bgEl.style.display='none';}
   var contentEl=document.getElementById('infoContent');
@@ -3006,9 +3028,9 @@ function enterFocus(id, suppressInfoAndSpeak){
   }
 
   focusedId=id;
-  // Hide Drive button in focus mode
-  var _dmBtn=document.getElementById('driveModeBtn');
-  if(_dmBtn) _dmBtn.style.display='none';
+  var _dmBtn=document.getElementById('driveModeBtn'); if(_dmBtn) _dmBtn.style.display='none';
+  var _invBtn=document.getElementById('invertBtn');   if(_invBtn) _invBtn.style.display='none';
+  var _slowBtn=document.getElementById('navSpeedBtn'); if(_slowBtn) _slowBtn.style.display='none';
   // Resume music only if NOT called from enterFocusWithLanding
   // (which handles music resume itself after cinematics)
   if(!suppressInfoAndSpeak) _resumeMusicAfterFocus();
@@ -3119,8 +3141,11 @@ function enterFocus(id, suppressInfoAndSpeak){
 
 function resetFocus(fromPop){
   focusedId=null;
-  _quizPendingId = null; // cancel pending quiz on reset
+  _quizPendingId = null;
   window._ttsFocusToken = (window._ttsFocusToken||0) + 1;
+  var _dmBtn=document.getElementById('driveModeBtn'); if(_dmBtn) _dmBtn.style.display='';
+  var _invBtn=document.getElementById('invertBtn');   if(_invBtn) _invBtn.style.display=driveMode?'block':'none';
+  var _slowBtn=document.getElementById('navSpeedBtn'); if(_slowBtn) _slowBtn.style.display='';
   // Show Drive button again
   var _dmBtn=document.getElementById('driveModeBtn');
   if(_dmBtn) _dmBtn.style.display='';
@@ -3306,8 +3331,12 @@ homeBtn.addEventListener('click',function(){
   });
   resetInfo();
   hideSearchResults();
-  // Resume music if we were in focus
-  if(wasFocused) _resumeMusicAfterFocus();
+  if(wasFocused){
+    _resumeMusicAfterFocus();
+    var _dm=document.getElementById('driveModeBtn'); if(_dm) _dm.style.display='';
+    var _iv=document.getElementById('invertBtn'); if(_iv) _iv.style.display=driveMode?'block':'none';
+    var _sl=document.getElementById('navSpeedBtn'); if(_sl) _sl.style.display='';
+  }
   // Smooth animate back to default view centered on Chaos
   var frames3=0, maxF3=40;
   var sA3=camera.alpha, sB3=camera.beta, sR3=camera.radius;
@@ -4209,8 +4238,10 @@ function _resumeMusicAfterFocus(){
   }catch(e){}
 }
 
+var _spacecraftCurrentSfx = null;
 function _pauseSpacecraft(){
   if(_spacecraftTimer){ clearTimeout(_spacecraftTimer); _spacecraftTimer=null; }
+  if(_spacecraftCurrentSfx){ try{_spacecraftCurrentSfx.pause(); _spacecraftCurrentSfx.currentTime=0;}catch(e){} _spacecraftCurrentSfx=null; }
 }
 
 function _resumeSpacecraft(){
@@ -4287,8 +4318,11 @@ function _scheduleSpacecraft(){
   var delay = (20 + Math.random()*10) * 1000;
   _spacecraftTimer = setTimeout(function(){
     if(!_musicOn) return;
+    if(focusedId || _musicWasPaused){ _scheduleSpacecraft(); return; }
     var sfx = new Audio(_spacecraftSounds[Math.floor(Math.random()*_spacecraftSounds.length)]);
-    sfx.volume = 0.7 * (_musicAudio.volume||0.55);
+    sfx.volume = 0.70;
+    _spacecraftCurrentSfx = sfx;
+    sfx.onended = function(){ _spacecraftCurrentSfx=null; };
     sfx.play().catch(function(){});
     _scheduleSpacecraft();
   }, delay);
@@ -4806,7 +4840,7 @@ function _quizAnswer(letter, btn){
   fb.style.border = isRight ? '1px solid rgba(60,220,80,0.3)' : '1px solid rgba(220,60,60,0.3)';
   fb.style.padding = '10px 12px';
   fb.style.maxHeight = '120px';
-  fb.textContent = (isRight ? '✅ Σωστό! ' : '❌ Λάθος. ') + q.explanation;
+  fb.innerHTML = (isRight ? '<strong>✅ Σωστό! +10 πόντοι 🎉</strong><br>' : '❌ Λάθος.<br>') + q.explanation;
 
   document.getElementById('quizNextBtn').style.display = 'block';
 
