@@ -2603,53 +2603,66 @@ function _showPhotoInOverlay(photoSrc, onDone){
   var ov = document.getElementById('videoOverlay');
   if(!ov){ onDone(); return; }
 
-  // Replace video with image temporarily
-  var lv = document.getElementById('videoEl');
-  if(lv){ lv.pause(); lv.src=''; lv.style.display='none'; }
+  // Hide ping-pong video elements
+  _vidEls.forEach(function(v){ if(v){ v.pause(); v.src=''; v.style.opacity='0'; } });
 
+  // Get or create photo img
   var img = document.getElementById('_photoZoomImg');
   if(!img){
     img = document.createElement('img');
     img.id = '_photoZoomImg';
-    img.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:8001;opacity:0;transition:opacity 0.4s;transform:scale(1);animation:none;';
+    img.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:8001;opacity:0;transform:scale(1);';
     ov.appendChild(img);
   }
+  img.style.display='block';
+  img.style.opacity='0';
+  img.style.transform='scale(1)';
+  img.style.transition='none';
 
   // Inject keyframe if not present
   if(!document.getElementById('_zoomKF')){
     var st=document.createElement('style');
     st.id='_zoomKF';
-    st.textContent='@keyframes _photoZoom{from{transform:scale(1)}to{transform:scale(1.08)}}';
+    st.textContent='@keyframes _photoZoom{from{transform:scale(1)}to{transform:scale(1.12)}}';
     document.head.appendChild(st);
   }
 
   img.src = photoSrc;
-  img.style.opacity='0';
-  img.style.animation='none';
+
+  // Show overlay
   ov.style.display='flex';
   ov.style.opacity='0';
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){
-    ov.style.opacity='1';
-    img.style.opacity='1';
-    img.style.animation='_photoZoom 3s ease-in-out forwards';
-  }); });
 
-  var skipBtn=document.getElementById('videoSkip');
   var _done=false;
   function finish(){
     if(_done) return; _done=true;
+    img.style.transition='opacity 0.4s';
     img.style.opacity='0';
+    ov.style.transition='opacity 0.4s';
     ov.style.opacity='0';
     setTimeout(function(){
       ov.style.display='none';
+      ov.style.opacity='0';
       img.style.display='none';
-      if(lv) lv.style.display='';
       onDone();
-    }, 350);
+    }, 420);
   }
+
+  img.onload = function(){
+    // Fade in overlay + start zoom
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      ov.style.transition='opacity 0.4s';
+      ov.style.opacity='1';
+      img.style.transition='opacity 0.4s';
+      img.style.opacity='1';
+      img.style.animation='_photoZoom 3.5s ease-in-out forwards';
+    }); });
+  };
+  img.onerror = function(){ finish(); };
+
+  var skipBtn=document.getElementById('videoSkip');
   if(skipBtn) skipBtn.onclick=finish;
-  // Auto-advance after 3.5s
-  setTimeout(finish, 3500);
+  setTimeout(finish, 4000);
 }
 
 function enterFocusWithLanding(id){
@@ -2661,8 +2674,11 @@ function enterFocusWithLanding(id){
 
   var entityVid = d && d.video ? d.video : null;
   var entityPhoto = d && (d.focusPhoto||d.photo) ? (d.focusPhoto||d.photo) : null;
+  // Valid photo = R2 URL (not a sprite/From_Main default)
+  var hasRealPhoto = entityPhoto && entityPhoto.indexOf('r2.dev')>=0 && entityPhoto.indexOf('From_Main')<0;
 
-  if(!entityVid && entityPhoto && entityPhoto.indexOf('From_Main')<0 && entityPhoto.indexOf('.png')<0){
+  if(!entityVid && hasRealPhoto){
+    // No video but has real photo → cinematic then photo zoom
     _playCinematicSequence(null, function(){
       _showPhotoInOverlay(entityPhoto, function(){ enterFocus(id); });
     });
