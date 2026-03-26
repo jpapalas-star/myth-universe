@@ -336,16 +336,18 @@ window.soundChoice = function(enabled){
     }catch(e){}
   }
 
-  // Pre-create ping-pong video elements
+  // Pre-create ping-pong video elements AND unlock them inside gesture
   var ov2 = document.getElementById('videoOverlay');
   if(ov2 && !_vidEls[0]){
     for(var vi=0;vi<2;vi++){
       var vel=document.createElement('video');
       vel.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:fill;z-index:8001;opacity:0;';
       vel.setAttribute('playsinline','');
-      vel.preload='auto'; vel.muted=false; vel.volume=0;
+      vel.preload='auto'; vel.muted=true; vel.volume=0;
       ov2.insertBefore(vel,ov2.firstChild);
       _vidEls[vi]=vel;
+      // CRITICAL: call play() inside user gesture to unlock on iOS/Android
+      vel.play().catch(function(){});
     }
   }
 
@@ -2492,9 +2494,10 @@ function _pickN(arr, n){
 }
 
 // ── PING-PONG DOUBLE VIDEO BUFFER ───────────────────────────────────
-var _vidEls   = [null, null]; // two <video> elements (ping-pong)
-var _vidGains = [null, null]; // unused - kept for compat
-var _vidSrcs  = [null, null]; // unused - kept for compat
+// Note: soundChoice() may have already created elements — don't reset!
+if(typeof _vidEls === 'undefined') var _vidEls = [null, null];
+if(typeof _vidGains === 'undefined') var _vidGains = [null, null];
+if(typeof _vidSrcs === 'undefined') var _vidSrcs = [null, null];
 var _vidSeqAbort = false;
 
 function _ensureVidEls(){
