@@ -261,6 +261,8 @@ html,body{
     <button onclick="cycleVoice();" style="background:rgba(100,200,255,0.12);border:1px solid rgba(100,200,255,0.4);border-radius:12px;color:#8fd3ff;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🔊 Voice</button>
     <button id="musicToggleBtn" onclick="toggleMusic();" style="background:rgba(180,100,255,0.12);border:1px solid rgba(180,100,255,0.4);border-radius:12px;color:#cc88ff;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🎵 Music ON</button>
     <button id="neuralModeBtn" onclick="toggleNeuralMode();" style="background:rgba(0,220,180,0.12);border:1px solid rgba(0,220,180,0.4);border-radius:12px;color:#00ddcc;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🧠 Neural Mode</button>
+    <button id="quizToggleBtn" onclick="toggleQuiz();" style="background:rgba(255,160,30,0.12);border:1px solid rgba(255,160,30,0.4);border-radius:12px;color:#ffaa30;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🎯 Quiz ON</button>
+    <button onclick="showLeaderboard();" style="background:rgba(60,200,100,0.12);border:1px solid rgba(60,200,100,0.4);border-radius:12px;color:#40dd70;font-size:13px;font-weight:bold;padding:7px 14px;cursor:pointer;">🏆 Σκορ</button>
   </div>
 </div>
 
@@ -268,7 +270,14 @@ html,body{
 <!-- Sound permission dialog - shown FIRST -->
 <!-- Sound permission dialog - shown FIRST -->
 <script>
-// ── STARTUP STATE ─────────────────────────────────────────────────────
+// ── PLAYER NAME ───────────────────────────────────────────────────────
+var _playerName = '';
+window._startWithName = function(enabled){
+  if(enabled === undefined) enabled = _soundEnabled;
+  var inp = document.getElementById('playerNameInput');
+  _playerName = (inp ? inp.value.trim() : '') || 'Παίκτης';
+  soundChoice(enabled);
+};
 var _soundEnabled  = true;
 var _universeReady = false;
 var _soundChosen   = false;
@@ -421,13 +430,17 @@ window.skipLaunch = function(){
 };
 </script>
 <div id="soundDialog" style="position:fixed;inset:0;z-index:200001;background:#000;display:flex;align-items:center;justify-content:center;">
-  <div style="background:rgba(10,5,25,0.98);border:1px solid rgba(255,220,60,0.4);border-radius:20px;padding:30px 36px;text-align:center;max-width:300px;">
-    <div style="font-size:40px;margin-bottom:12px;">🔊</div>
-    <div style="color:#ffe040;font-family:Arial;font-size:18px;font-weight:bold;margin-bottom:8px;">Sound ON?</div>
-    <div style="color:#aaa;font-family:Arial;font-size:13px;margin-bottom:24px;">Enable sound for the best experience</div>
+  <div style="background:rgba(10,5,25,0.98);border:1px solid rgba(255,220,60,0.4);border-radius:20px;padding:30px 36px;text-align:center;max-width:320px;width:90%;">
+    <div style="font-size:36px;margin-bottom:10px;">🏛️</div>
+    <div style="color:#ffe040;font-family:Arial;font-size:18px;font-weight:bold;margin-bottom:6px;">Myth Universe</div>
+    <div style="color:#aaa;font-family:Arial;font-size:13px;margin-bottom:18px;">Ελληνική Μυθολογία</div>
+    <input id="playerNameInput" type="text" placeholder="Το όνομά σου..." maxlength="20"
+      style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);border:1px solid rgba(255,220,60,0.4);border-radius:10px;color:#fff;font-size:15px;padding:10px 12px;margin-bottom:16px;outline:none;font-family:Arial;text-align:center;"
+      onkeydown="if(event.key==='Enter') _startWithName()"/>
+    <div style="color:#ffe040;font-family:Arial;font-size:14px;font-weight:bold;margin-bottom:12px;">🔊 Ήχος;</div>
     <div style="display:flex;gap:12px;justify-content:center;">
-      <button onclick="soundChoice(true)" style="background:rgba(255,220,60,0.2);border:2px solid rgba(255,220,60,0.6);border-radius:14px;color:#ffe040;font-size:15px;font-weight:bold;padding:10px 28px;cursor:pointer;">✅ Yes</button>
-      <button onclick="soundChoice(false)" style="background:rgba(100,100,100,0.2);border:1px solid rgba(255,255,255,0.2);border-radius:14px;color:#aaa;font-size:15px;padding:10px 28px;cursor:pointer;">No</button>
+      <button onclick="_startWithName(true)" style="background:rgba(255,220,60,0.2);border:2px solid rgba(255,220,60,0.6);border-radius:14px;color:#ffe040;font-size:15px;font-weight:bold;padding:10px 28px;cursor:pointer;">✅ Ναι</button>
+      <button onclick="_startWithName(false)" style="background:rgba(100,100,100,0.2);border:1px solid rgba(255,255,255,0.2);border-radius:14px;color:#aaa;font-size:15px;padding:10px 28px;cursor:pointer;">Όχι</button>
     </div>
   </div>
 </div>
@@ -1548,9 +1561,10 @@ function showInfo(d){
     `<div class="sec">${lbl.par}</div><div class="txt">${listInfoLinks(d.Parents)}</div>`+
     `<div class="sec">${lbl.prt}</div><div class="txt">${listInfoLinks(d.Partners)}</div>`+
     `<div class="sec">${lbl.txt}</div>`+
-    `<div style="margin-bottom:7px;display:flex;gap:8px;">
+    `<div style="margin-bottom:7px;display:flex;gap:8px;flex-wrap:wrap;">
       <button onclick="${appLang==='en'?'speakText':'speakTextEL'}()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:5px 12px;font-size:12px;cursor:pointer;">${appLang==="en"?"🔊 Listen":"🔊 Ακρόαση"}</button>
       <button onclick="stopSpeak()" style="background:rgba(255,100,60,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:16px;color:#ff8866;padding:5px 12px;font-size:12px;cursor:pointer;">⏹ Stop</button>
+      <button onclick="showQuizForEntity('${d.id}',null)" style="background:rgba(255,160,30,0.15);border:1px solid rgba(255,160,30,0.4);border-radius:16px;color:#ffaa30;padding:5px 12px;font-size:12px;cursor:pointer;">🎯 Quiz</button>
     </div>`+
     `<div class="txt" id="infoFullText">${fulltext}</div>`+
     `<div style="margin-top:12px;">
@@ -1926,11 +1940,17 @@ function _advEnd(){
   _hideAdvOverlay();
   stopSpeak();
   _releaseWakeLock();
-  _resumeMusicAfterFocus(); // resume music after adventure ends
+  _resumeMusicAfterFocus();
   var isEN=appLang==='en';
   var msg=isEN?"That was my family. Nice to meet you!":"Αυτή ήταν η οικογένειά μου. Χάρηκα που γνωριστήκαμε!";
   showToast('🌟 '+msg);
-  _advSpeak(msg, null);
+  // After message, show quiz for visited relatives (up to 5)
+  _advSpeak(msg, function(){
+    if(_quizEnabled && _advQueue.length > 0){
+      var ids = _advQueue.map(function(q){ return q.id||q; }).filter(Boolean).slice(0,5);
+      setTimeout(function(){ showQuizForEntities(ids, null); }, 600);
+    }
+  });
 }
 
 function toggleInstructions(){
@@ -2939,6 +2959,8 @@ function enterFocusWithLanding(id){
       if(window._ttsFocusToken!==_ttsToken || _advActive) return;
       if(typeof speakText==='function') speakText();
     }, 400);
+    // Quiz button in info card is added via showInfo
+    _quizPendingId = id; // mark for quiz trigger
   }
 
   // Wait for focus animation to complete, then start cinematics
@@ -3097,6 +3119,7 @@ function enterFocus(id, suppressInfoAndSpeak){
 
 function resetFocus(fromPop){
   focusedId=null;
+  _quizPendingId = null; // cancel pending quiz on reset
   window._ttsFocusToken = (window._ttsFocusToken||0) + 1;
   // Show Drive button again
   var _dmBtn=document.getElementById('driveModeBtn');
@@ -4608,5 +4631,229 @@ function _updateGasVisual(){
 }
 </script>
 <script src="https://code.responsivevoice.org/responsivevoice.js?key=iTT65rNX"></script>
+
+<!-- ── QUIZ OVERLAY ─────────────────────────────────────────────────── -->
+<div id="quizOverlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;">
+  <div style="background:linear-gradient(145deg,rgba(15,8,35,0.98),rgba(25,12,50,0.98));border:1px solid rgba(255,180,30,0.5);border-radius:20px;padding:24px 20px;max-width:420px;width:92%;max-height:90vh;overflow-y:auto;box-shadow:0 0 40px rgba(255,150,20,0.2);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div style="color:#ffaa30;font-size:11px;font-weight:bold;letter-spacing:2px;">ΚΟΥΙΖ</div>
+      <div id="quizScore" style="color:#ffe040;font-size:14px;font-weight:bold;">🏆 <span id="quizScoreVal">0</span> πόντοι</div>
+    </div>
+    <div id="quizEntityName" style="color:#fff;font-size:15px;font-weight:bold;margin-bottom:14px;opacity:0.7;"></div>
+    <div id="quizQuestion" style="color:#fff;font-size:16px;font-weight:bold;line-height:1.5;margin-bottom:18px;min-height:60px;"></div>
+    <div id="quizOptions" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+    <div id="quizFeedback" style="min-height:48px;font-size:13px;line-height:1.5;margin-bottom:12px;border-radius:10px;padding:0 12px;overflow:hidden;max-height:0;transition:max-height 0.4s,padding 0.3s;"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button id="quizNextBtn" onclick="quizNext()" style="display:none;background:rgba(255,180,30,0.2);border:1px solid rgba(255,180,30,0.5);border-radius:12px;color:#ffaa30;font-size:14px;font-weight:bold;padding:8px 20px;cursor:pointer;">Επόμενο ▶</button>
+      <button onclick="quizSkip()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#aaa;font-size:13px;padding:8px 16px;cursor:pointer;">Παράλειψη</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LEADERBOARD OVERLAY ──────────────────────────────────────────── -->
+<div id="leaderboardOverlay" style="display:none;position:fixed;inset:0;z-index:9001;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;">
+  <div style="background:linear-gradient(145deg,rgba(15,8,35,0.98),rgba(25,12,50,0.98));border:1px solid rgba(60,200,100,0.4);border-radius:20px;padding:24px 20px;max-width:400px;width:92%;max-height:85vh;overflow-y:auto;box-shadow:0 0 40px rgba(60,200,100,0.15);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="color:#40dd70;font-size:16px;font-weight:bold;letter-spacing:1px;">🏆 Κατάταξη</div>
+      <button onclick="document.getElementById('leaderboardOverlay').style.display='none'" style="background:none;border:none;color:#aaa;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div id="myScoreRow" style="background:rgba(255,220,60,0.1);border:1px solid rgba(255,220,60,0.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="color:#ffe040;font-weight:bold;" id="myScoreName">-</span>
+      <span style="color:#ffe040;font-size:18px;font-weight:bold;" id="myScorePoints">0 πόντοι</span>
+    </div>
+    <div id="leaderboardList" style="display:flex;flex-direction:column;gap:6px;"></div>
+    <div id="leaderboardLoading" style="color:#aaa;text-align:center;padding:20px;font-size:14px;">Φόρτωση...</div>
+  </div>
+</div>
+
+<script>
+// ── QUIZ SYSTEM ────────────────────────────────────────────────────────
+var _quizEnabled = true;
+var _quizPendingId = null;  // entity to quiz after focus card viewed
+var _quizData = null;       // loaded from GitHub
+var _quizScore = 0;
+var _quizQueue = [];        // pending questions for current session
+var _quizCurrentQ = null;
+var _quizAnswered = false;
+var _quizOnDone = null;     // callback after quiz closes
+var _quizSessionIds = {};   // which question ids already used per entity
+
+var _LEADERBOARD_URL = 'https://myth-tts-api.vercel.app/api/leaderboard';
+var _QUIZ_JSON_URL = 'https://raw.githubusercontent.com/jpapalas-star/myth-universe/main/quiz_questions.json';
+
+function toggleQuiz(){
+  _quizEnabled = !_quizEnabled;
+  var btn=document.getElementById('quizToggleBtn');
+  if(btn) btn.textContent = _quizEnabled ? '🎯 Quiz ON' : '🎯 Quiz OFF';
+  if(btn) btn.style.opacity = _quizEnabled ? '1' : '0.5';
+  showToast(_quizEnabled ? '🎯 Quiz ενεργό' : '🎯 Quiz ανενεργό');
+}
+
+// Load quiz data from GitHub (cached)
+function _loadQuizData(cb){
+  if(_quizData){ cb(_quizData); return; }
+  fetch(_QUIZ_JSON_URL)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      // Build map: id -> questions[]
+      _quizData = {};
+      (d.characters||[]).forEach(function(c){ _quizData[c.id] = c.questions; });
+      cb(_quizData);
+    })
+    .catch(function(){ _quizData = {}; cb(_quizData); });
+}
+
+// Show quiz for one entity, call onDone when done/skipped
+function showQuizForEntity(entityId, onDone){
+  if(!_quizEnabled){ if(onDone) onDone(); return; }
+  _loadQuizData(function(qmap){
+    var qs = qmap[entityId];
+    if(!qs||!qs.length){ if(onDone) onDone(); return; }
+    // Pick unused question
+    if(!_quizSessionIds[entityId]) _quizSessionIds[entityId] = new Set();
+    var used = _quizSessionIds[entityId];
+    var unused = qs.filter(function(q){ return !used.has(q.id); });
+    if(unused.length===0){ used.clear(); unused = qs.slice(); }
+    var q = unused[Math.floor(Math.random()*unused.length)];
+    used.add(q.id);
+    _showQuizQuestion(q, dataMap[entityId], onDone);
+  });
+}
+
+// Show quiz for multiple entities (adventure end)
+function showQuizForEntities(entityIds, onDone){
+  if(!_quizEnabled||!entityIds.length){ if(onDone) onDone(); return; }
+  var queue = entityIds.slice(0, 5); // max 5
+  var idx = 0;
+  function next(){
+    if(idx >= queue.length){ if(onDone) onDone(); return; }
+    showQuizForEntity(queue[idx++], next);
+  }
+  next();
+}
+
+function _showQuizQuestion(q, entityData, onDone){
+  _quizCurrentQ = q;
+  _quizAnswered = false;
+  _quizOnDone = onDone;
+
+  var ov = document.getElementById('quizOverlay');
+  var name = entityData ? entityData.Name : '';
+  document.getElementById('quizEntityName').textContent = name;
+  document.getElementById('quizQuestion').textContent = q.question;
+  document.getElementById('quizScoreVal').textContent = _quizScore;
+  document.getElementById('quizFeedback').style.maxHeight = '0';
+  document.getElementById('quizFeedback').style.padding = '0 12px';
+  document.getElementById('quizNextBtn').style.display = 'none';
+
+  var opts = document.getElementById('quizOptions');
+  opts.innerHTML = '';
+  ['A','B','C','D'].forEach(function(letter){
+    var btn = document.createElement('button');
+    btn.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:12px;color:#fff;font-size:14px;padding:11px 14px;cursor:pointer;text-align:left;transition:background 0.2s;';
+    btn.innerHTML = '<span style="color:#ffaa30;font-weight:bold;margin-right:8px;">'+letter+'.</span>'+q[letter];
+    btn.onclick = function(){ _quizAnswer(letter, btn); };
+    opts.appendChild(btn);
+  });
+
+  ov.style.display = 'flex';
+  stopSpeak();
+}
+
+function _quizAnswer(letter, btn){
+  if(_quizAnswered) return;
+  _quizAnswered = true;
+  var q = _quizCurrentQ;
+  var correct = q.correct;
+  var isRight = letter === correct;
+
+  // Color all options
+  var opts = document.getElementById('quizOptions').children;
+  ['A','B','C','D'].forEach(function(l, i){
+    var b = opts[i];
+    if(l === correct){
+      b.style.background = 'rgba(60,220,80,0.25)';
+      b.style.border = '1px solid rgba(60,220,80,0.6)';
+    } else if(l === letter && !isRight){
+      b.style.background = 'rgba(220,60,60,0.25)';
+      b.style.border = '1px solid rgba(220,60,60,0.5)';
+    }
+    b.onclick = null;
+  });
+
+  if(isRight){
+    _quizScore += 10;
+    document.getElementById('quizScoreVal').textContent = _quizScore;
+    // Submit to leaderboard
+    _submitScore(_playerName, _quizScore);
+  }
+
+  // Show feedback
+  var fb = document.getElementById('quizFeedback');
+  fb.style.background = isRight ? 'rgba(60,220,80,0.12)' : 'rgba(220,60,60,0.12)';
+  fb.style.color = isRight ? '#60dd80' : '#ff7060';
+  fb.style.border = isRight ? '1px solid rgba(60,220,80,0.3)' : '1px solid rgba(220,60,60,0.3)';
+  fb.style.padding = '10px 12px';
+  fb.style.maxHeight = '120px';
+  fb.textContent = (isRight ? '✅ Σωστό! ' : '❌ Λάθος. ') + q.explanation;
+
+  document.getElementById('quizNextBtn').style.display = 'block';
+
+  // Auto-read answer via RV
+  var txt = (isRight ? 'Σωστό! ' : 'Λάθος. ') + q.explanation;
+  if(appLang==='en') _rvSpeak(txt, null); else _rvSpeak(txt, null);
+}
+
+function quizNext(){
+  document.getElementById('quizOverlay').style.display = 'none';
+  stopSpeak();
+  if(_quizOnDone) { var cb=_quizOnDone; _quizOnDone=null; cb(); }
+}
+
+function quizSkip(){
+  document.getElementById('quizOverlay').style.display = 'none';
+  stopSpeak();
+  if(_quizOnDone) { var cb=_quizOnDone; _quizOnDone=null; cb(); }
+}
+
+// ── LEADERBOARD ────────────────────────────────────────────────────────
+function _submitScore(name, score){
+  if(!name||!score) return;
+  fetch(_LEADERBOARD_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:name, score:score})
+  }).catch(function(){});
+}
+
+function showLeaderboard(){
+  var ov = document.getElementById('leaderboardOverlay');
+  var list = document.getElementById('leaderboardList');
+  var ldg = document.getElementById('leaderboardLoading');
+  document.getElementById('myScoreName').textContent = _playerName||'Εσύ';
+  document.getElementById('myScorePoints').textContent = _quizScore+' πόντοι';
+  list.innerHTML = ''; ldg.style.display='block';
+  ov.style.display = 'flex';
+  var sp = document.getElementById('settingsPanelMain');
+  if(sp) sp.style.display='none';
+
+  fetch(_LEADERBOARD_URL)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      ldg.style.display='none';
+      var scores = d.scores||[];
+      if(!scores.length){ list.innerHTML='<div style="color:#aaa;text-align:center;padding:16px;font-size:14px;">Κανένα σκορ ακόμα!</div>'; return; }
+      scores.forEach(function(s,i){
+        var row=document.createElement('div');
+        var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
+        var isMe = s.name.toLowerCase()===(_playerName||'').toLowerCase();
+        row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:10px;background:'+(isMe?'rgba(255,220,60,0.1)':'rgba(255,255,255,0.04)')+';border:1px solid '+(isMe?'rgba(255,220,60,0.3)':'rgba(255,255,255,0.08)')+';';
+        row.innerHTML='<span style="color:'+(isMe?'#ffe040':'#aaa')+';">'+(typeof medal==='string'&&medal.startsWith('#')?'<span style="min-width:28px;display:inline-block;color:#888;">'+medal+'</span>':medal+' ')+s.name+'</span><span style="color:'+(isMe?'#ffe040':'#fff')+';font-weight:bold;">'+s.score+'</span>';
+        list.appendChild(row);
+      });
+    })
+    .catch(function(){ ldg.textContent='Σφάλμα φόρτωσης.'; });
+}
+</script>
 </body>
 </html>
