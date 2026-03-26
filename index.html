@@ -229,17 +229,20 @@ html,body{
     left:10px;
     right:10px;
     top:auto;
-    bottom:6vh;
+    bottom:0;
     width:auto;
-    max-height:38vh
+    max-height:52vh;
+    border-radius:16px 16px 0 0;
+    padding:14px 14px 20px 14px;
   }
   #infoBg{
     left:10px;
     right:10px;
     top:auto;
-    bottom:6vh;
+    bottom:0;
     width:auto;
-    max-height:38vh
+    max-height:52vh;
+    border-radius:16px 16px 0 0;
   }
 }
 
@@ -3021,11 +3024,13 @@ function enterFocus(id, suppressInfoAndSpeak){
   }
 
   focusedId=id;
-  // Hide Drive + Invert buttons in focus mode
+  // Hide Drive + Invert + Slow buttons in focus mode
   var _dmBtn=document.getElementById('driveModeBtn');
   if(_dmBtn) _dmBtn.style.display='none';
   var _invBtn=document.getElementById('invertBtn');
   if(_invBtn) _invBtn.style.display='none';
+  var _slowBtn=document.getElementById('navSpeedBtn');
+  if(_slowBtn) _slowBtn.style.display='none';
   // Resume music only if NOT called from enterFocusWithLanding
   // (which handles music resume itself after cinematics)
   if(!suppressInfoAndSpeak) _resumeMusicAfterFocus();
@@ -3136,14 +3141,15 @@ function enterFocus(id, suppressInfoAndSpeak){
 
 function resetFocus(fromPop){
   focusedId=null;
-  _quizPendingId = null; // cancel pending quiz on reset
+  _quizPendingId = null;
   window._ttsFocusToken = (window._ttsFocusToken||0) + 1;
-  // Show Drive button again
+  // Restore all buttons hidden during focus
   var _dmBtn=document.getElementById('driveModeBtn');
   if(_dmBtn) _dmBtn.style.display='';
-  // Restore invertBtn only if we're in drive mode
   var _invBtn2=document.getElementById('invertBtn');
   if(_invBtn2) _invBtn2.style.display = driveMode ? 'block' : 'none';
+  var _slowBtn=document.getElementById('navSpeedBtn');
+  if(_slowBtn) _slowBtn.style.display='';
   // Resume music + spacecraft sounds
   _resumeMusicAfterFocus();
   if(typeof closeVideo==='function') closeVideo();
@@ -3326,8 +3332,13 @@ homeBtn.addEventListener('click',function(){
   });
   resetInfo();
   hideSearchResults();
-  // Resume music if we were in focus
-  if(wasFocused) _resumeMusicAfterFocus();
+  // Restore buttons if we were in focus
+  if(wasFocused){
+    _resumeMusicAfterFocus();
+    var _dm=document.getElementById('driveModeBtn'); if(_dm) _dm.style.display='';
+    var _iv=document.getElementById('invertBtn'); if(_iv) _iv.style.display=driveMode?'block':'none';
+    var _sl=document.getElementById('navSpeedBtn'); if(_sl) _sl.style.display='';
+  }
   // Smooth animate back to default view centered on Chaos
   var frames3=0, maxF3=40;
   var sA3=camera.alpha, sB3=camera.beta, sR3=camera.radius;
