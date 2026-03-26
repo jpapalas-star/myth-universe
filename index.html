@@ -268,12 +268,44 @@ html,body{
 <!-- Sound permission dialog - shown FIRST -->
 <!-- Sound permission dialog - shown FIRST -->
 <script>
-// Must be defined BEFORE the buttons that call it
+// ── STARTUP STATE ─────────────────────────────────────────────────────
 var _soundEnabled = true;
+var _universeReady = false;   // set when renderConnections done
+var _videoPreloaded = false;  // set when launch video canplay
+var _soundChosen = false;     // set after Yes/No
+var _launchVidEl = null;      // preloaded video element
+
+// Preload launch video + mp3 immediately on page load
+(function(){
+  try{
+    var lv = document.getElementById('launchVideo');
+    if(lv){
+      lv.src = './Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
+      lv.preload = 'auto';
+      lv.muted = true;
+      lv.load();
+      function onVidReady(){ _videoPreloaded=true; _tryAutoStart(); }
+      lv.addEventListener('canplay', onVidReady, {once:true});
+      lv.addEventListener('loadeddata', onVidReady, {once:true});
+      // Fallback: mark ready after 8s anyway
+      setTimeout(function(){ _videoPreloaded=true; _tryAutoStart(); }, 8000);
+    }
+  }catch(e){}
+})();
+
+function _tryAutoStart(){
+  if(!_soundChosen || !_universeReady || !_videoPreloaded) return;
+  // All ready — play video
+  _doPlayLaunchVideo();
+}
+
+window._hideLoader = null; // will be set below by loadScreen script
+
 window.soundChoice = function(enabled){
   _soundEnabled = enabled;
+  _soundChosen = true;
 
-  // ── 1. Init AudioContext INSIDE user gesture — MUST be first ─────
+  // ── 1. Init AudioContext INSIDE user gesture ──────────────────────
   var ac;
   try{
     ac = new(window.AudioContext||window.webkitAudioContext)();
@@ -282,19 +314,19 @@ window.soundChoice = function(enabled){
     ac.resume();
   }catch(e){}
 
-  // ── 2. Beep immediately via oscillator ───────────────────────────
+  // ── 2. Beep ───────────────────────────────────────────────────────
   if(ac){
     try{
       var osc=ac.createOscillator(), g=ac.createGain();
       osc.type='sine'; osc.frequency.value=880;
-      g.gain.setValueAtTime(0.4, ac.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.18);
+      g.gain.setValueAtTime(0.4,ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.18);
       osc.connect(g); g.connect(ac.destination);
       osc.start(ac.currentTime); osc.stop(ac.currentTime+0.18);
     }catch(e){}
   }
 
-  // ── 3. Pre-create ping-pong video elements ───────────────────────
+  // ── 3. Pre-create ping-pong video elements ────────────────────────
   var ov2 = document.getElementById('videoOverlay');
   if(ov2 && !_vidEls[0]){
     for(var vi=0;vi<2;vi++){
@@ -307,51 +339,95 @@ window.soundChoice = function(enabled){
     }
   }
 
-  // ── 4. Launch MP3 — play preloaded audio inside gesture ──────────
+  // ── 4. Play launch mp3 (preloaded) ───────────────────────────────
   if(enabled){
     try{
       var la = window._introAudio;
-      if(la){
-        la.currentTime = 0;
-        la.volume = 0.75;
-        la.play().catch(function(){
-          // If browser blocked, retry on canplaythrough
-          la.addEventListener('canplaythrough', function(){
-            la.play().catch(function(){});
-          }, {once:true});
-        });
-      }
+      if(la){ la.currentTime=0; la.volume=0.75; la.play().catch(function(){}); }
     }catch(e){}
   }
 
-  // ── 5. Hide dialog, show start screen ────────────────────────────
+  // ── 5. Hide soundDialog, show "loading" state on launchOverlay ───
   var sd=document.getElementById('soundDialog');
   if(sd){ sd.style.transition='opacity 0.3s'; sd.style.opacity='0'; setTimeout(function(){sd.style.display='none';},300); }
-  setTimeout(function(){
-    var ss=document.getElementById('startScreen');
-    if(ss){ ss.style.display='flex'; }
-  }, 350);
+
+  // Show launchOverlay as black loading screen (no video yet)
+  var lo = document.getElementById('launchOverlay');
+  if(lo){
+    lo.style.display='flex';
+    lo.style.opacity='1';
+    // Add loading indicator
+    if(!document.getElementById('launchLoading')){
+      var ldg=document.createElement('div');
+      ldg.id='launchLoading';
+      ldg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,220,60,0.9);font-family:Arial,sans-serif;text-align:center;z-index:100003;pointer-events:none;';
+      ldg.innerHTML='<div style="font-size:26px;font-weight:bold;letter-spacing:3px;margin-bottom:18px;text-shadow:0 0 20px rgba(255,200,60,0.6);">MYTH UNIVERSE</div>'
+        +'<div style="display:flex;gap:8px;justify-content:center;">'
+        +'<span class="_ld" style="width:9px;height:9px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;transition:opacity 0.15s;"></span>'
+        +'<span class="_ld" style="width:9px;height:9px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;transition:opacity 0.15s;"></span>'
+        +'<span class="_ld" style="width:9px;height:9px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;transition:opacity 0.15s;"></span>'
+        +'</div>';
+      lo.appendChild(ldg);
+      var _ldCur=0,_ldDots=ldg.querySelectorAll('._ld');
+      var _ldIv=setInterval(function(){
+        _ldDots.forEach(function(d,i){ d.style.opacity=i===_ldCur?'1':'0.15'; });
+        _ldCur=(_ldCur+1)%3;
+      },500);
+      ldg._ldIv=_ldIv;
+    }
+  }
+
+  _unlockMusic();
+  _tryAutoStart();
 };
-// Stub - overridden by main script when loaded
-window.startMythJourney = function(){
-  var ss = document.getElementById('startScreen');
-  if(ss){ ss.style.transition='opacity 0.4s'; ss.style.opacity='0'; setTimeout(function(){ss.style.display='none';},400); }
+
+function _doPlayLaunchVideo(){
   var lo = document.getElementById('launchOverlay');
   var lv = document.getElementById('launchVideo');
-  if(lo) lo.style.display='flex';
-  if(lv){
-    lv.src='./Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
-    lv.muted=true; lv.load();
-    lv.play().catch(function(){ lv.muted=false; lv.play().catch(function(){}); });
-    lv.onended=function(){ if(window.skipLaunch) skipLaunch(); };
-  }
+  if(!lo||!lv){ skipLaunch(); return; }
+
+  // Remove loading indicator
+  var ldg=document.getElementById('launchLoading');
+  if(ldg){ if(ldg._ldIv) clearInterval(ldg._ldIv); ldg.remove(); }
+
+  // Unmute and play
+  lv.muted = !_soundEnabled;
+  lv.volume = 0.8;
+  if(_soundEnabled) _stopIntroMusic();
+
+  lv.play().catch(function(){
+    lv.muted=true;
+    lv.play().catch(function(){ skipLaunch(); });
+  });
+
+  lv.addEventListener('playing', function onP(){
+    lv.removeEventListener('playing',onP);
+    if(_soundEnabled) _stopIntroMusic();
+  },{once:true});
+
+  lv.onended = function(){ skipLaunch(); };
+  lv.onerror = function(){ skipLaunch(); };
+  setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); },40000);
+}
+
+// startMythJourney no longer needed (auto-triggers) but keep for SKIP/compat
+window.startMythJourney = function(){
+  _soundChosen=true; _tryAutoStart();
 };
-// skipLaunch stub - real version defined in main script
+
 window.skipLaunch = function(){
   var lo = document.getElementById('launchOverlay');
   var lv = document.getElementById('launchVideo');
   if(lv){ try{lv.pause();lv.src='';}catch(e){} }
-  if(lo){ lo.style.transition='opacity 0.5s'; lo.style.opacity='0'; setTimeout(function(){ lo.style.display='none'; lo.style.opacity='1'; },500); }
+  var ldg=document.getElementById('launchLoading'); if(ldg){ if(ldg._ldIv)clearInterval(ldg._ldIv); ldg.remove(); }
+  if(typeof _stopIntroMusic==='function') _stopIntroMusic();
+  if(lo){
+    lo.style.transition='opacity 0.5s';
+    lo.style.opacity='0';
+    setTimeout(function(){ lo.style.display='none'; lo.style.opacity='1'; },500);
+  }
+  if(!_musicUnlocked){ _musicUnlocked=true; _initBeepCtx(); if(_beepCtx) _beepCtx.resume(); _loadBeepBuffer(); }
+  setTimeout(function(){ if(_musicOn&&_musicAudio&&_musicAudio.paused) startMusic(); },700);
 };
 </script>
 <div id="soundDialog" style="position:fixed;inset:0;z-index:200001;background:#000;display:flex;align-items:center;justify-content:center;">
@@ -4251,93 +4327,8 @@ document.addEventListener('click', function(e){
 }, true); // capture phase = fires before anything else
 
 // ── LAUNCH VIDEO ──────────────────────────────────────────────────────
-window.startMythJourney = function(){
-  _initBeepCtx();
-  _loadBeepBuffer();
-  playBeep();
-  _unlockMusic();
+// startMythJourney and skipLaunch defined in early script block above
 
-  // Show black screen IMMEDIATELY — covers the universe while video loads
-  var lo = document.getElementById('launchOverlay');
-  var lv = document.getElementById('launchVideo');
-
-  // Show black screen IMMEDIATELY — z-index 100002 covers everything
-  if(lo){ lo.style.display='flex'; lo.style.opacity='1'; lo.style.background='#000'; }
-
-  // Hide start screen instantly — no fade, launchOverlay already covers it
-  var ss = document.getElementById('startScreen');
-  if(ss){ ss.style.display='none'; }
-
-  // Add loading indicator
-  if(lo && !document.getElementById('launchLoading')){
-    var ldg = document.createElement('div');
-    ldg.id='launchLoading';
-    ldg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,220,60,0.9);font-family:Arial,sans-serif;text-align:center;z-index:100003;pointer-events:none;';
-    ldg.innerHTML='<div style="font-size:26px;font-weight:bold;letter-spacing:3px;margin-bottom:18px;text-shadow:0 0 20px rgba(255,200,60,0.6);">MYTH UNIVERSE</div>'
-      +'<div style="display:flex;gap:8px;justify-content:center;">'
-      +'<span class="_ld" style="width:9px;height:9px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;transition:opacity 0.15s;"></span>'
-      +'<span class="_ld" style="width:9px;height:9px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;transition:opacity 0.15s;"></span>'
-      +'<span class="_ld" style="width:9px;height:9px;border-radius:50%;background:#ffe040;opacity:0.2;display:inline-block;transition:opacity 0.15s;"></span>'
-      +'</div>';
-    lo.appendChild(ldg);
-    var _ldCur=0, _ldDots=ldg.querySelectorAll('._ld');
-    var _ldIv=setInterval(function(){
-      _ldDots.forEach(function(d,i){ d.style.opacity=i===_ldCur?'1':'0.15'; });
-      _ldCur=(_ldCur+1)%3;
-    },500);
-    ldg._ldIv=_ldIv;
-  }
-
-  if(!lv||!lo){ return; }
-
-  function _playLaunchVideo(src){
-    lv.src = src;
-    lv.muted = false; lv.volume = 0.8;
-
-    lv.load();
-    var _played=false;
-    function tryPlay(){
-      if(_played)return; _played=true;
-      lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
-    }
-
-    // Remove loading indicator when video actually starts rendering
-    lv.addEventListener('playing', function onPlaying(){
-      lv.removeEventListener('playing', onPlaying);
-      var l=document.getElementById('launchLoading');
-      if(l){ if(l._ldIv) clearInterval(l._ldIv); l.remove(); }
-      _stopIntroMusic();
-    });
-
-    lv.addEventListener('canplay',function onCP(){ lv.removeEventListener('canplay',onCP); tryPlay(); });
-    lv.addEventListener('loadeddata',function onLD(){ lv.removeEventListener('loadeddata',onLD); tryPlay(); });
-    lv.onerror=function(){ _stopIntroMusic(); skipLaunch(); };
-    lv.onended=function(){ skipLaunch(); };
-    setTimeout(function(){ if(!_played) tryPlay(); },2000);
-    setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); },40000);
-  }
-
-  _playLaunchVideo('./Assets/Launch_Video/YouCut_20260323_1657186262.mp4');
-};
-
-window.skipLaunch = function(){
-  var lo = document.getElementById('launchOverlay');
-  var lv = document.getElementById('launchVideo');
-  if(lv){ lv.pause(); lv.src=''; }
-  var ldg = document.getElementById('launchLoading'); if(ldg) ldg.remove();
-  if(typeof _stopIntroMusic==='function') _stopIntroMusic();
-  if(lo){
-    lo.style.transition='opacity 0.5s';
-    lo.style.opacity='0';
-    setTimeout(function(){ lo.style.display='none'; lo.style.opacity='1'; }, 500);
-  }
-  // Ensure unlocked
-  if(!_musicUnlocked){ _musicUnlocked=true; _initBeepCtx(); if(_beepCtx) _beepCtx.resume(); _loadBeepBuffer(); }
-  // Start music
-  setTimeout(function(){
-    if(_musicOn && _musicAudio && _musicAudio.paused) startMusic();
-  }, 700);
-};
 </script>
 <div id="loadScreen" style="position:fixed;inset:0;background:#02040a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
   <div style="color:#ffd060;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;letter-spacing:3px;">MYTH UNIVERSE</div>
@@ -4363,12 +4354,12 @@ window.skipLaunch = function(){
   var iv=setInterval(tick,500);
   window._hideLoader=function(){
     clearInterval(iv);
+    _universeReady = true;
+    // Hide the loadScreen (was behind soundDialog anyway)
     var ls=document.getElementById('loadScreen');
-    if(ls){
-      ls.style.transition='opacity 0.7s';
-      ls.style.opacity='0';
-      setTimeout(function(){ls.remove();},750);
-    }
+    if(ls){ ls.style.opacity='0'; setTimeout(function(){ls.remove();},100); }
+    // Trigger auto-start if sound already chosen and video ready
+    if(typeof _tryAutoStart==='function') _tryAutoStart();
   };
 })();
 </script>
