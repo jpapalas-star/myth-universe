@@ -4392,6 +4392,8 @@ document.addEventListener('click', function(e){
         });
       });
     }
+    // Eager: load quiz data in background
+    if(typeof _loadQuizData==='function') _loadQuizData(function(){});
     if(typeof _tryAutoStart==='function') _tryAutoStart();
   };
 })();
@@ -4705,10 +4707,19 @@ function _loadQuizData(cb){
 
 // Show quiz for one entity, call onDone when done/skipped
 function showQuizForEntity(entityId, onDone){
-  if(!_quizEnabled){ if(onDone) onDone(); return; }
+  console.log('showQuizForEntity called:', entityId, 'enabled:', _quizEnabled, 'data:', _quizData ? Object.keys(_quizData).length : 'null');
+  if(!_quizEnabled){ showToast('🎯 Quiz ανενεργό'); if(onDone) onDone(); return; }
   _loadQuizData(function(qmap){
+    console.log('quiz data loaded, keys:', Object.keys(qmap).length, 'entityId qs:', qmap[entityId] ? qmap[entityId].length : 'none');
+    if(!qmap || Object.keys(qmap).length===0){
+      showToast('⚠️ Quiz JSON δεν φορτώθηκε');
+      if(onDone) onDone(); return;
+    }
     var qs = qmap[entityId];
-    if(!qs||!qs.length){ if(onDone) onDone(); return; }
+    if(!qs||!qs.length){
+      showToast('⚠️ Δεν βρέθηκαν ερωτήσεις για: '+entityId);
+      if(onDone) onDone(); return;
+    }
     // Pick unused question
     if(!_quizSessionIds[entityId]) _quizSessionIds[entityId] = new Set();
     var used = _quizSessionIds[entityId];
