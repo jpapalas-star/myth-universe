@@ -444,7 +444,11 @@ window.skipLaunch = function(){
   if(typeof _stopIntroMusic==='function') _stopIntroMusic();
   if(lo){ lo.style.transition='opacity 0.5s'; lo.style.opacity='0'; setTimeout(function(){ lo.style.display='none'; lo.style.opacity='1'; },500); }
   if(!_musicUnlocked){ _musicUnlocked=true; _initBeepCtx(); if(_beepCtx) _beepCtx.resume(); _loadBeepBuffer(); }
-  setTimeout(function(){ if(_musicOn&&_musicAudio&&_musicAudio.paused) startMusic(); },700);
+  // Always start fresh music after launch
+  setTimeout(function(){
+    _musicWasPaused = false; // ensure music can start
+    if(_musicOn) startMusic();
+  },700);
 };
 </script>
 <div id="soundDialog" style="position:fixed;inset:0;z-index:200001;background:#000;display:flex;align-items:center;justify-content:center;">
@@ -466,7 +470,7 @@ window.skipLaunch = function(){
 
 <!-- Launch video overlay -->
 <div id="launchOverlay" style="position:fixed;inset:0;z-index:100002;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
-  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline></video>
+  <video id="launchVideo" style="width:100%;height:100%;object-fit:cover;background:#000;" playsinline></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
 
@@ -503,7 +507,7 @@ window.skipLaunch = function(){
     <button onclick="toggleInstructions()" style="background:rgba(255,220,60,0.12);border:1px solid rgba(255,220,60,0.35);border-radius:12px;color:#ffe040;font-size:11px;padding:4px 10px;cursor:pointer;white-space:nowrap;">📖 Οδηγίες</button>
   </div>
   <div class="sub">Ελληνική Μυθολογία</div>
-  <div class="txt">Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Επανεστίαση» για reset.</div>
+  <div class="txt">Πάτα σε έναν πλανήτη για προσεδάφιση και εξερεύνηση. Πάτα ξανά ή «Επανεστίαση» για reset.</div>
   </div>
 </div>
 
@@ -2072,8 +2076,8 @@ if(window.speechSynthesis){
 function resetInfo(){
   var isEN=appLang==='en';
   var sub = isEN ? 'Greek Mythology' : 'Ελληνική Μυθολογία';
-  var txt = isEN ? 'Tap a planet for info. Tap again or tap «Reset» to reset.'
-                 : 'Πάτα σε έναν πλανήτη για πληροφορίες. Πάτα ξανά ή πάτα «Επανεστίαση» για reset.';
+  var txt = isEN ? 'Tap a planet to land and explore. Tap again or «Reset» to go back.'
+                 : 'Πάτα σε έναν πλανήτη για προσεδάφιση και εξερεύνηση. Πάτα ξανά ή «Επανεστίαση» για reset.';
   var bgEl=document.getElementById('infoBgImg');
   if(bgEl){bgEl.src='';bgEl.style.display='none';}
   var contentEl=document.getElementById('infoContent');
@@ -2467,6 +2471,21 @@ function _fetchCinematic(cb){
         finding:   { 1: getTheme(data.finding,1)||[], 2: getTheme(data.finding,2)||[], 3: getTheme(data.finding,3)||[] }
       };
       _cinematicCache = cache;
+
+      // Update music tracks if API returned them
+      if(data.music && data.music.length > 0){
+        _musicTracks = data.music;
+        // If music is currently paused and should be playing, restart with new tracks
+        if(_musicOn && !_musicWasPaused && _musicAudio.paused){
+          _musicIndex = 0;
+          _playMusicTrack(0);
+        }
+      }
+
+      // Update launch video if returned
+      if(data.launch && data.launch.length > 0){
+        window._r2LaunchVideos = data.launch;
+      }
       // Aggressively preload first video of each theme immediately
       [1,2,3].forEach(function(t){
         if(cache.landing[t] && cache.landing[t][0]) _preloadVideo(cache.landing[t][0]);
@@ -4256,8 +4275,14 @@ function _resumeMusicAfterFocus(){
   }catch(e){}
 }
 
+var _spacecraftCurrentSfx = null; // track currently playing spacecraft audio
+
 function _pauseSpacecraft(){
   if(_spacecraftTimer){ clearTimeout(_spacecraftTimer); _spacecraftTimer=null; }
+  if(_spacecraftCurrentSfx){
+    try{ _spacecraftCurrentSfx.pause(); _spacecraftCurrentSfx.currentTime=0; }catch(e){}
+    _spacecraftCurrentSfx = null;
+  }
 }
 
 function _resumeSpacecraft(){
@@ -4295,23 +4320,20 @@ document.addEventListener('click', _unlockMusic);
 
 function _playMusicTrack(idx){
   if(!_musicOn) return;
-  if(focusedId || _advActive) return; // never start during focus/adventure
-  var track;
-  if(idx < _musicTracks.length){
-    track = _musicTracks[idx];
-    _musicIndex = idx;
-  } else {
-    if(!_shuffledTracks) _shuffledTracks = _shuffleArray(_musicTracks);
-    var si = (idx - _musicTracks.length) % _shuffledTracks.length;
-    if(si === 0) _shuffledTracks = _shuffleArray(_musicTracks);
-    track = _shuffledTracks[si];
-    _musicIndex = idx;
-  }
-  _musicAudio.src = track;
+  if(focusedId || _advActive) return;
+  if(!_musicTracks.length) return;
+
+  // Play in order: 0,1,2,3,...,N-1, then loop from 0
+  var trackIdx = idx % _musicTracks.length;
+  _musicIndex = idx;
+
+  _musicAudio.src = _musicTracks[trackIdx];
   _musicAudio.volume = _MUSIC_VOL_NORMAL;
   _musicAudio.play().catch(function(){});
   _musicAudio.onended = function(){
-    if(_musicOn && !focusedId && !_advActive && !_musicWasPaused) _playMusicTrack(_musicIndex + 1);
+    if(_musicOn && !focusedId && !_advActive && !_musicWasPaused){
+      _playMusicTrack(_musicIndex + 1);
+    }
   };
 }
 
@@ -4334,8 +4356,11 @@ function _scheduleSpacecraft(){
   var delay = (20 + Math.random()*10) * 1000;
   _spacecraftTimer = setTimeout(function(){
     if(!_musicOn) return;
+    if(focusedId || _musicWasPaused) { _scheduleSpacecraft(); return; } // no spacecraft during focus
     var sfx = new Audio(_spacecraftSounds[Math.floor(Math.random()*_spacecraftSounds.length)]);
-    sfx.volume = 0.7 * (_musicAudio.volume||0.55);
+    sfx.volume = 0.70; // 70% volume
+    _spacecraftCurrentSfx = sfx;
+    sfx.onended = function(){ _spacecraftCurrentSfx = null; };
     sfx.play().catch(function(){});
     _scheduleSpacecraft();
   }, delay);
