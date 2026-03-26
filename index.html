@@ -890,7 +890,13 @@ function _doTap(pickedId) {
 
   if (pickedId && nodes[pickedId]) {
     if (focusedId === pickedId) resetFocus(false);
-    else enterFocusWithLanding(pickedId);
+    else if (!focusedId) enterFocusWithLanding(pickedId);
+    else {
+      // In focus mode: only allow tapping relatives
+      var rels = getRelativesSet(focusedId);
+      if(rels.has(pickedId)) enterFocusWithLanding(pickedId);
+      // Non-relative tap → ignore
+    }
   } else {
     if (focusedId) {
       resetFocus(false);
@@ -1708,6 +1714,8 @@ function stopSpeak(){
   if(_elAudio){ try{_elAudio.pause(); _elAudio.src='';}catch(e){} _elAudio=null; }
   var ttsBtn=document.getElementById('ttsStop');
   if(ttsBtn) ttsBtn.style.display='none';
+  // Increment token to cancel any pending auto-speak setTimeout
+  window._ttsFocusToken = (window._ttsFocusToken||0) + 1;
 }
 
 // ── SOUND CHOICE ─────────────────────────────────────────────────────
@@ -1997,7 +2005,7 @@ function cycleVoice(){
 function showToast(msg){
   var t = document.getElementById('voiceToast');
   if(!t){ t=document.createElement('div'); t.id='voiceToast';
-    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.82);color:#ffe040;padding:8px 18px;border-radius:20px;font-size:13px;font-family:Arial;z-index:9999;pointer-events:none;transition:opacity 0.4s;white-space:nowrap;';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.82);color:#ffe040;padding:8px 18px;border-radius:20px;font-size:13px;font-family:Arial;z-index:200005;pointer-events:none;transition:opacity 0.4s;white-space:nowrap;';
     document.body.appendChild(t);
   }
   t.textContent=msg; t.style.opacity='1';
@@ -2568,7 +2576,7 @@ function _playVideoSequence(srcs, onDone){
       curEl.style.transition='opacity 0.5s';
       curEl.style.opacity='0';
       if(!_fading) curEl.volume=0;
-      setTimeout(function(){ curEl.style.transition=''; playAt(i+1); }, 500);
+      setTimeout(function(){ curEl.style.transition=''; playAt(i+1); }, 80);
     }
 
     function _onReady(){
