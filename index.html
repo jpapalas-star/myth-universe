@@ -272,9 +272,10 @@ html,body{
 var _soundEnabled = true;
 var _universeReady = false;
 var _soundChosen = false;
+var _videoUnlocked = false;
 
 function _tryAutoStart(){
-  if(!_soundChosen || !_universeReady) return;
+  if(!_soundChosen || !_universeReady || !_videoUnlocked) return;
   _doPlayLaunchVideo();
 }
 
@@ -310,6 +311,20 @@ window.soundChoice = function(enabled){
       ov2.insertBefore(vel,ov2.firstChild);
       _vidEls[vi]=vel;
     }
+  }
+
+  // ── CRITICAL: unlock launch video inside user gesture ─────────────
+  var lv2 = document.getElementById('launchVideo');
+  if(lv2){
+    lv2.src = './Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
+    lv2.muted = !enabled;
+    lv2.volume = 0.8;
+    lv2.preload = 'auto';
+    lv2.load();
+    function onVidReady(){ _videoUnlocked=true; _tryAutoStart(); }
+    lv2.addEventListener('canplay', onVidReady, {once:true});
+    lv2.addEventListener('loadeddata', onVidReady, {once:true});
+    setTimeout(function(){ if(!_videoUnlocked){ _videoUnlocked=true; _tryAutoStart(); } }, 3000);
   }
 
   // Play launch mp3
@@ -350,51 +365,32 @@ function _doPlayLaunchVideo(){
   var lv=document.getElementById('launchVideo');
   if(!lo||!lv){ skipLaunch(); return; }
 
-  // Remove loading indicator
   var ldg=document.getElementById('launchLoading');
   if(ldg){ if(ldg._ldIv) clearInterval(ldg._ldIv); ldg.remove(); }
 
-  // Keep overlay visible
-  lo.style.display='flex';
-  lo.style.opacity='1';
+  lo.style.display='flex'; lo.style.opacity='1';
 
-  function _playVideoSrc(src){
-    lv.src = src;
-    lv.muted = !_soundEnabled;
-    lv.volume = 0.8;
-    lv.load();
+  // Video already loaded (unlocked in soundChoice) — just play
+  lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
 
-    var _played = false;
-    function tryPlay(){
-      if(_played) return; _played = true;
-      lv.play().catch(function(){ lv.muted=true; lv.play().catch(function(){ skipLaunch(); }); });
-    }
+  lv.addEventListener('playing', function onP(){
+    lv.removeEventListener('playing',onP);
+    if(_soundEnabled) _stopIntroMusic();
+  },{once:true});
 
-    lv.addEventListener('canplay',   function onCP(){ lv.removeEventListener('canplay',onCP);    tryPlay(); },{once:true});
-    lv.addEventListener('loadeddata',function onLD(){ lv.removeEventListener('loadeddata',onLD); tryPlay(); },{once:true});
-    lv.addEventListener('playing', function onP(){
-      lv.removeEventListener('playing',onP);
-      if(_soundEnabled) _stopIntroMusic();
-    },{once:true});
+  lv.onended = function(){ skipLaunch(); };
+  lv.onerror = function(){ skipLaunch(); };
 
-    lv.onended = function(){ skipLaunch(); };
-    lv.onerror = function(){ skipLaunch(); };
+  // Watchdog
+  var _lastT=-1, _sc=0;
+  var _wd=setInterval(function(){
+    if(!lo||lo.style.display==='none'){ clearInterval(_wd); return; }
+    var t=lv.currentTime;
+    if(t===_lastT && !lv.paused && !lv.ended){ if(++_sc>=6){ clearInterval(_wd); skipLaunch(); } }
+    else { _sc=0; _lastT=t; }
+  },1000);
 
-    // Stall watchdog — if video freezes for 6s, skip
-    var _lastT=-1, _sc=0;
-    var _wd=setInterval(function(){
-      if(!lo||lo.style.display==='none'){ clearInterval(_wd); return; }
-      if(!_played) return;
-      var t=lv.currentTime;
-      if(t===_lastT && !lv.paused && !lv.ended){ if(++_sc>=6){ clearInterval(_wd); skipLaunch(); } }
-      else { _sc=0; _lastT=t; }
-    },1000);
-
-    setTimeout(function(){ if(!_played) tryPlay(); }, 6000);
-    setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); }, 40000);
-  }
-
-  _playVideoSrc('./Assets/Launch_Video/YouCut_20260323_1657186262.mp4');
+  setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); }, 40000);
 }
 
 window.startMythJourney = function(){ _soundChosen=true; _tryAutoStart(); };
@@ -3798,31 +3794,6 @@ engine.runRenderLoop(()=>{
 });
 
 window.addEventListener('resize',()=>engine.resize());
-
-// Launch countdown audio — preloaded on page load for instant play
-var _introAudio = null;
-(function(){
-  try{
-    var la = new Audio('https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/SOUNDS/LAUNCH_COUNTDOWN/590318main_ringtone_135_launch.mp3');
-    la.volume = 0.75;
-    la.loop = false;
-    la.preload = 'auto';
-    la.load(); // start downloading immediately
-    window._introAudio = la;
-  }catch(e){}
-})();
-
-function _stopIntroMusic(){
-  if(_introAudio){
-    var a=_introAudio; _introAudio=null;
-    var vol=a.volume;
-    var fade=setInterval(function(){
-      vol=Math.max(0,vol-0.07);
-      try{a.volume=vol;}catch(e){}
-      if(vol<=0){clearInterval(fade);try{a.pause();}catch(e){}}
-    },50);
-  }
-}
 var _warpSnd = null;
 window._warpSndActive = false;
 var _warpFadeTimer = null;
@@ -4350,11 +4321,9 @@ document.addEventListener('click', function(e){
   window._hideLoader=function(){
     clearInterval(iv);
     _universeReady = true;
-    // Hide the loadScreen (was behind soundDialog anyway)
     var ls=document.getElementById('loadScreen');
-    if(ls){ ls.style.opacity='0'; setTimeout(function(){ls.remove();},100); }
-    // Trigger auto-start if sound already chosen and video ready
-    if(typeof _tryAutoStart==='function') _tryAutoStart();
+    if(ls){ ls.style.opacity='0'; setTimeout(function(){ls.remove();},300); }
+    if(typeof _tryStartVideo==='function') _tryStartVideo();
   };
 })();
 </script>
