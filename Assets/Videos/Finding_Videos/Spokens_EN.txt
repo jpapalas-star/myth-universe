@@ -1,0 +1,25 @@
+1.Ah! What do we have here? I found something!
+2.Wait… what is this right here?
+3.Oh! We need to check this out!
+4.I found it! This is important!
+5.Hold on… there’s something here!
+6.There it is! This will give us the whole truth!
+7.Ooooh! I see something that will enlighten us!
+8.Look here! We didn’t see this before!
+9.This is not random… something is hidden here!
+10.Wait! This looks like a clue!
+11.Oh! This changes everything!
+12.Now this is interesting!
+13.I knew it! We would find something!
+14.Look carefully… the answer is here!
+15.Ah! This must be a sign!
+16.Look at this… this will lead us forward!
+17.Ooooh! This looks important!
+18.I found it! This explains a lot!
+19.Stop! There is something hidden here!
+20.This is the clue we were looking for!
+21.Oh! This will reveal the truth!
+22.Look here! We discovered something!
+23.This right here will enlighten us!
+24.Wait… now I’m starting to understand!
+25.Yes! That’s it! We found it!
