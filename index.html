@@ -469,7 +469,7 @@ window.skipLaunch = function(){
   <div>Tap entity = family focus</div>
 </div>
 
-<div id="info" style="position:fixed;">
+<div id="info" style="position:fixed;display:none;">
   <div id="infoBg"><img id="infoBgImg" src="" alt="" onerror="this.style.display='none'"></div>
   <div id="infoContent">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -4334,6 +4334,9 @@ document.addEventListener('click', function(e){
     _universeReady = true;
     var ls=document.getElementById('loadScreen');
     if(ls){ ls.style.opacity='0'; setTimeout(function(){ls.remove();},300); }
+    // Show info panel now that universe is ready
+    var inf=document.getElementById('info');
+    if(inf) inf.style.display='';
     if(typeof _tryAutoStart==='function') _tryAutoStart();
   };
 })();
