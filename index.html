@@ -2488,25 +2488,19 @@ function _fetchCinematic(cb){
         if(!obj) return [];
         return obj[t] || obj[String(t)] || [];
       }
-
       var cache = {
         landing:   { 1: getTheme(data.landing,1),   2: getTheme(data.landing,2),   3: getTheme(data.landing,3)   },
         searching: { 1: getTheme(data.searching,1),  2: getTheme(data.searching,2),  3: getTheme(data.searching,3)  },
         finding:   { 1: getTheme(data.finding,1)||[], 2: getTheme(data.finding,2)||[], 3: getTheme(data.finding,3)||[] }
       };
-      _cinematicCache = cache;
-
-      // Aggressively preload first video of each theme immediately
-      [1,2,3].forEach(function(t){
-        if(cache.landing[t] && cache.landing[t][0]) _preloadVideo(cache.landing[t][0]);
-        if(cache.searching[t] && cache.searching[t][0]) _preloadVideo(cache.searching[t][0]);
-      });
+      // Only cache if we got actual data
+      var hasData = cache.landing[1].length>0 || cache.landing[2].length>0 || cache.landing[3].length>0;
+      if(hasData) _cinematicCache = cache;
       cb(cache);
     })
-    .catch(function(err){
-      // API failed - use empty cache so cinematics are skipped gracefully
-      _cinematicCache={landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}};
-      cb(_cinematicCache);
+    .catch(function(){
+      // Don't cache on failure — allow retry next time
+      cb({landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}});
     });
 }
 
