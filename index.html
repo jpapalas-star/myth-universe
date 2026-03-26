@@ -1484,7 +1484,7 @@ function showInfo(d){
     `<div class="sec">${lbl.prt}</div><div class="txt">${listInfoLinks(d.Partners)}</div>`+
     `<div class="sec">${lbl.txt}</div>`+
     `<div style="margin-bottom:7px;display:flex;gap:8px;">
-      <button onclick="speakText()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:5px 12px;font-size:12px;cursor:pointer;">${appLang==="en"?"🔊 Listen":"🔊 Ακρόαση"}</button>
+      <button onclick="${appLang==='en'?'speakText':'speakTextEL'}()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:5px 12px;font-size:12px;cursor:pointer;">${appLang==="en"?"🔊 Listen":"🔊 Ακρόαση"}</button>
       <button onclick="stopSpeak()" style="background:rgba(255,100,60,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:16px;color:#ff8866;padding:5px 12px;font-size:12px;cursor:pointer;">⏹ Stop</button>
     </div>`+
     `<div class="txt" id="infoFullText">${fulltext}</div>`+
@@ -1598,6 +1598,28 @@ function _getBestVoice(lang, preferMale){
   }
 }
 
+function _elSpeakSentences(text, onDone){
+  // Split into sentences, send one by one to ElevenLabs
+  var sentences = text
+    .split(/(?<=[.!?;])\s+/)
+    .map(function(s){ return s.trim(); })
+    .filter(function(s){ return s.length>2; });
+
+  if(sentences.length===0){ if(onDone) onDone(); return; }
+
+  var sessionToken = ++window._ttsFocusToken;
+
+  function next(idx){
+    if(window._ttsFocusToken !== sessionToken) return; // cancelled
+    if(idx >= sentences.length){ if(onDone) onDone(); return; }
+    _elSpeak(sentences[idx], function(){
+      if(window._ttsFocusToken !== sessionToken) return;
+      next(idx+1);
+    });
+  }
+  next(0);
+}
+
 function speakText(){
   stopSpeak();
   var el=document.getElementById('infoFullText');
@@ -1606,9 +1628,12 @@ function speakText(){
   if(!txt||txt==='-') return;
   var ttsBtn=document.getElementById('ttsStop');
   if(ttsBtn) ttsBtn.style.display='block';
-  function onEnd(){ if(ttsBtn) ttsBtn.style.display='none'; }
-  // Use ElevenLabs (Greek Male) → fallback RV → fallback WebSpeech
-  _elSpeak(txt, onEnd);
+  _elSpeakSentences(txt, function(){ if(ttsBtn) ttsBtn.style.display='none'; });
+}
+
+function speakTextEL(){
+  // "Ακρόαση" button — same as speakText but re-reads from start
+  speakText();
 }
 
 function stopSpeak(){
@@ -2407,6 +2432,19 @@ function _preloadVideo(src){
   }catch(e){}
 }
 
+// Preload src and call cb when readyState >= 3 (HAVE_FUTURE_DATA) or timeout
+function _preloadVideoReady(src, cb){
+  _preloadVideo(src);
+  var v = _preloadPool[src];
+  if(!v){ cb(); return; }
+  if(v.readyState >= 3){ cb(); return; }
+  var _done=false;
+  var _t=setTimeout(function(){ if(!_done){_done=true; cb();} }, 5000);
+  function onReady(){ if(_done) return; _done=true; clearTimeout(_t); cb(); }
+  v.addEventListener('canplay', onReady, {once:true});
+  v.addEventListener('loadeddata', onReady, {once:true});
+}
+
 
 
 // Play a list of videos in sequence using ping-pong buffering + Web Audio GainNodes
@@ -2604,7 +2642,8 @@ function _speakNextSpoken(type){
     if(lang==='en'){
       _rvSpeak(text, null);
     } else {
-      _elSpeak(text, null);
+      // EL sentence by sentence (spokens are usually 1 sentence anyway)
+      _elSpeakSentences(text, null);
     }
   });
 }
@@ -2649,39 +2688,90 @@ function _playCinematicSequence(entityVideo, onDone){
 
     if(queue.length===0){ onDone(); return; }
 
-    // Pre-fetch spoken for landing (background)
+    // Pre-fetch spokens in background
     var lang2 = appLang==='en' ? 'en' : 'el';
     _fetchSpokens('landing', lang2, function(){});
+    _fetchSpokens('searching', lang2, function(){});
+    _fetchSpokens('finding', lang2, function(){});
 
-    var srcs = queue.map(function(q){ return q.src; });
+    var srcs  = queue.map(function(q){ return q.src; });
     var types = queue.map(function(q){ return q.type; });
 
     window._cinematicPlaying = true;
 
-    // Track which types have already spoken
-    var _spokenTypes = {};
-    function _onVideoStart(idx){
-      var type = types[idx];
-      if(!type || type==='entity' || _spokenTypes[type]) return;
-      if(type==='landing' || type==='searching' || type==='finding'){
-        _spokenTypes[type] = true;
-        _speakNextSpoken(type);
-      }
+    // Show "Prepare to land" screen while prefetching first 2 videos
+    var ov = document.getElementById('videoOverlay');
+    var _prepEl = document.getElementById('_prepareToLand');
+    if(!_prepEl && ov){
+      _prepEl = document.createElement('div');
+      _prepEl.id = '_prepareToLand';
+      _prepEl.style.cssText='position:fixed;inset:0;z-index:8005;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;';
+      _prepEl.innerHTML=
+        '<div style="font-size:13px;letter-spacing:4px;color:rgba(255,200,60,0.5);margin-bottom:12px;text-transform:uppercase;">'+(appLang==='en'?'Prepare to land':'Ετοιμαστείτε για προσγείωση')+'</div>'
+        +'<div style="display:flex;gap:10px;">'
+        +'<span class="_pld" style="width:7px;height:7px;border-radius:50%;background:#ffe040;opacity:0.15;display:inline-block;transition:opacity 0.2s;"></span>'
+        +'<span class="_pld" style="width:7px;height:7px;border-radius:50%;background:#ffe040;opacity:0.15;display:inline-block;transition:opacity 0.2s;"></span>'
+        +'<span class="_pld" style="width:7px;height:7px;border-radius:50%;background:#ffe040;opacity:0.15;display:inline-block;transition:opacity 0.2s;"></span>'
+        +'</div>';
+      ov.appendChild(_prepEl);
+      // Animate dots
+      var _pdots=_prepEl.querySelectorAll('._pld'), _pc=0;
+      var _piv=setInterval(function(){
+        _pdots.forEach(function(d,i){ d.style.opacity=i===_pc?'1':'0.15'; });
+        _pc=(_pc+1)%3;
+      },500);
+      _prepEl._piv=_piv;
+    } else if(_prepEl){
+      _prepEl.style.display='flex';
     }
-    window._cinematicOnFirstStart = _onVideoStart;
 
-    _playVideoSequence(srcs, function(){
-      window._cinematicPlaying = false;
-      window._cinematicOnFirstStart = null;
-      var ov=document.getElementById('videoOverlay');
-      _vidEls.forEach(function(v){ if(v){ v.pause(); v.src=''; v.style.opacity='0'; } });
-      if(ov){
-        ov.style.transition='opacity 0.3s';
-        ov.style.opacity='0';
-        setTimeout(function(){ ov.style.display='none'; ov.style.opacity='0'; },320);
+    if(ov){ ov.style.display='flex'; ov.style.opacity='1'; }
+
+    // Prefetch first 2 videos (landing + first searching), then start
+    var first2 = srcs.slice(0,2).filter(Boolean);
+    var _ready=0;
+    function _onPrefetchDone(){
+      _ready++;
+      if(_ready < first2.length) return;
+      // First 2 ready — hide prepare screen and start sequence
+      if(_prepEl){
+        if(_prepEl._piv) clearInterval(_prepEl._piv);
+        _prepEl.style.display='none';
       }
-      setTimeout(onDone, 380);
-    });
+      // Prefetch remaining in background while first plays
+      srcs.slice(2).forEach(function(s){ if(s) _preloadVideo(s); });
+
+      // Track spoken types
+      var _spokenTypes = {};
+      function _onVideoStart(idx){
+        var type = types[idx];
+        if(!type || type==='entity' || _spokenTypes[type]) return;
+        if(type==='landing'||type==='searching'||type==='finding'){
+          _spokenTypes[type]=true;
+          _speakNextSpoken(type);
+        }
+      }
+      window._cinematicOnFirstStart = _onVideoStart;
+
+      _playVideoSequence(srcs, function(){
+        window._cinematicPlaying = false;
+        window._cinematicOnFirstStart = null;
+        var ov2=document.getElementById('videoOverlay');
+        _vidEls.forEach(function(v){ if(v){ v.pause(); v.src=''; v.style.opacity='0'; } });
+        if(ov2){
+          ov2.style.transition='opacity 0.3s';
+          ov2.style.opacity='0';
+          setTimeout(function(){ ov2.style.display='none'; ov2.style.opacity='0'; },320);
+        }
+        setTimeout(onDone, 380);
+      });
+    }
+
+    if(first2.length===0){
+      _onPrefetchDone();
+    } else {
+      first2.forEach(function(src){ _preloadVideoReady(src, _onPrefetchDone); });
+    }
   });
 }
 
