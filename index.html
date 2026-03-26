@@ -354,6 +354,7 @@ function _doPlayLaunchVideo(){
   if(ldg){ if(ldg._ldIv) clearInterval(ldg._ldIv); ldg.remove(); }
 
   var _R2_LAUNCH = 'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev/Launch_Video/YouCut_20260326_155547561.mp4';
+  var _LOCAL_LAUNCH = './Assets/Launch_Video/YouCut_20260323_1657186262.mp4';
 
   // Always set src fresh
   lv.src = _R2_LAUNCH;
@@ -379,11 +380,20 @@ function _doPlayLaunchVideo(){
   },{once:true});
 
   lv.onended = function(){ skipLaunch(); };
-  lv.onerror = function(){ skipLaunch(); };
+  lv.onerror = function(){
+    // R2 failed — try local fallback
+    if(lv.src.indexOf('r2.dev')>=0){
+      lv.src = _LOCAL_LAUNCH;
+      lv.load();
+      lv.play().catch(function(){ skipLaunch(); });
+    } else {
+      skipLaunch();
+    }
+  };
 
-  // Stall guard: if canplay never fires in 6s, try playing anyway
-  setTimeout(function(){ tryPlay(); }, 6000);
-  // Hard timeout: if still running after 45s, skip
+  // Stall guard: if canplay never fires in 8s, try playing anyway
+  setTimeout(function(){ if(!_played) tryPlay(); }, 8000);
+  // Hard timeout
   setTimeout(function(){ if(lo&&lo.style.display!=='none') skipLaunch(); }, 180000);
 }
 
@@ -422,7 +432,7 @@ window.skipLaunch = function(){
 
 <!-- Launch video overlay -->
 <div id="launchOverlay" style="position:fixed;inset:0;z-index:100002;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;">
-  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline muted></video>
+  <video id="launchVideo" style="width:100%;height:100%;object-fit:contain;background:#000;" playsinline></video>
   <button onclick="skipLaunch()" style="position:fixed;top:18px;right:18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-size:13px;font-weight:bold;padding:8px 16px;cursor:pointer;z-index:100000;">SKIP ✕</button>
 </div>
 
