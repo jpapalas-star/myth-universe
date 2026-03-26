@@ -2346,8 +2346,6 @@ function _fetchCinematic(cb){
         finding:   { 1: getTheme(data.finding,1)||[], 2: getTheme(data.finding,2)||[], 3: getTheme(data.finding,3)||[] }
       };
       _cinematicCache = cache;
-      // Debug toast — remove after confirming finding works
-      showToast('🎬 F1:'+cache.finding[1].length+' F2:'+cache.finding[2].length+' F3:'+cache.finding[3].length);
       // Aggressively preload first video of each theme immediately
       [1,2,3].forEach(function(t){
         if(cache.landing[t] && cache.landing[t][0]) _preloadVideo(cache.landing[t][0]);
@@ -2756,14 +2754,8 @@ function _playCinematicSequence(entityVideo, onDone){
       _playVideoSequence(srcs, function(){
         window._cinematicPlaying = false;
         window._cinematicOnFirstStart = null;
-        var ov2=document.getElementById('videoOverlay');
-        _vidEls.forEach(function(v){ if(v){ v.pause(); v.src=''; v.style.opacity='0'; } });
-        if(ov2){
-          ov2.style.transition='opacity 0.3s';
-          ov2.style.opacity='0';
-          setTimeout(function(){ ov2.style.display='none'; ov2.style.opacity='0'; },320);
-        }
-        setTimeout(onDone, 380);
+        // Don't close overlay here — caller (_showPhotoInOverlay or _closeOverlayAndFocus) handles it
+        setTimeout(onDone, 50);
       });
     }
 
@@ -2843,24 +2835,41 @@ function _showPhotoInOverlay(photoSrc, onDone){
 
 function enterFocusWithLanding(id){
   var d = dataMap[id];
-  // Stop speech + music immediately on planet tap
   stopSpeak();
   window._ttsFocusToken = (window._ttsFocusToken||0) + 1;
   _pauseMusicForFocus();
 
   var entityVid = d && d.video ? d.video : null;
   var entityPhoto = d && (d.focusPhoto||d.photo) ? (d.focusPhoto||d.photo) : null;
-  // Valid photo = R2 URL (not a sprite/From_Main default)
   var hasRealPhoto = entityPhoto && entityPhoto.indexOf('r2.dev')>=0 && entityPhoto.indexOf('From_Main')<0;
 
-  if(!entityVid && hasRealPhoto){
-    // No video but has real photo → cinematic then photo zoom
+  function _closeOverlayAndFocus(){
+    var ov=document.getElementById('videoOverlay');
+    if(ov){
+      ov.style.transition='opacity 0.3s';
+      ov.style.opacity='0';
+      setTimeout(function(){ ov.style.display='none'; ov.style.opacity='0'; enterFocus(id); }, 320);
+    } else {
+      enterFocus(id);
+    }
+  }
+
+  if(hasRealPhoto){
+    // Has real photo → cinematic sequence with photo as last item
     _playCinematicSequence(null, function(){
-      _showPhotoInOverlay(entityPhoto, function(){ enterFocus(id); });
+      // Overlay still open — show photo zoom inside it
+      _showPhotoInOverlay(entityPhoto, function(){
+        _closeOverlayAndFocus();
+      });
+    });
+  } else if(entityVid){
+    _playCinematicSequence(entityVid, function(){
+      _closeOverlayAndFocus();
     });
   } else {
-    _playCinematicSequence(entityVid, function(){
-      enterFocus(id);
+    // No photo, no video — just cinematic then focus
+    _playCinematicSequence(null, function(){
+      _closeOverlayAndFocus();
     });
   }
 }
