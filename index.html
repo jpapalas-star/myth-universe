@@ -2504,6 +2504,7 @@ function _fetchCinematic(cb){
       cb(cache);
     })
     .catch(function(err){
+      // API failed - use empty cache so cinematics are skipped gracefully
       _cinematicCache={landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}};
       cb(_cinematicCache);
     });
@@ -4497,13 +4498,25 @@ document.addEventListener('click', function(e){
     // Eager: fetch cinematic API + preload first videos immediately
     if(typeof _fetchCinematic==='function'){
       _fetchCinematic(function(cache){
-        // Preload first landing video of each available theme
         [1,2,3].forEach(function(t){
           if(cache.landing[t]&&cache.landing[t][0]) _preloadVideo(cache.landing[t][0]);
           if(cache.searching[t]&&cache.searching[t][0]) _preloadVideo(cache.searching[t][0]);
         });
       });
     }
+    // Separate: fetch music list from R2 (via Vercel music endpoint)
+    fetch('https://myth-tts-api.vercel.app/api/music')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d.tracks && d.tracks.length > 0){
+          _musicTracks = d.tracks;
+          // Restart music with new tracks if playing
+          if(_musicOn && !_musicWasPaused && _musicAudio.paused){
+            _musicIndex = 0; _playMusicTrack(0);
+          }
+        }
+      })
+      .catch(function(){}); // silently fail - hardcoded fallback stays
     // Eager: load quiz data in background
     if(typeof _loadQuizData==='function') _loadQuizData(function(){});
     if(typeof _tryAutoStart==='function') _tryAutoStart();
