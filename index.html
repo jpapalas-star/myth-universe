@@ -285,6 +285,10 @@ html,body{
 <script>
 // ── PLAYER NAME ───────────────────────────────────────────────────────
 var _playerName = '';
+// Declare early so soundChoice can use before main script loads
+var _vidEls = [null, null];
+var _vidGains = [null, null];
+var _vidSrcs  = [null, null];
 window._startWithName = function(enabled){
   if(enabled === undefined) enabled = _soundEnabled;
   var inp = document.getElementById('playerNameInput');
@@ -439,7 +443,8 @@ window.skipLaunch = function(){
   if(typeof _stopIntroMusic==='function') _stopIntroMusic();
   if(lo){ lo.style.transition='opacity 0.5s'; lo.style.opacity='0'; setTimeout(function(){ lo.style.display='none'; lo.style.opacity='1'; },500); }
   if(!_musicUnlocked){ _musicUnlocked=true; _initBeepCtx(); if(_beepCtx) _beepCtx.resume(); _loadBeepBuffer(); }
-  setTimeout(function(){ if(_musicOn&&_musicAudio&&_musicAudio.paused) startMusic(); },700);
+  _musicWasPaused=false;
+  setTimeout(function(){ if(_musicOn) startMusic(); },700);
 };
 </script>
 <div id="soundDialog" style="position:fixed;inset:0;z-index:200001;background:#000;display:flex;align-items:center;justify-content:center;">
@@ -2462,9 +2467,9 @@ function _fetchCinematic(cb){
       });
       cb(cache);
     })
-    .catch(function(err){
-      _cinematicCache={landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}};
-      cb(_cinematicCache);
+    .catch(function(){
+      // Don't cache on failure so next tap retries
+      cb({landing:{1:[],2:[],3:[]},searching:{1:[],2:[],3:[]},finding:{1:[],2:[],3:[]}});
     });
 }
 
@@ -2476,9 +2481,7 @@ function _pickN(arr, n){
 }
 
 // ── PING-PONG DOUBLE VIDEO BUFFER ───────────────────────────────────
-var _vidEls   = [null, null]; // two <video> elements (ping-pong)
-var _vidGains = [null, null]; // unused - kept for compat
-var _vidSrcs  = [null, null]; // unused - kept for compat
+// _vidEls declared early in startup script above
 var _vidSeqAbort = false;
 
 function _ensureVidEls(){
@@ -4250,8 +4253,9 @@ function _resumeSpacecraft(){
 
 function startMusic(){
   if(!_musicOn) return;
-  if(_musicWasPaused) return; // don't start if we paused for focus
+  if(_musicWasPaused) return;
   _musicIndex = 0;
+  _shuffledTracks = null; // reset shuffle on new start
   _playMusicTrack(0);
   _scheduleSpacecraft();
 }
