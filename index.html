@@ -1903,12 +1903,12 @@ function _advSpeak(text, onDone){
     if(_advActive&&onDone) onDone();
   }
 
-  // Safety timer fallback (EL can be slow)
+  // Safety timer fallback
   var estMs = Math.max(3000, text.length * 95);
   _advTimer = setTimeout(finish, estMs);
 
-  // ElevenLabs first → RV fallback → WebSpeech
-  _elSpeak(text, finish);
+  // Send sentence by sentence to ElevenLabs
+  _elSpeakSentences(text, finish);
 }
 
 function advNext(){
