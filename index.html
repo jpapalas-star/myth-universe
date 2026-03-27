@@ -3988,41 +3988,8 @@ engine.runRenderLoop(()=>{
   particleSystem.emitter.x=Math.sin(performance.now()*0.00005)*200;
   particleSystem.emitter.z=Math.cos(performance.now()*0.00005)*200;
   // ── INERTIA: smooth deceleration after gesture ends ────────────────
-  if (_inertiaActive && !driveMode) {
-    var DAMP = 0.88;
-    _velAlpha *= DAMP; _velBeta *= DAMP;
-    _velTx    *= DAMP; _velTy   *= DAMP; _velTz *= DAMP;
-    _velRadius = 0;
-    var MIN = 0.0001;
-    // Clamp velocities to prevent phantom shake
-    _velAlpha = Math.max(-0.08, Math.min(0.08, _velAlpha));
-    _velBeta  = Math.max(-0.05, Math.min(0.05, _velBeta));
-    _velTx    = Math.max(-30, Math.min(30, _velTx));
-    _velTy    = Math.max(-30, Math.min(30, _velTy));
-    _velTz    = Math.max(-30, Math.min(30, _velTz));
-    if (Math.abs(_velAlpha) > MIN) camera.alpha    += _velAlpha;
-    if (Math.abs(_velBeta)  > MIN) camera.beta     = _cb(camera.beta + _velBeta);
-    if (Math.abs(_velTx)    > MIN) camera.target.x += _velTx;
-    if (Math.abs(_velTy)    > MIN) camera.target.y += _velTy;
-    if (Math.abs(_velTz)    > MIN) camera.target.z += _velTz;
-    if (Math.abs(_velAlpha)<MIN && Math.abs(_velBeta)<MIN &&
-        Math.abs(_velTx)<MIN && Math.abs(_velTz)<MIN) {
-      _inertiaActive = false;
-    }
-  } else if(driveMode && _inertiaActive){
-    _inertiaActive=false;
-    _velAlpha=0;_velBeta=0;_velTx=0;_velTy=0;_velTz=0;
-  }
-  // Track velocity each frame (skip during drive to avoid phantom accumulation)
-  // Track velocity each frame (skip during drive to avoid phantom accumulation)
-  if(!driveMode){
-    _velAlpha  = camera.alpha    - _prevAlpha;
-    _velBeta   = camera.beta     - _prevBeta;
-    _velRadius = camera.radius   - _prevRadius;
-    _velTx     = camera.target.x - _prevTx;
-    _velTy     = camera.target.y - _prevTy;
-    _velTz     = camera.target.z - _prevTz;
-  }
+  // Only inertia2 system is used now (both 1 and 2 finger)
+  // _inertiaActive legacy block removed
   // If at beta limit, zero out beta velocity to prevent shake
   if(camera.beta <= camera.lowerBetaLimit+0.01 || camera.beta >= camera.upperBetaLimit-0.01) _velBeta=0;
   // If radius unchanged (hit limit), zero radius vel
