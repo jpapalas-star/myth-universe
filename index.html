@@ -1638,8 +1638,9 @@ function showInfo(d){
       <button onclick="showQuizForEntity('${d.id}',null)" style="background:rgba(255,160,30,0.15);border:1px solid rgba(255,160,30,0.4);border-radius:16px;color:#ffaa30;padding:5px 12px;font-size:12px;cursor:pointer;">🎯 Quiz</button>
     </div>`+
     `<div class="txt" id="infoFullText">${fulltext}</div>`+
-    `<div style="margin-top:12px;">
-      <button onclick="startFamilyAdventure('${d.id}', this)" style="width:100%;background:linear-gradient(135deg,rgba(255,160,30,0.25),rgba(255,100,30,0.15));border:1px solid rgba(255,160,30,0.5);border-radius:18px;color:#ffb040;padding:9px 14px;font-size:13px;font-weight:bold;cursor:pointer;letter-spacing:1px;">🌟 ${appLang==='en'?'Family Adventure':'Περιπέτεια'}</button>
+    `<div style="margin-top:12px;display:flex;gap:8px;">
+      <button onclick="startFamilyAdventure('${d.id}', this)" style="flex:1;background:linear-gradient(135deg,rgba(255,160,30,0.25),rgba(255,100,30,0.15));border:1px solid rgba(255,160,30,0.5);border-radius:18px;color:#ffb040;padding:9px 14px;font-size:13px;font-weight:bold;cursor:pointer;letter-spacing:1px;">🌟 ${appLang==='en'?'Family Adventure':'Περιπέτεια'}</button>
+      <button onclick="resetFocus(false)" style="background:rgba(100,180,255,0.12);border:1px solid rgba(100,180,255,0.4);border-radius:18px;color:#80c8ff;padding:9px 14px;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;">🚀 ${appLang==='en'?'Take off':'Απογείωση'}</button>
     </div>`;
   bindInfoLinks();
 }
@@ -4773,7 +4774,7 @@ function _updateGasVisual(){
 <div id="quizOverlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;">
   <div style="background:linear-gradient(145deg,rgba(15,8,35,0.98),rgba(25,12,50,0.98));border:1px solid rgba(255,180,30,0.5);border-radius:20px;padding:24px 20px;max-width:420px;width:92%;max-height:90vh;overflow-y:auto;box-shadow:0 0 40px rgba(255,150,20,0.2);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-      <div style="color:#ffaa30;font-size:11px;font-weight:bold;letter-spacing:2px;">appLang==='en'?'QUIZ':'ΚΟΥΙΖ')</div>
+      <div style="color:#ffaa30;font-size:11px;font-weight:bold;letter-spacing:2px;">QUIZ</div>
       <div id="quizScore" style="color:#ffe040;font-size:14px;font-weight:bold;">🏆 <span id="quizScoreVal">0</span> <span id="quizPtsLabel">pts</span></div>
     </div>
     <div id="quizEntityName" style="color:#fff;font-size:15px;font-weight:bold;margin-bottom:14px;opacity:0.7;"></div>
@@ -4796,7 +4797,7 @@ function _updateGasVisual(){
     </div>
     <div id="myScoreRow" style="background:rgba(255,220,60,0.1);border:1px solid rgba(255,220,60,0.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
       <span style="color:#ffe040;font-weight:bold;" id="myScoreName">-</span>
-      <span style="color:#ffe040;font-size:18px;font-weight:bold;" id="myScorePoints">0 πόντοι</span>
+      <span style="color:#ffe040;font-size:18px;font-weight:bold;" id="myScorePoints">0 pts</span>
     </div>
     <div id="leaderboardList" style="display:flex;flex-direction:column;gap:6px;"></div>
     <div id="leaderboardLoading" style="color:#aaa;text-align:center;padding:20px;font-size:14px;">Loading...</div>
@@ -5001,7 +5002,7 @@ function showLeaderboard(){
         list.appendChild(row);
       });
     })
-    .catch(function(){ ldg.textContent='Σφάλμα φόρτωσης.'; });
+    .catch(function(){ ldg.textContent=appLang==='en'?'Loading error.':'Σφάλμα φόρτωσης.'; });
 }
 </script>
 </body>
