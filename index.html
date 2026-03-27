@@ -444,18 +444,19 @@ window.skipLaunch = function(){
   _musicWasPaused=false;
   setTimeout(function(){
     if(!_musicOn) return;
-    // Try to start music, retry once on failure
     _musicIndex=0; _shuffledTracks=null;
     var t0 = _musicTracks[0];
     _musicAudio.src = t0;
     _musicAudio.volume = _MUSIC_VOL_NORMAL;
     _musicAudio.load();
-    _musicAudio.play().catch(function(){
-      setTimeout(function(){ _musicAudio.play().catch(function(){}); }, 500);
-    });
-    _musicAudio.onended = function(){
-      if(_musicOn&&!focusedId&&!_advActive&&!_musicWasPaused) _playMusicTrack(1);
-    };
+    _musicAudio.play()
+      .then(function(){ _musicAudio.onended=function(){ if(_musicOn&&!focusedId&&!_advActive&&!_musicWasPaused) _playMusicTrack(1); }; })
+      .catch(function(){
+        // Autoplay blocked - start on next user touch
+        window._pendingMusic = true;
+        document.addEventListener('touchstart', function _mu(){ document.removeEventListener('touchstart',_mu); if(_musicOn) startMusic(); },{once:true,passive:true});
+        document.addEventListener('click', function _mc(){ document.removeEventListener('click',_mc); if(_musicOn) startMusic(); },{once:true});
+      });
     _scheduleSpacecraft();
   },700);
 };
