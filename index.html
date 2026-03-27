@@ -897,10 +897,10 @@ canvas.addEventListener('touchend', function(e) {
     }
   }
   _t1 = null; _multi = false;
-  // 1-finger: stop immediately, no coast (prevents shake/bounce)
+  // Zero ALL movement state on 1-finger release
   _vel2x=0; _vel2y=0; _velZoom=1;
-  _inertia2=false;
-  _inertiaActive = false;
+  _inertia2=false; _inertiaActive=false;
+  _velAlpha=0; _velBeta=0; _velRadius=0; _velTx=0; _velTy=0; _velTz=0;
 }, { passive: false });
 
 canvas.addEventListener('touchcancel', function() {
