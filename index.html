@@ -4167,7 +4167,9 @@ var _elFailCount = 0;
 var _elAbortCtrl = null; // global — cancelled by stopSpeak()
 
 function _elSpeak(text, onDone){
-  stopSpeak();
+  // Cancel any previous in-flight request ONLY (don't increment token)
+  if(_elAbortCtrl){ try{_elAbortCtrl.abort();}catch(e){} _elAbortCtrl=null; }
+  if(_elAudio){ try{_elAudio.pause(); _elAudio.src='';}catch(e){} _elAudio=null; }
   if(!text||text==='-'){ if(onDone) setTimeout(onDone,200); return; }
   // EN: ElevenLabs only has Greek voice — go straight to RV
   if(appLang==='en'){ _rvSpeak(text, onDone); return; }
