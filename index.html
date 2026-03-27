@@ -772,7 +772,6 @@ canvas.addEventListener('touchmove', function(e) {
     }
     _t1.firstMove = false;
     _t1.dist = (_t1.dist||0) + rawSpeed;
-    if (rawSpeed > 10) _t1.id = null; // cancel tap on planet
 
     if (focusedId) {
       // Focus orbit — store raw delta, inertia loop will apply
