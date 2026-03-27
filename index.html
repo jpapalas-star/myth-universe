@@ -774,7 +774,8 @@ canvas.addEventListener('touchmove', function(e) {
     if (rawSpeed > 10) _t1.id = null; // cancel tap
 
     if (focusedId) {
-      // Focus mode: orbit around focused planet
+      // Focus mode: orbit around focused planet — zero velocity to prevent shake
+      _velAlpha = 0; _velBeta = 0;
       camera.alpha -= dmx2 * 0.0015;
       camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
     } else {
@@ -4006,17 +4007,21 @@ engine.runRenderLoop(()=>{
   }
   // Track velocity each frame (skip during drive to avoid phantom accumulation)
   if(!driveMode){
-    var newVA  = camera.alpha    - _prevAlpha;
-    var newVB  = camera.beta     - _prevBeta;
-    var newVTx = camera.target.x - _prevTx;
-    var newVTy = camera.target.y - _prevTy;
-    var newVTz = camera.target.z - _prevTz;
-    // Hard clamp — if delta is too large it's a spike, zero it out
-    _velAlpha  = Math.abs(newVA)  > 0.05 ? 0 : ((_velAlpha  + newVA)  * 0.5);
-    _velBeta   = Math.abs(newVB)  > 0.03 ? 0 : ((_velBeta   + newVB)  * 0.5);
-    _velTx     = Math.abs(newVTx) > 20   ? 0 : ((_velTx     + newVTx) * 0.5);
-    _velTy     = Math.abs(newVTy) > 20   ? 0 : ((_velTy     + newVTy) * 0.5);
-    _velTz     = Math.abs(newVTz) > 20   ? 0 : ((_velTz     + newVTz) * 0.5);
+    if(_inertiaActive){
+      var newVA  = camera.alpha    - _prevAlpha;
+      var newVB  = camera.beta     - _prevBeta;
+      var newVTx = camera.target.x - _prevTx;
+      var newVTy = camera.target.y - _prevTy;
+      var newVTz = camera.target.z - _prevTz;
+      // Hard clamp — if delta is too large it's a spike, zero it out
+      _velAlpha  = Math.abs(newVA)  > 0.05 ? 0 : ((_velAlpha  + newVA)  * 0.5);
+      _velBeta   = Math.abs(newVB)  > 0.03 ? 0 : ((_velBeta   + newVB)  * 0.5);
+      _velTx     = Math.abs(newVTx) > 20   ? 0 : ((_velTx     + newVTx) * 0.5);
+      _velTy     = Math.abs(newVTy) > 20   ? 0 : ((_velTy     + newVTy) * 0.5);
+      _velTz     = Math.abs(newVTz) > 20   ? 0 : ((_velTz     + newVTz) * 0.5);
+    } else {
+      _velAlpha=0; _velBeta=0; _velTx=0; _velTy=0; _velTz=0;
+    }
     _velRadius = camera.radius - _prevRadius;
   }
   // If at beta limit, zero out beta velocity to prevent shake
