@@ -806,7 +806,7 @@ canvas.addEventListener('touchmove', function(e) {
 
       ratio = 1 + rawChange * damping;
       camera.radius = _cr(camera.radius * ratio);
-      if(ratio < 1 && camera.radius < 60) _driftTargetToNearest();
+      if(ratio < 1 && camera.radius < 40) _driftTargetToNearest();
       // Warp sound during pinch
       if(window._startWarpSound) _startWarpSound();
       if(window._scheduleWarpStop) _scheduleWarpStop(350);
@@ -914,7 +914,7 @@ window.addEventListener('mouseup', function(e) {
 canvas.addEventListener('wheel', function(e) {
   var zoomFactor = navFast ? (e.deltaY > 0 ? 1.14 : 0.88) : (e.deltaY > 0 ? 1.08 : 0.926);
   camera.radius = _cr(camera.radius * zoomFactor);
-  if(zoomFactor < 1 && camera.radius < 60) _driftTargetToNearest();
+  if(zoomFactor < 1 && camera.radius < 40) _driftTargetToNearest();
   // Warp sound while zooming
   if(window._startWarpSound) _startWarpSound();
   if(window._scheduleWarpStop) _scheduleWarpStop(350);
@@ -972,7 +972,7 @@ function _doTap(pickedId) {
         var p=ease(Math.min(frames/maxF,1));
         camera.alpha    = lerp(sA, -Math.PI/2, p);
         camera.beta     = lerp(sB, Math.PI/3.1, p);
-        camera.radius   = lerp(sR, 760, p);
+        camera.radius   = lerp(sR, 980, p);
         camera.target.x = lerp(sTx, 0, p);
         camera.target.y = lerp(sTy, 0, p);
         camera.target.z = lerp(sTz, 0, p);
@@ -1274,8 +1274,8 @@ function sizeFor(d){
   if(model==='god'||model==='goddess') return 13; // Tier 2: Olympians
   if(model==='giant'||model==='energy') return 10;// Tier 3: Titans + Primordials
   if(model==='human'||model==='nymph'||
-     model==='hero') return 7.5;                  // Tier 4: Heroes / mortals
-  return 5.5;                                      // Tier 5: spirits/winds/monsters/groups
+     model==='hero') return 8.5;                  // Tier 4: Heroes / mortals
+  return 7.0;                                       // Tier 5: spirits/winds/monsters/groups
 }
 
 function addRing(parentMesh,color,diameter,thickness){
@@ -1399,7 +1399,7 @@ function createNode(d,x,y,z,familyRingColor){
     cRings.push(addRing(sphere,redC,size*1.25,0.18));
     cRings.push(addRing(sphere,redC,size*1.55,0.10));
     cRings.push(addRing(sphere,new BABYLON.Color3(1.0,0.4,0.3),size*1.85,0.05));
-    cRings.push(addRing(sphere,new BABYLON.Color3(0.5,0.85,1.0),size*2.18,0.04));
+    cRings.push(addRing(sphere,new BABYLON.Color3(0.3,0.75,1.0),size*2.25,0.14));
     var cLabel=createLabel(d.Name||d.id,sphere,size,groupLabelColor(d));
     nodes[d.id]={id:d.id,data:d,sphere:sphere,rings:cRings,label:cLabel,size:size,familyRingColor:null};
     placed.add(d.id);
@@ -3136,7 +3136,7 @@ function enterFocus(id, suppressInfoAndSpeak){
     var newTarget = pos.clone();
     var minDist = 2; // allow close zoom
     camera.lowerRadiusLimit = minDist;
-    var newRadius = nodes[id].size * 10 + 60;
+    var newRadius = nodes[id].size * 10 + 80;
     // Compute target alpha: face planet from outside its ring
     var px = newTarget.x, pz = newTarget.z;
     var pd = Math.sqrt(px*px + pz*pz);
@@ -3151,7 +3151,7 @@ function enterFocus(id, suppressInfoAndSpeak){
     while(dA >  Math.PI) dA -= Math.PI*2;
     while(dA < -Math.PI) dA += Math.PI*2;
     var destAlpha = camera.alpha + dA;
-    var destBeta  = Math.PI/5; // gentle top-down angle
+    var destBeta  = Math.PI/3.5; // angle shows planet centered in upper half
 
     _animToken++; var myToken=_animToken; // cancel any running anim
     var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
@@ -3399,7 +3399,7 @@ homeBtn.addEventListener('click',function(){
   var frames3=0, maxF3=40;
   var sA3=camera.alpha, sB3=camera.beta, sR3=camera.radius;
   var sTx3=camera.target.x, sTy3=camera.target.y, sTz3=camera.target.z;
-  var tA3=-Math.PI/2, tB3=Math.PI/3.1, tR3=760;
+  var tA3=-Math.PI/2, tB3=Math.PI/3.1, tR3=980;
   function lerp3(a,b,t){return a+(b-a)*t;}
   function ease3(t){return t<0.5?2*t*t:1-2*(1-t)*(1-t);}
   _animToken++; var myTok3=_animToken;
@@ -3466,14 +3466,14 @@ fetch('app-data.json',{cache:'default'})
 
     // Tier → radial zone [minR, maxR] from Chaos
     var ZONES = {
-      primordial: [55,  110],
-      titan:      [120, 190],
-      olympian:   [200, 290],
-      nymph:      [300, 360],
-      hero:       [300, 370],
-      mortal:     [300, 370],
-      monster:    [380, 450],
-      outer:      [380, 460]
+      primordial: [70,  140],
+      titan:      [155, 250],
+      olympian:   [265, 380],
+      nymph:      [390, 470],
+      hero:       [390, 490],
+      mortal:     [390, 490],
+      monster:    [500, 600],
+      outer:      [500, 620]
     };
 
     function getTier(d){
@@ -3535,7 +3535,7 @@ fetch('app-data.json',{cache:'default'})
         // Hub of this family system
         var hx = Math.cos(ang)*r;
         var hz = Math.sin(ang)*r;
-        var hy = (Math.sin(ang * 7.3 + i * 2.1) * 0.5 + Math.sin(ang * 3.7) * 0.5) * 220;
+        var hy = (Math.sin(ang * 7.3 + i * 2.1) * 0.5 + Math.sin(ang * 3.7) * 0.5) * 280;
 
         // Orbit radius for children — minimum 28 so circle is clearly visible
         var nc      = cl.children.length;
@@ -3907,6 +3907,12 @@ engine.runRenderLoop(()=>{
     _velTx    *= DAMP; _velTy   *= DAMP; _velTz *= DAMP;
     _velRadius = 0;
     var MIN = 0.0001;
+    // Clamp velocities to prevent phantom shake
+    _velAlpha = Math.max(-0.08, Math.min(0.08, _velAlpha));
+    _velBeta  = Math.max(-0.05, Math.min(0.05, _velBeta));
+    _velTx    = Math.max(-30, Math.min(30, _velTx));
+    _velTy    = Math.max(-30, Math.min(30, _velTy));
+    _velTz    = Math.max(-30, Math.min(30, _velTz));
     if (Math.abs(_velAlpha) > MIN) camera.alpha    += _velAlpha;
     if (Math.abs(_velBeta)  > MIN) camera.beta     = _cb(camera.beta + _velBeta);
     if (Math.abs(_velTx)    > MIN) camera.target.x += _velTx;
