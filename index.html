@@ -289,29 +289,21 @@ var _LEADERBOARD_URL = 'https://myth-tts-api.vercel.app/api/leaderboard';
 window._startWithName = function(enabled){
   if(enabled === undefined) enabled = _soundEnabled;
   var inp = document.getElementById('playerNameInput');
-  var name = (inp ? inp.value.trim() : '') || 'Ανώνυμος';
-
-  // Check if name already in top 30 — with timeout so Yes always works
-  var _nameChecked = false;
-  function _proceed(){ if(_nameChecked) return; _nameChecked=true; _playerName=name; soundChoice(enabled); }
-  var _nameTimeout = setTimeout(_proceed, 3000); // fallback after 3s
-
+  var name = (inp ? inp.value.trim() : '') || (appLang==='en'?'Anonymous':'Ανώνυμος');
+  _playerName = name;
+  // Start immediately (inside gesture) — check name in background
+  soundChoice(enabled);
+  // Async name check — show warning after if name taken
   fetch(_LEADERBOARD_URL)
     .then(function(r){ return r.json(); })
     .then(function(d){
-      clearTimeout(_nameTimeout);
       var scores = d.scores || [];
-      var top30 = scores.slice(0,30);
-      var taken = top30.some(function(s){ return s.name.toLowerCase()===name.toLowerCase() && name.toLowerCase()!=='ανώνυμος'; });
-      if(taken){
-        _nameChecked = true;
-        var msg = appLang==='en' ? 'Name "'+name+'" is already in the top 30! Choose another.' : 'Το όνομα "'+name+'" υπάρχει ήδη στους 30 πρώτους! Βάλε άλλο.';
-        if(inp){ inp.value=''; inp.placeholder=msg; inp.style.borderColor='rgba(255,100,100,0.8)'; }
-        return;
-      }
-      _proceed();
+      var taken = scores.slice(0,30).some(function(s){
+        return s.name.toLowerCase()===name.toLowerCase() && name.toLowerCase()!=='ανώνυμος' && name.toLowerCase()!=='anonymous';
+      });
+      if(taken) showToast(appLang==='en'?'⚠️ Name already in top 30!':'⚠️ Το όνομα υπάρχει στους 30 πρώτους!');
     })
-    .catch(function(){ clearTimeout(_nameTimeout); _proceed(); });
+    .catch(function(){});
 };
 var _soundEnabled  = true;
 var _universeReady = false;
