@@ -762,9 +762,8 @@ canvas.addEventListener('touchmove', function(e) {
     var t = e.touches[0];
     var dmx2 = t.clientX - _t1.x, dmy2 = t.clientY - _t1.y;
 
-    // Cap delta to avoid teleport on first frame (instead of skipping)
     var rawSpeed = Math.hypot(dmx2, dmy2);
-    var MAX_DELTA = 20; // max pixels per frame
+    var MAX_DELTA = 20;
     if (rawSpeed > MAX_DELTA) {
       dmx2 = dmx2 * MAX_DELTA / rawSpeed;
       dmy2 = dmy2 * MAX_DELTA / rawSpeed;
@@ -774,13 +773,16 @@ canvas.addEventListener('touchmove', function(e) {
     if (rawSpeed > 10) _t1.id = null; // cancel tap
 
     if (focusedId) {
-      // Focus mode: orbit around focused planet
+      // Focus mode: orbit — use vel2x/vel2y for inertia
+      _vel2x = dmx2 * 0.0015;
+      _vel2y = dmy2 * 0.0015;
       camera.alpha -= dmx2 * 0.0015;
       camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
     } else {
-      // Pan - same speed as 2-finger
-      _velAlpha = 0; _velBeta = 0;
-      _panDelta(dmx2 * (navFast?6.5:1.2), dmy2 * (navFast?6.5:1.2));
+      // Pan — use vel2x/vel2y exactly like 2-finger
+      _vel2x = dmx2 * (navFast?6.5:1.2);
+      _vel2y = dmy2 * (navFast?6.5:1.2);
+      _panDelta(_vel2x, _vel2y);
     }
     _t1.x = t.clientX; _t1.y = t.clientY;
 
@@ -881,12 +883,12 @@ canvas.addEventListener('touchend', function(e) {
     }
     return;
   }
-  // All fingers up — always start float + warp
+  // All fingers up — same inertia system for both 1 and 2 finger
   if(_tf){_inertia2=true;_warpLevel=0.6;if(window._warpInit)window._warpInit();}
   _tf = null;
   if (!_multi && _t1) {
     var el = Date.now() - _t1.t;
-    var id = _t1.id; // null = blank space, valid in focus mode
+    var id = _t1.id;
     if (el < 500) {
       _t1 = null; _multi = false;
       _doTap(id);
@@ -894,10 +896,10 @@ canvas.addEventListener('touchend', function(e) {
     }
   }
   _t1 = null; _multi = false;
-  // No inertia after 1-finger drag — stops immediately where you leave it
+  // 1-finger: use same inertia2 system as 2-finger
+  _inertia2=true; _warpLevel=0.4;
+  if(window._warpInit) window._warpInit();
   _inertiaActive = false;
-  _velAlpha=0; _velBeta=0; _velTx=0; _velTy=0; _velTz=0; _velRadius=0;
-  _velZoom=1; // prevent accidental zoom-out
 }, { passive: false });
 
 canvas.addEventListener('touchcancel', function() {
@@ -3853,7 +3855,13 @@ engine.runRenderLoop(()=>{
     _vel2x*=DAMP2; _vel2y*=DAMP2;
     _velZoom=1+(_velZoom-1)*DAMP2;
     if(Math.abs(_vel2x)>0.1){
-      _panDelta(_vel2x*(navFast?6.5:1.2), _vel2y*(navFast?6.5:1.2));
+      if(focusedId){
+        // Focus orbit inertia
+        camera.alpha -= _vel2x;
+        camera.beta   = _cb(camera.beta - _vel2y);
+      } else {
+        _panDelta(_vel2x*(navFast?6.5:1.2), _vel2y*(navFast?6.5:1.2));
+      }
     }
     if(Math.abs(_velZoom-1)>0.0001){
       camera.radius=_cr(camera.radius*_velZoom);
