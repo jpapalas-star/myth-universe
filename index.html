@@ -343,11 +343,12 @@ window.soundChoice = function(enabled){
       var vel=document.createElement('video');
       vel.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:fill;z-index:8001;opacity:0;';
       vel.setAttribute('playsinline','');
-      vel.preload='auto'; vel.muted=true; vel.volume=0;
+      vel.preload='auto'; vel.muted=false; vel.volume=0;
       ov2.insertBefore(vel,ov2.firstChild);
       _vidEls[vi]=vel;
-      // CRITICAL: call play() inside user gesture to unlock on iOS/Android
+      // Unlock autoplay with silent play() inside user gesture
       vel.play().catch(function(){});
+      setTimeout(function(v){ v.pause(); }, 100, vel);
     }
   }
 
@@ -2658,7 +2659,6 @@ function _playVideoSequence(srcs, onDone){
       curEl.removeEventListener('loadeddata',_onReady);
       clearTimeout(_stall);
       clearTimeout(_stall2);
-      curEl.muted = false; // unmute (was muted during gesture unlock)
       curEl.play().catch(function(){ _advance(); });
       _fadeGain(cur, 0, 0.85, 300); // fade in audio
       curEl.style.transition='opacity 0.4s';
