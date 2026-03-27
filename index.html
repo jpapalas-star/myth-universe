@@ -367,9 +367,8 @@ window.soundChoice = function(enabled){
       vel.preload='auto'; vel.muted=false; vel.volume=0;
       ov2.insertBefore(vel,ov2.firstChild);
       _vidEls[vi]=vel;
-      // Unlock autoplay with silent play() inside user gesture
-      vel.play().catch(function(){});
-      setTimeout(function(v){ v.pause(); }, 100, vel);
+      // Unlock autoplay with silent play() inside user gesture - don't pause after
+      vel.play().then(function(){ vel.pause(); vel.currentTime=0; }).catch(function(){});
     }
   }
 
@@ -1940,7 +1939,7 @@ function _advStep(){
 
   // Play cinematic sequence (landing+searching+finding+entity video) then focus+speak
   var entityVid = d.video || null;
-  var entityPhoto = d.focusPhoto||d.photo||null;
+  var entityPhoto = d.photo||d.focusPhoto||null; // use same photo as planet disc
   var hasRealPhoto = entityPhoto && entityPhoto.indexOf('r2.dev')>=0 && entityPhoto.indexOf('From_Main')<0;
   function _afterCinematic(){
     if(!_advActive) return;
@@ -2548,7 +2547,42 @@ function _pickN(arr, n){
   return shuffled.slice(0, Math.min(n, shuffled.length));
 }
 
-// ── PING-PONG DOUBLE VIDEO BUFFER ───────────────────────────────────
+// ── INTRO SOUND EFFECTS ──────────────────────────────────────────────
+var _introSfxTracks = null; // cached from API
+var _introSfxAudio = null;
+
+function _loadIntroSfx(cb){
+  if(_introSfxTracks){ cb(_introSfxTracks); return; }
+  var R2 = 'https://pub-928be8961edc4bd294392b36f9a41216.r2.dev';
+  // List from music API approach - use direct R2 listing via videos API pattern
+  // Fetch tracks from R2 via dedicated endpoint or hardcode prefix
+  fetch('https://myth-tts-api.vercel.app/api/introfx')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      _introSfxTracks = (d.tracks && d.tracks.length) ? d.tracks : [];
+      cb(_introSfxTracks);
+    })
+    .catch(function(){
+      _introSfxTracks = [];
+      cb([]);
+    });
+}
+
+function _playIntroSfx(){
+  if(!_soundEnabled) return;
+  _loadIntroSfx(function(tracks){
+    if(!tracks.length) return;
+    var url = tracks[Math.floor(Math.random()*tracks.length)];
+    if(_introSfxAudio){ try{_introSfxAudio.pause();}catch(e){} }
+    _introSfxAudio = new Audio(url);
+    _introSfxAudio.volume = 0.75;
+    _introSfxAudio.play().catch(function(){});
+  });
+}
+
+function _stopIntroSfx(){
+  if(_introSfxAudio){ try{_introSfxAudio.pause(); _introSfxAudio.src='';}catch(e){} _introSfxAudio=null; }
+}
 // Note: soundChoice() may have already created elements — don't reset!
 if(typeof _vidEls === 'undefined') var _vidEls = [null, null];
 if(typeof _vidGains === 'undefined') var _vidGains = [null, null];
@@ -3026,17 +3060,7 @@ function _showPhotoInOverlay(photoSrc, onDone){
     }, 420);
   }
 
-  img.onerror = function(){
-    // Try fallback: if focusPhoto fails, try plain photo from data
-    var fallback = null;
-    if(window.dataMap){
-      Object.values(window.dataMap||{}).forEach(function(d){
-        if(d.focusPhoto===photoSrc && d.photo && d.photo!==photoSrc) fallback=d.photo;
-      });
-    }
-    if(fallback){ img.src=fallback; img.onerror=function(){ finish(); }; }
-    else { finish(); }
-  };
+  img.onerror = function(){ finish(); };
 
   img.onload = function(){
     // Overlay already open — just fade in the image and zoom
@@ -3045,6 +3069,8 @@ function _showPhotoInOverlay(photoSrc, onDone){
       img.style.opacity='1';
       img.style.animation='_photoZoom 3.5s ease-in-out forwards';
     }); });
+    // Play random intro sound effect
+    _playIntroSfx();
   };
   img.onerror = function(){ finish(); };
 
@@ -3064,7 +3090,7 @@ function enterFocusWithLanding(id){
   enterFocus(id, true); // pass suppressCinematic=true so it doesn't auto-speak yet
 
   var entityVid = d && d.video ? d.video : null;
-  var entityPhoto = d && (d.focusPhoto||d.photo) ? (d.focusPhoto||d.photo) : null;
+  var entityPhoto = d && (d.photo||d.focusPhoto) ? (d.photo||d.focusPhoto) : null; // use same photo as planet
   var hasRealPhoto = entityPhoto && entityPhoto.indexOf('r2.dev')>=0 && entityPhoto.indexOf('From_Main')<0;
 
   function _closeOverlayAndFocus(){
