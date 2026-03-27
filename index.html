@@ -896,7 +896,8 @@ canvas.addEventListener('touchend', function(e) {
     }
   }
   _t1 = null; _multi = false;
-  // 1-finger: use same inertia2 system as 2-finger
+  // 1-finger: use same inertia2 system as 2-finger, but no zoom coast
+  _velZoom=1;
   _inertia2=true; _warpLevel=0.4;
   if(window._warpInit) window._warpInit();
   _inertiaActive = false;
