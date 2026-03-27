@@ -773,16 +773,16 @@ canvas.addEventListener('touchmove', function(e) {
     if (rawSpeed > 10) _t1.id = null; // cancel tap
 
     if (focusedId) {
-      // Focus mode: orbit — use vel2x/vel2y for inertia
+      // Focus orbit — store raw delta, inertia loop will apply
       _vel2x = dmx2 * 0.0015;
       _vel2y = dmy2 * 0.0015;
-      camera.alpha -= dmx2 * 0.0015;
-      camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
+      camera.alpha -= _vel2x;
+      camera.beta   = _cb(camera.beta - _vel2y);
     } else {
-      // Pan — use vel2x/vel2y exactly like 2-finger
-      _vel2x = dmx2 * (navFast?6.5:1.2);
-      _vel2y = dmy2 * (navFast?6.5:1.2);
-      _panDelta(_vel2x, _vel2y);
+      // Pan — store raw pixels like 2-finger, inertia loop multiplies
+      _vel2x = dmx2;
+      _vel2y = dmy2;
+      _panDelta(dmx2 * (navFast?6.5:1.2), dmy2 * (navFast?6.5:1.2));
     }
     _t1.x = t.clientX; _t1.y = t.clientY;
 
