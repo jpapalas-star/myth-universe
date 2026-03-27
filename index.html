@@ -629,6 +629,8 @@ const camera = new BABYLON.ArcRotateCamera(
 );
 
 camera.detachControl();
+camera.inertia = 0; // disable built-in Babylon inertia
+camera.panningInertia = 0;
 camera.lowerRadiusLimit = 2;
 camera.upperRadiusLimit = 20000;
 camera.lowerBetaLimit   = 0.08;
