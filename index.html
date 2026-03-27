@@ -2646,11 +2646,20 @@ function _playVideoSequence(srcs, onDone){
 
     function _advance(){
       if(_advanced) return; _advanced=true;
-      // Fade out overlay opacity too for visible transition
-      curEl.style.transition='opacity 0.5s';
+      curEl.style.transition='opacity 0.4s';
       curEl.style.opacity='0';
-      if(!_fading) curEl.volume=0;
-      setTimeout(function(){ curEl.style.transition=''; playAt(i+1); }, 80);
+      // Always ramp volume to 0 smoothly before advancing (prevents click)
+      var _v = curEl.volume || 0;
+      if(_v > 0){
+        var _steps2=12, _s2=0;
+        var _iv2=setInterval(function(){
+          _s2++;
+          try{ curEl.volume=Math.max(0,_v*(1-_s2/_steps2)); }catch(e){}
+          if(_s2>=_steps2){ clearInterval(_iv2); try{curEl.volume=0;}catch(e){} playAt(i+1); }
+        },16); // 12×16ms = ~200ms
+      } else {
+        setTimeout(function(){ playAt(i+1); }, 80);
+      }
     }
 
     function _onReady(){
