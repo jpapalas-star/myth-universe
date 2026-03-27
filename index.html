@@ -897,6 +897,7 @@ canvas.addEventListener('touchend', function(e) {
   // No inertia after 1-finger drag — stops immediately where you leave it
   _inertiaActive = false;
   _velAlpha=0; _velBeta=0; _velTx=0; _velTy=0; _velTz=0; _velRadius=0;
+  _velZoom=1; // prevent accidental zoom-out
 }, { passive: false });
 
 canvas.addEventListener('touchcancel', function() {
