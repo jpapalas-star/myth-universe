@@ -292,7 +292,7 @@ window._startWithName = function(enabled){
   var name = (inp ? inp.value.trim() : '') || (appLang==='en'?'Anonymous':'Ανώνυμος');
   _playerName = name;
   // Start immediately (inside gesture) — check name in background
-  soundChoice(enabled);
+  window.soundChoice(enabled);
   // Async name check — show warning after if name taken
   fetch(_LEADERBOARD_URL)
     .then(function(r){ return r.json(); })
