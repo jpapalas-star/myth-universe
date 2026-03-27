@@ -882,11 +882,12 @@ canvas.addEventListener('touchend', function(e) {
     }
     return;
   }
-  // All fingers up — always start float + warp
+  // All fingers up
   if(_tf){_inertia2=true;_warpLevel=0.6;if(window._warpInit)window._warpInit();}
   _tf = null;
-  // Zero out velocities to prevent spike on fast release
-  _velAlpha=0; _velBeta=0; _velTx=0; _velTy=0; _velTz=0;
+  // Always zero rotation velocity — only pan inertia (_inertia2) allowed
+  _velAlpha=0; _velBeta=0; _velRadius=0; _velTx=0; _velTy=0; _velTz=0;
+  _inertiaActive=false; // disable single-finger inertia completely
   if (!_multi && _t1) {
     var el = Date.now() - _t1.t;
     var id = _t1.id; // null = blank space, valid in focus mode
@@ -2865,7 +2866,13 @@ function _playCinematicSequence(entityVideo, onDone){
     var theme = null;
 
     if(availableThemes.length > 0){
-      theme = availableThemes[Math.floor(Math.random()*availableThemes.length)];
+      // Pick theme that hasn't been used recently
+      if(!window._lastCinematicTheme) window._lastCinematicTheme = 0;
+      // Filter out last theme if possible
+      var freshThemes = availableThemes.filter(function(t){ return t !== window._lastCinematicTheme; });
+      var pool = freshThemes.length > 0 ? freshThemes : availableThemes;
+      theme = pool[Math.floor(Math.random()*pool.length)];
+      window._lastCinematicTheme = theme;
 
       // 1 landing — from rotation queue
       var lv = _nextFromFolder('landing', theme, cache.landing[theme]);
@@ -3003,8 +3010,18 @@ function _showPhotoInOverlay(photoSrc, onDone){
   }
 
   img.src = photoSrc;
-
-  var _done=false;
+  img.onerror = function(){
+    // Try fallback: if focusPhoto fails, try plain photo from data
+    var fallback = null;
+    if(window.dataMap){
+      // Find entity with this focusPhoto
+      Object.values(window.dataMap||{}).forEach(function(d){
+        if(d.focusPhoto===photoSrc && d.photo && d.photo!==photoSrc) fallback=d.photo;
+      });
+    }
+    if(fallback){ img.src=fallback; img.onerror=function(){ finish(); }; }
+    else { finish(); }
+  };
   function finish(){
     if(_done) return; _done=true;
     img.style.transition='opacity 0.4s';
@@ -4905,11 +4922,17 @@ function _showQuizQuestion(q, entityData, onDone){
 
   var opts = document.getElementById('quizOptions');
   opts.innerHTML = '';
-  ['A','B','C','D'].forEach(function(letter){
+  // Shuffle options so correct answer isn't always A
+  var letters = ['A','B','C','D'];
+  var shuffled = letters.slice().sort(function(){ return Math.random()-0.5; });
+  // Build mapping: display position -> original letter
+  shuffled.forEach(function(origLetter, idx){
+    var displayLabel = letters[idx]; // A,B,C,D display labels
     var btn = document.createElement('button');
     btn.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:12px;color:#fff;font-size:14px;padding:11px 14px;cursor:pointer;text-align:left;transition:background 0.2s;';
-    btn.innerHTML = '<span style="color:#ffaa30;font-weight:bold;margin-right:8px;">'+letter+'.</span>'+q[letter];
-    btn.onclick = function(){ _quizAnswer(letter, btn); };
+    btn.innerHTML = '<span style="color:#ffaa30;font-weight:bold;margin-right:8px;">'+displayLabel+'.</span>'+q[origLetter];
+    btn.dataset.origLetter = origLetter;
+    btn.onclick = function(){ _quizAnswer(origLetter, btn); };
     opts.appendChild(btn);
   });
 
@@ -4924,14 +4947,14 @@ function _quizAnswer(letter, btn){
   var correct = q.correct;
   var isRight = letter === correct;
 
-  // Color all options
-  var opts = document.getElementById('quizOptions').children;
-  ['A','B','C','D'].forEach(function(l, i){
-    var b = opts[i];
-    if(l === correct){
+  // Color all options by original letter stored in dataset
+  var optEls = document.getElementById('quizOptions').children;
+  Array.prototype.forEach.call(optEls, function(b){
+    var ol = b.dataset.origLetter;
+    if(ol === correct){
       b.style.background = 'rgba(60,220,80,0.25)';
       b.style.border = '1px solid rgba(60,220,80,0.6)';
-    } else if(l === letter && !isRight){
+    } else if(ol === letter && !isRight){
       b.style.background = 'rgba(220,60,60,0.25)';
       b.style.border = '1px solid rgba(220,60,60,0.5)';
     }
