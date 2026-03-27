@@ -705,8 +705,7 @@ var _animToken=0; // increment to cancel all running animations
 // ── TOUCH START ───────────────────────────────────────────────────────────────
 canvas.addEventListener('touchstart', function(e) {
   e.preventDefault();
-
-  if (e.touches.length === 1) {
+  if(driveMode) return; // drive mode has its own handlers
     _multi = false;
     _tf = null; // clear any stale 2-finger state
     var t = e.touches[0];
@@ -737,6 +736,7 @@ canvas.addEventListener('touchstart', function(e) {
 // ── TOUCH MOVE ────────────────────────────────────────────────────────────────
 canvas.addEventListener('touchmove', function(e) {
   e.preventDefault();
+  if(driveMode) return; // drive mode handles its own movement
   var rect = canvas.getBoundingClientRect();
 
   // Route by touch count — mutually exclusive
