@@ -885,6 +885,8 @@ canvas.addEventListener('touchend', function(e) {
   // All fingers up — always start float + warp
   if(_tf){_inertia2=true;_warpLevel=0.6;if(window._warpInit)window._warpInit();}
   _tf = null;
+  // Zero out velocities to prevent spike on fast release
+  _velAlpha=0; _velBeta=0; _velTx=0; _velTy=0; _velTz=0;
   if (!_multi && _t1) {
     var el = Date.now() - _t1.t;
     var id = _t1.id; // null = blank space, valid in focus mode
@@ -3959,17 +3961,17 @@ engine.runRenderLoop(()=>{
   }
   // Track velocity each frame (skip during drive to avoid phantom accumulation)
   if(!driveMode){
-    var newVA = camera.alpha    - _prevAlpha;
-    var newVB = camera.beta     - _prevBeta;
+    var newVA  = camera.alpha    - _prevAlpha;
+    var newVB  = camera.beta     - _prevBeta;
     var newVTx = camera.target.x - _prevTx;
     var newVTy = camera.target.y - _prevTy;
     var newVTz = camera.target.z - _prevTz;
-    // Average with previous velocity to smooth out spikes
-    _velAlpha  = (_velAlpha  + newVA)  * 0.5;
-    _velBeta   = (_velBeta   + newVB)  * 0.5;
-    _velTx     = (_velTx     + newVTx) * 0.5;
-    _velTy     = (_velTy     + newVTy) * 0.5;
-    _velTz     = (_velTz     + newVTz) * 0.5;
+    // Hard clamp — if delta is too large it's a spike, zero it out
+    _velAlpha  = Math.abs(newVA)  > 0.05 ? 0 : ((_velAlpha  + newVA)  * 0.5);
+    _velBeta   = Math.abs(newVB)  > 0.03 ? 0 : ((_velBeta   + newVB)  * 0.5);
+    _velTx     = Math.abs(newVTx) > 20   ? 0 : ((_velTx     + newVTx) * 0.5);
+    _velTy     = Math.abs(newVTy) > 20   ? 0 : ((_velTy     + newVTy) * 0.5);
+    _velTz     = Math.abs(newVTz) > 20   ? 0 : ((_velTz     + newVTz) * 0.5);
     _velRadius = camera.radius - _prevRadius;
   }
   // If at beta limit, zero out beta velocity to prevent shake
