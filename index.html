@@ -9,6 +9,7 @@
 <link rel="preload" href="https://cdn.babylonjs.com/babylon.js" as="script">
 <meta http-equiv="Cache-Control" content="max-age=86400">
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script>if(typeof BABYLON==='undefined'){document.write('<script src="https://unpkg.com/babylonjs@6.48.1/babylon.js"><\/script>');}</script>
 
 <script>
 window.onerror = function(msg, url, line, col, error) {
@@ -286,6 +287,11 @@ html,body{
 // ── PLAYER NAME ───────────────────────────────────────────────────────
 var _playerName = '';
 var _LEADERBOARD_URL = 'https://myth-tts-api.vercel.app/api/leaderboard';
+var appLang = (navigator.language||'').startsWith('en') ? 'en' : 'gr';
+var _LEADERBOARD_URL = 'https://myth-tts-api.vercel.app/api/leaderboard';
+var _vidEls = [null, null];
+var _vidGains = [null, null];
+
 window._startWithName = function(enabled){
   if(enabled === undefined) enabled = _soundEnabled;
   var inp = document.getElementById('playerNameInput');
@@ -711,6 +717,8 @@ var _animToken=0; // increment to cancel all running animations
 canvas.addEventListener('touchstart', function(e) {
   e.preventDefault();
   if(driveMode) return; // drive mode has its own handlers
+
+  if (e.touches.length === 1) {
     _multi = false;
     _tf = null; // clear any stale 2-finger state
     var t = e.touches[0];
@@ -5016,5 +5024,7 @@ function showLeaderboard(){
     .catch(function(){ ldg.textContent=appLang==='en'?'Loading error.':'Σφάλμα φόρτωσης.'; });
 }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
 </body>
 </html>
