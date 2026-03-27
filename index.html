@@ -774,8 +774,7 @@ canvas.addEventListener('touchmove', function(e) {
     if (rawSpeed > 10) _t1.id = null; // cancel tap
 
     if (focusedId) {
-      // Focus mode: orbit around focused planet — zero velocity to prevent shake
-      _velAlpha = 0; _velBeta = 0;
+      // Focus mode: orbit around focused planet
       camera.alpha -= dmx2 * 0.0015;
       camera.beta   = _cb(camera.beta - dmy2 * 0.0015);
     } else {
@@ -882,12 +881,9 @@ canvas.addEventListener('touchend', function(e) {
     }
     return;
   }
-  // All fingers up
+  // All fingers up — always start float + warp
   if(_tf){_inertia2=true;_warpLevel=0.6;if(window._warpInit)window._warpInit();}
   _tf = null;
-  // Always zero rotation velocity — only pan inertia (_inertia2) allowed
-  _velAlpha=0; _velBeta=0; _velRadius=0; _velTx=0; _velTy=0; _velTz=0;
-  _inertiaActive=false; // disable single-finger inertia completely
   if (!_multi && _t1) {
     var el = Date.now() - _t1.t;
     var id = _t1.id; // null = blank space, valid in focus mode
@@ -898,7 +894,9 @@ canvas.addEventListener('touchend', function(e) {
     }
   }
   _t1 = null; _multi = false;
-  _inertiaActive = true;
+  // No inertia after 1-finger drag — stops immediately where you leave it
+  _inertiaActive = false;
+  _velAlpha=0; _velBeta=0; _velTx=0; _velTy=0; _velTz=0; _velRadius=0;
 }, { passive: false });
 
 canvas.addEventListener('touchcancel', function() {
@@ -4006,23 +4004,14 @@ engine.runRenderLoop(()=>{
     _velAlpha=0;_velBeta=0;_velTx=0;_velTy=0;_velTz=0;
   }
   // Track velocity each frame (skip during drive to avoid phantom accumulation)
+  // Track velocity each frame (skip during drive to avoid phantom accumulation)
   if(!driveMode){
-    if(_inertiaActive){
-      var newVA  = camera.alpha    - _prevAlpha;
-      var newVB  = camera.beta     - _prevBeta;
-      var newVTx = camera.target.x - _prevTx;
-      var newVTy = camera.target.y - _prevTy;
-      var newVTz = camera.target.z - _prevTz;
-      // Hard clamp — if delta is too large it's a spike, zero it out
-      _velAlpha  = Math.abs(newVA)  > 0.05 ? 0 : ((_velAlpha  + newVA)  * 0.5);
-      _velBeta   = Math.abs(newVB)  > 0.03 ? 0 : ((_velBeta   + newVB)  * 0.5);
-      _velTx     = Math.abs(newVTx) > 20   ? 0 : ((_velTx     + newVTx) * 0.5);
-      _velTy     = Math.abs(newVTy) > 20   ? 0 : ((_velTy     + newVTy) * 0.5);
-      _velTz     = Math.abs(newVTz) > 20   ? 0 : ((_velTz     + newVTz) * 0.5);
-    } else {
-      _velAlpha=0; _velBeta=0; _velTx=0; _velTy=0; _velTz=0;
-    }
-    _velRadius = camera.radius - _prevRadius;
+    _velAlpha  = camera.alpha    - _prevAlpha;
+    _velBeta   = camera.beta     - _prevBeta;
+    _velRadius = camera.radius   - _prevRadius;
+    _velTx     = camera.target.x - _prevTx;
+    _velTy     = camera.target.y - _prevTy;
+    _velTz     = camera.target.z - _prevTz;
   }
   // If at beta limit, zero out beta velocity to prevent shake
   if(camera.beta <= camera.lowerBetaLimit+0.01 || camera.beta >= camera.upperBetaLimit-0.01) _velBeta=0;
