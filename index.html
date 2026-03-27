@@ -1756,14 +1756,23 @@ function speakText(){
   if(!el) return;
   var txt=el.textContent||'';
   if(!txt||txt==='-') return;
+  // Auto-speak: only first sentence (economy)
+  var first = txt.split(/(?<=[.!?;])\s+/)[0] || txt;
   var ttsBtn=document.getElementById('ttsStop');
   if(ttsBtn) ttsBtn.style.display='block';
-  _elSpeakSentences(txt, function(){ if(ttsBtn) ttsBtn.style.display='none'; });
+  _elSpeakSentences(first, function(){ if(ttsBtn) ttsBtn.style.display='none'; });
 }
 
 function speakTextEL(){
-  // "Ακρόαση" button — same as speakText but re-reads from start
-  speakText();
+  // "Ακρόαση" button — reads full text
+  stopSpeak();
+  var el=document.getElementById('infoFullText');
+  if(!el) return;
+  var txt=el.textContent||'';
+  if(!txt||txt==='-') return;
+  var ttsBtn=document.getElementById('ttsStop');
+  if(ttsBtn) ttsBtn.style.display='block';
+  _elSpeakSentences(txt, function(){ if(ttsBtn) ttsBtn.style.display='none'; });
 }
 
 function stopSpeak(){
