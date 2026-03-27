@@ -415,6 +415,14 @@ window.soundChoice = function(enabled){
     ldg._ldIv=_ldIv;
   }
 
+  // Pre-unlock intro sfx audio inside gesture
+  try{
+    var _sfxUnlock = new Audio();
+    _sfxUnlock.volume = 0;
+    _sfxUnlock.play().then(function(){ _sfxUnlock.pause(); }).catch(function(){});
+    window._introSfxUnlocked = _sfxUnlock;
+  }catch(e){}
+
   _unlockMusic();
   // Pre-start music inside gesture so autoplay is allowed - muted until launch ends
   if(_musicOn && _musicTracks && _musicTracks.length){
@@ -2556,9 +2564,13 @@ function _playIntroSfx(){
   _loadIntroSfx(function(tracks){
     if(!tracks.length) return;
     var url = tracks[Math.floor(Math.random()*tracks.length)];
-    if(_introSfxAudio){ try{_introSfxAudio.pause();}catch(e){} }
-    _introSfxAudio = new Audio(url);
+    if(_introSfxAudio){ try{_introSfxAudio.pause(); _introSfxAudio.src='';}catch(e){} }
+    // Reuse pre-unlocked element if available
+    _introSfxAudio = window._introSfxUnlocked || new Audio();
+    window._introSfxUnlocked = null;
+    _introSfxAudio.src = url;
     _introSfxAudio.volume = 0.75;
+    _introSfxAudio.load();
     _introSfxAudio.play().catch(function(){});
   });
 }
