@@ -1274,8 +1274,8 @@ function sizeFor(d){
   if(model==='god'||model==='goddess') return 13; // Tier 2: Olympians
   if(model==='giant'||model==='energy') return 10;// Tier 3: Titans + Primordials
   if(model==='human'||model==='nymph'||
-     model==='hero') return 8.5;                  // Tier 4: Heroes / mortals
-  return 7.0;                                       // Tier 5: spirits/winds/monsters/groups
+     model==='hero') return 10.0;                 // Tier 4: Heroes / mortals
+  return 8.5;                                       // Tier 5: spirits/winds/monsters/groups
 }
 
 function addRing(parentMesh,color,diameter,thickness){
@@ -3466,14 +3466,14 @@ fetch('app-data.json',{cache:'default'})
 
     // Tier → radial zone [minR, maxR] from Chaos
     var ZONES = {
-      primordial: [70,  140],
-      titan:      [155, 250],
-      olympian:   [265, 380],
-      nymph:      [390, 470],
-      hero:       [390, 490],
-      mortal:     [390, 490],
-      monster:    [500, 600],
-      outer:      [500, 620]
+      primordial: [65,  120],
+      titan:      [135, 210],
+      olympian:   [220, 320],
+      nymph:      [330, 400],
+      hero:       [330, 420],
+      mortal:     [330, 420],
+      monster:    [430, 520],
+      outer:      [430, 530]
     };
 
     function getTier(d){
@@ -3576,6 +3576,15 @@ fetch('app-data.json',{cache:'default'})
     });
 
         saveOriginalPositions();
+    // Set camera upper radius limit to 2x the farthest planet
+    var _maxR = 0;
+    Object.values(nodes).forEach(function(n){
+      if(!n.sphere) return;
+      var p = n.sphere.position;
+      var r = Math.sqrt(p.x*p.x + p.z*p.z);
+      if(r > _maxR) _maxR = r;
+    });
+    camera.upperRadiusLimit = _maxR * 2.5 + 200;
     buildConnections();
     renderConnections();
     resetInfo();
@@ -3935,6 +3944,10 @@ engine.runRenderLoop(()=>{
     _velTy     = camera.target.y - _prevTy;
     _velTz     = camera.target.z - _prevTz;
   }
+  // If at beta limit, zero out beta velocity to prevent shake
+  if(camera.beta <= camera.lowerBetaLimit+0.01 || camera.beta >= camera.upperBetaLimit-0.01) _velBeta=0;
+  // If radius unchanged (hit limit), zero radius vel
+  if(Math.abs(camera.radius - _prevRadius) < 0.01) _velRadius=0;
   _prevAlpha = camera.alpha;    _prevBeta  = camera.beta;
   _prevRadius= camera.radius;   _prevTx    = camera.target.x;
   _prevTy    = camera.target.y; _prevTz    = camera.target.z;
