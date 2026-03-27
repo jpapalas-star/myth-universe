@@ -883,8 +883,9 @@ canvas.addEventListener('touchend', function(e) {
     }
     return;
   }
-  // All fingers up — same inertia system for both 1 and 2 finger
-  if(_tf){_inertia2=true;_warpLevel=0.6;if(window._warpInit)window._warpInit();}
+  // Only start inertia2 coast if we were doing 2-finger (_tf exists)
+  // For 1-finger, _tf should be null
+  if(_tf){ _inertia2=true; _warpLevel=0.6; if(window._warpInit)window._warpInit(); }
   _tf = null;
   if (!_multi && _t1) {
     var el = Date.now() - _t1.t;
@@ -3964,15 +3965,7 @@ engine.runRenderLoop(()=>{
     }
   }
 
-  // 2-finger inertia float
-  if(_inertia2){
-    var D2=0.94;_vel2x*=D2;_vel2y*=D2;_velZoom=1+(_velZoom-1)*D2;
-    if(Math.abs(_vel2x)>0.1)_panDelta(_vel2x*(navFast?6.5:1.2),_vel2y*(navFast?6.5:1.2));
-    if(Math.abs(_velZoom-1)>0.0001)camera.radius=_cr(camera.radius*_velZoom);
-    var sp2=Math.sqrt(_vel2x*_vel2x+_vel2y*_vel2y);
-    if(!driveMode)_warpLevel=Math.min(1,_warpLevel*0.9+(sp2*0.3+Math.abs(_velZoom-1)*80)*0.1);
-    if(Math.abs(_vel2x)<0.1&&Math.abs(_vel2y)<0.1&&Math.abs(_velZoom-1)<0.0001){_inertia2=false;_vel2x=0;_vel2y=0;_velZoom=1;}
-  }
+  // 2-finger inertia float handled above
 
   // Warp visual
   if(_warpLevel>0.01){
