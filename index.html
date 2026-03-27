@@ -366,8 +366,10 @@ window.soundChoice = function(enabled){
       vel.preload='auto'; vel.muted=false; vel.volume=0;
       ov2.insertBefore(vel,ov2.firstChild);
       _vidEls[vi]=vel;
-      // Unlock autoplay with silent play() inside user gesture - don't pause after
-      vel.play().then(function(){ vel.pause(); vel.currentTime=0; }).catch(function(){});
+      // Unlock autoplay inside gesture — muted play so browser allows later unmuted play
+      vel.muted=true;
+      vel.play().catch(function(){});
+      setTimeout(function(v){ try{v.pause(); v.muted=false; v.currentTime=0;}catch(e){} }, 200, vel);
     }
   }
 
