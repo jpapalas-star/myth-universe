@@ -985,29 +985,8 @@ function _doTap(pickedId) {
   } else {
     if (focusedId) {
       resetFocus(false);
-    } else {
-      // Tap on empty space - smooth return to default overview
-      resetInfo();
-      var frames=0, maxF=35;
-      var sA=camera.alpha, sB=camera.beta, sR=camera.radius;
-      var sTx=camera.target.x, sTy=camera.target.y, sTz=camera.target.z;
-      function ease(t){return t<0.5?2*t*t:1-2*(1-t)*(1-t);}
-      function lerp(a,b,t){return a+(b-a)*t;}
-      _animToken++; var tok=_animToken;
-      function step(){
-        if(_animToken!==tok) return;
-        frames++;
-        var p=ease(Math.min(frames/maxF,1));
-        camera.alpha    = lerp(sA, -Math.PI/2, p);
-        camera.beta     = lerp(sB, Math.PI/3.1, p);
-        camera.radius   = lerp(sR, 980, p);
-        camera.target.x = lerp(sTx, 0, p);
-        camera.target.y = lerp(sTy, 0, p);
-        camera.target.z = lerp(sTz, 0, p);
-        if(frames<maxF) setTimeout(step,16);
-      }
-      step();
     }
+    // Tap on empty space outside focus: do nothing
   }
 }
 
