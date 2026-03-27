@@ -706,6 +706,8 @@ var _animToken=0; // increment to cancel all running animations
 canvas.addEventListener('touchstart', function(e) {
   e.preventDefault();
   if(driveMode) return; // drive mode has its own handlers
+
+  if (e.touches.length === 1) {
     _multi = false;
     _tf = null; // clear any stale 2-finger state
     var t = e.touches[0];
