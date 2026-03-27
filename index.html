@@ -886,13 +886,14 @@ canvas.addEventListener('touchend', function(e) {
     return;
   }
   // Only start inertia2 coast if we were doing 2-finger (_tf exists)
-  // For 1-finger, _tf should be null
   if(_tf){ _inertia2=true; _warpLevel=0.6; if(window._warpInit)window._warpInit(); }
   _tf = null;
   if (!_multi && _t1) {
     var el = Date.now() - _t1.t;
     var id = _t1.id;
-    if (el < 500) {
+    var moved = _t1.firstMove === false; // was it ever moved?
+    // Only register as tap if: short time AND finger barely moved (id null = moved too much)
+    if (el < 400 && !moved) {
       _t1 = null; _multi = false;
       _doTap(id);
       return;
