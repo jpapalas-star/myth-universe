@@ -3010,18 +3010,8 @@ function _showPhotoInOverlay(photoSrc, onDone){
   }
 
   img.src = photoSrc;
-  img.onerror = function(){
-    // Try fallback: if focusPhoto fails, try plain photo from data
-    var fallback = null;
-    if(window.dataMap){
-      // Find entity with this focusPhoto
-      Object.values(window.dataMap||{}).forEach(function(d){
-        if(d.focusPhoto===photoSrc && d.photo && d.photo!==photoSrc) fallback=d.photo;
-      });
-    }
-    if(fallback){ img.src=fallback; img.onerror=function(){ finish(); }; }
-    else { finish(); }
-  };
+
+  var _done=false;
   function finish(){
     if(_done) return; _done=true;
     img.style.transition='opacity 0.4s';
@@ -3035,6 +3025,18 @@ function _showPhotoInOverlay(photoSrc, onDone){
       onDone();
     }, 420);
   }
+
+  img.onerror = function(){
+    // Try fallback: if focusPhoto fails, try plain photo from data
+    var fallback = null;
+    if(window.dataMap){
+      Object.values(window.dataMap||{}).forEach(function(d){
+        if(d.focusPhoto===photoSrc && d.photo && d.photo!==photoSrc) fallback=d.photo;
+      });
+    }
+    if(fallback){ img.src=fallback; img.onerror=function(){ finish(); }; }
+    else { finish(); }
+  };
 
   img.onload = function(){
     // Overlay already open — just fade in the image and zoom
