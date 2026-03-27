@@ -1397,6 +1397,7 @@ function createNode(d,x,y,z,familyRingColor){
     cRings.push(addRing(sphere,redC,size*1.25,0.18));
     cRings.push(addRing(sphere,redC,size*1.55,0.10));
     cRings.push(addRing(sphere,new BABYLON.Color3(1.0,0.4,0.3),size*1.85,0.05));
+    cRings.push(addRing(sphere,new BABYLON.Color3(0.5,0.85,1.0),size*2.18,0.04));
     var cLabel=createLabel(d.Name||d.id,sphere,size,groupLabelColor(d));
     nodes[d.id]={id:d.id,data:d,sphere:sphere,rings:cRings,label:cLabel,size:size,familyRingColor:null};
     placed.add(d.id);
@@ -2657,6 +2658,7 @@ function _playVideoSequence(srcs, onDone){
       curEl.removeEventListener('loadeddata',_onReady);
       clearTimeout(_stall);
       clearTimeout(_stall2);
+      curEl.muted = false; // unmute (was muted during gesture unlock)
       curEl.play().catch(function(){ _advance(); });
       _fadeGain(cur, 0, 0.85, 300); // fade in audio
       curEl.style.transition='opacity 0.4s';
