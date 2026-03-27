@@ -3959,12 +3959,18 @@ engine.runRenderLoop(()=>{
   }
   // Track velocity each frame (skip during drive to avoid phantom accumulation)
   if(!driveMode){
-    _velAlpha  = camera.alpha    - _prevAlpha;
-    _velBeta   = camera.beta     - _prevBeta;
-    _velRadius = camera.radius   - _prevRadius;
-    _velTx     = camera.target.x - _prevTx;
-    _velTy     = camera.target.y - _prevTy;
-    _velTz     = camera.target.z - _prevTz;
+    var newVA = camera.alpha    - _prevAlpha;
+    var newVB = camera.beta     - _prevBeta;
+    var newVTx = camera.target.x - _prevTx;
+    var newVTy = camera.target.y - _prevTy;
+    var newVTz = camera.target.z - _prevTz;
+    // Average with previous velocity to smooth out spikes
+    _velAlpha  = (_velAlpha  + newVA)  * 0.5;
+    _velBeta   = (_velBeta   + newVB)  * 0.5;
+    _velTx     = (_velTx     + newVTx) * 0.5;
+    _velTy     = (_velTy     + newVTy) * 0.5;
+    _velTz     = (_velTz     + newVTz) * 0.5;
+    _velRadius = camera.radius - _prevRadius;
   }
   // If at beta limit, zero out beta velocity to prevent shake
   if(camera.beta <= camera.lowerBetaLimit+0.01 || camera.beta >= camera.upperBetaLimit-0.01) _velBeta=0;
