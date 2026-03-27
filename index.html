@@ -395,6 +395,15 @@ window.soundChoice = function(enabled){
   }
 
   _unlockMusic();
+  // Pre-start music inside gesture so autoplay is allowed - muted until launch ends
+  if(_musicOn && _musicTracks && _musicTracks.length){
+    _musicIndex=0; _shuffledTracks=null;
+    _musicAudio.src = _musicTracks[0];
+    _musicAudio.volume = 0; // silent until skipLaunch
+    _musicAudio.load();
+    _musicAudio.play().catch(function(){});
+    _musicAudio.onended=function(){ if(_musicOn&&!focusedId&&!_advActive&&!_musicWasPaused) _playMusicTrack(1); };
+  }
   _tryAutoStart();
 };
 
@@ -444,19 +453,13 @@ window.skipLaunch = function(){
   _musicWasPaused=false;
   setTimeout(function(){
     if(!_musicOn) return;
-    _musicIndex=0; _shuffledTracks=null;
-    var t0 = _musicTracks[0];
-    _musicAudio.src = t0;
-    _musicAudio.volume = _MUSIC_VOL_NORMAL;
-    _musicAudio.load();
-    _musicAudio.play()
-      .then(function(){ _musicAudio.onended=function(){ if(_musicOn&&!focusedId&&!_advActive&&!_musicWasPaused) _playMusicTrack(1); }; })
-      .catch(function(){
-        // Autoplay blocked - start on next user touch
-        window._pendingMusic = true;
-        document.addEventListener('touchstart', function _mu(){ document.removeEventListener('touchstart',_mu); if(_musicOn) startMusic(); },{once:true,passive:true});
-        document.addEventListener('click', function _mc(){ document.removeEventListener('click',_mc); if(_musicOn) startMusic(); },{once:true});
-      });
+    if(_musicAudio && !_musicAudio.paused){
+      // Already playing (started in soundChoice) — just unmute
+      _musicAudio.volume = _MUSIC_VOL_NORMAL;
+    } else {
+      // Fallback: start fresh
+      startMusic();
+    }
     _scheduleSpacecraft();
   },700);
 };
