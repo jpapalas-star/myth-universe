@@ -461,6 +461,18 @@ window.skipLaunch = function(){
       startMusic();
     }
     _scheduleSpacecraft();
+    // Fetch full music list from API
+    fetch('https://myth-tts-api.vercel.app/api/music')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d.tracks && d.tracks.length > 0){
+          _musicTracks = d.tracks;
+          // Update onended to use full track list
+          _musicAudio.onended = function(){
+            if(_musicOn&&!focusedId&&!_advActive&&!_musicWasPaused) _playMusicTrack(1);
+          };
+        }
+      }).catch(function(){});
   },700);
 };
 </script>
@@ -746,7 +758,7 @@ canvas.addEventListener('touchmove', function(e) {
     } else {
       // Pan - same speed as 2-finger
       _velAlpha = 0; _velBeta = 0;
-      _panDelta(dmx2 * (navFast?6.5:1.8), dmy2 * (navFast?6.5:1.8));
+      _panDelta(dmx2 * (navFast?6.5:1.2), dmy2 * (navFast?6.5:1.2));
     }
     _t1.x = t.clientX; _t1.y = t.clientY;
 
@@ -772,7 +784,7 @@ canvas.addEventListener('touchmove', function(e) {
     var STILL = 4; // px — below this = "stationary"
     // Only pan if BOTH fingers moved, not just one
     if (d0 > STILL && d1 > STILL) {
-      _panDelta(dmx * (navFast ? 6.5 : 1.8), dmy * (navFast ? 6.5 : 1.8));
+      _panDelta(dmx * (navFast ? 6.5 : 1.2), dmy * (navFast ? 6.5 : 1.2));
     }
     // Update individual finger positions
     _tf.p0x = t0.clientX; _tf.p0y = t0.clientY;
@@ -787,7 +799,7 @@ canvas.addEventListener('touchmove', function(e) {
       var minR = 2;
       var maxR = 2000; // match actual galaxy size
       var t = Math.max(0, Math.min(1, (camera.radius - minR) / (maxR - minR)));
-      var dampMax = navFast ? 2.5 : 1.0;
+      var dampMax = navFast ? 2.5 : 0.65;
       var damping = 0.45 + t * (dampMax - 0.45);
 
       ratio = 1 + rawChange * damping;
@@ -3740,7 +3752,7 @@ engine.runRenderLoop(()=>{
     _vel2x*=DAMP2; _vel2y*=DAMP2;
     _velZoom=1+(_velZoom-1)*DAMP2;
     if(Math.abs(_vel2x)>0.1){
-      _panDelta(_vel2x*(navFast?6.5:1.8), _vel2y*(navFast?6.5:1.8));
+      _panDelta(_vel2x*(navFast?6.5:1.2), _vel2y*(navFast?6.5:1.2));
     }
     if(Math.abs(_velZoom-1)>0.0001){
       camera.radius=_cr(camera.radius*_velZoom);
@@ -3846,7 +3858,7 @@ engine.runRenderLoop(()=>{
   // 2-finger inertia float
   if(_inertia2){
     var D2=0.94;_vel2x*=D2;_vel2y*=D2;_velZoom=1+(_velZoom-1)*D2;
-    if(Math.abs(_vel2x)>0.1)_panDelta(_vel2x*(navFast?6.5:1.8),_vel2y*(navFast?6.5:1.8));
+    if(Math.abs(_vel2x)>0.1)_panDelta(_vel2x*(navFast?6.5:1.2),_vel2y*(navFast?6.5:1.2));
     if(Math.abs(_velZoom-1)>0.0001)camera.radius=_cr(camera.radius*_velZoom);
     var sp2=Math.sqrt(_vel2x*_vel2x+_vel2y*_vel2y);
     if(!driveMode)_warpLevel=Math.min(1,_warpLevel*0.9+(sp2*0.3+Math.abs(_velZoom-1)*80)*0.1);
