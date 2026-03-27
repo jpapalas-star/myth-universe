@@ -581,6 +581,7 @@ var _inertia2=false;       // 2-finger inertia active
 var _warpLevel=0;          // 0..1 warp intensity // false=slow, true=fast
 var _lastInfoD=null;
 window._ttsFocusToken=0;
+window._elSentenceToken=0;
 const canvas=document.getElementById('renderCanvas');
 const infoEl=document.getElementById('info');
 const homeBtn=document.getElementById('homeBtn');
@@ -1735,13 +1736,14 @@ function _elSpeakSentences(text, onDone){
 
   if(sentences.length===0){ if(onDone) onDone(); return; }
 
-  var sessionToken = ++window._ttsFocusToken;
+  // Use a local token — don't increment global _ttsFocusToken
+  var myToken = ++window._elSentenceToken;
 
   function next(idx){
-    if(window._ttsFocusToken !== sessionToken) return; // cancelled
+    if(window._elSentenceToken !== myToken) return; // cancelled
     if(idx >= sentences.length){ if(onDone) onDone(); return; }
     _elSpeak(sentences[idx], function(){
-      if(window._ttsFocusToken !== sessionToken) return;
+      if(window._elSentenceToken !== myToken) return;
       next(idx+1);
     });
   }
@@ -1772,8 +1774,9 @@ function stopSpeak(){
   if(_elAudio){ try{_elAudio.pause(); _elAudio.src='';}catch(e){} _elAudio=null; }
   var ttsBtn=document.getElementById('ttsStop');
   if(ttsBtn) ttsBtn.style.display='none';
-  // Increment token to cancel any pending auto-speak setTimeout
+  // Increment tokens to cancel any pending auto-speak
   window._ttsFocusToken = (window._ttsFocusToken||0) + 1;
+  window._elSentenceToken = (window._elSentenceToken||0) + 1;
 }
 
 // ── SOUND CHOICE ─────────────────────────────────────────────────────
