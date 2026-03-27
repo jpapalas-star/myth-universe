@@ -9,7 +9,6 @@
 <link rel="preload" href="https://cdn.babylonjs.com/babylon.js" as="script">
 <meta http-equiv="Cache-Control" content="max-age=86400">
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
-<script>if(typeof BABYLON==='undefined'){document.write('<script src="https://unpkg.com/babylonjs@6.48.1/babylon.js"><\/script>');}</script>
 
 <script>
 window.onerror = function(msg, url, line, col, error) {
@@ -287,29 +286,31 @@ html,body{
 // ── PLAYER NAME ───────────────────────────────────────────────────────
 var _playerName = '';
 var _LEADERBOARD_URL = 'https://myth-tts-api.vercel.app/api/leaderboard';
-var appLang = (navigator.language||'').startsWith('en') ? 'en' : 'gr';
-var _LEADERBOARD_URL = 'https://myth-tts-api.vercel.app/api/leaderboard';
-var _vidEls = [null, null];
-var _vidGains = [null, null];
-
 window._startWithName = function(enabled){
   if(enabled === undefined) enabled = _soundEnabled;
   var inp = document.getElementById('playerNameInput');
-  var name = (inp ? inp.value.trim() : '') || (appLang==='en'?'Anonymous':'Ανώνυμος');
-  _playerName = name;
-  // Start immediately (inside gesture) — check name in background
-  window.soundChoice(enabled);
-  // Async name check — show warning after if name taken
+  var name = (inp ? inp.value.trim() : '') || 'Ανώνυμος';
+
+  // Check if name already in top 30
   fetch(_LEADERBOARD_URL)
     .then(function(r){ return r.json(); })
     .then(function(d){
       var scores = d.scores || [];
-      var taken = scores.slice(0,30).some(function(s){
-        return s.name.toLowerCase()===name.toLowerCase() && name.toLowerCase()!=='ανώνυμος' && name.toLowerCase()!=='anonymous';
-      });
-      if(taken) showToast(appLang==='en'?'⚠️ Name already in top 30!':'⚠️ Το όνομα υπάρχει στους 30 πρώτους!');
+      var top30 = scores.slice(0,30);
+      var taken = top30.some(function(s){ return s.name.toLowerCase()===name.toLowerCase() && name.toLowerCase()!=='ανώνυμος'; });
+      if(taken){
+        var msg = appLang==='en' ? 'Name "'+name+'" is already in the top 30! Choose another.' : 'Το όνομα "'+name+'" υπάρχει ήδη στους 30 πρώτους! Βάλε άλλο.';
+        if(inp){ inp.value=''; inp.placeholder=msg; inp.style.borderColor='rgba(255,100,100,0.8)'; }
+        return; // don't proceed
+      }
+      _playerName = name;
+      soundChoice(enabled);
     })
-    .catch(function(){});
+    .catch(function(){
+      // API failed - proceed anyway
+      _playerName = name;
+      soundChoice(enabled);
+    });
 };
 var _soundEnabled  = true;
 var _universeReady = false;
@@ -366,10 +367,8 @@ window.soundChoice = function(enabled){
       vel.preload='auto'; vel.muted=false; vel.volume=0;
       ov2.insertBefore(vel,ov2.firstChild);
       _vidEls[vi]=vel;
-      // Unlock autoplay inside gesture — muted play so browser allows later unmuted play
-      vel.muted=true;
-      vel.play().catch(function(){});
-      setTimeout(function(v){ try{v.pause(); v.muted=false; v.currentTime=0;}catch(e){} }, 200, vel);
+      // Unlock autoplay with silent play() inside user gesture - don't pause after
+      vel.play().then(function(){ vel.pause(); vel.currentTime=0; }).catch(function(){});
     }
   }
 
@@ -385,10 +384,6 @@ window.soundChoice = function(enabled){
     lv2.addEventListener('canplay', onVidReady, {once:true});
     lv2.addEventListener('loadeddata', onVidReady, {once:true});
     setTimeout(function(){ if(!_videoUnlocked){ _videoUnlocked=true; _tryAutoStart(); } }, 3000);
-  } else {
-    // No launch video element — proceed immediately
-    _videoUnlocked = true;
-    _tryAutoStart();
   }
 
   // Play launch mp3
@@ -419,14 +414,6 @@ window.soundChoice = function(enabled){
     },500);
     ldg._ldIv=_ldIv;
   }
-
-  // Pre-unlock intro sfx audio inside gesture
-  try{
-    var _sfxUnlock = new Audio();
-    _sfxUnlock.volume = 0;
-    _sfxUnlock.play().then(function(){ _sfxUnlock.pause(); }).catch(function(){});
-    window._introSfxUnlocked = _sfxUnlock;
-  }catch(e){}
 
   _unlockMusic();
   // Pre-start music inside gesture so autoplay is allowed - muted until launch ends
@@ -719,8 +706,6 @@ var _animToken=0; // increment to cancel all running animations
 canvas.addEventListener('touchstart', function(e) {
   e.preventDefault();
   if(driveMode) return; // drive mode has its own handlers
-
-  if (e.touches.length === 1) {
     _multi = false;
     _tf = null; // clear any stale 2-finger state
     var t = e.touches[0];
@@ -2571,13 +2556,9 @@ function _playIntroSfx(){
   _loadIntroSfx(function(tracks){
     if(!tracks.length) return;
     var url = tracks[Math.floor(Math.random()*tracks.length)];
-    if(_introSfxAudio){ try{_introSfxAudio.pause(); _introSfxAudio.src='';}catch(e){} }
-    // Reuse pre-unlocked element if available
-    _introSfxAudio = window._introSfxUnlocked || new Audio();
-    window._introSfxUnlocked = null;
-    _introSfxAudio.src = url;
+    if(_introSfxAudio){ try{_introSfxAudio.pause();}catch(e){} }
+    _introSfxAudio = new Audio(url);
     _introSfxAudio.volume = 0.75;
-    _introSfxAudio.load();
     _introSfxAudio.play().catch(function(){});
   });
 }
@@ -5026,7 +5007,5 @@ function showLeaderboard(){
     .catch(function(){ ldg.textContent=appLang==='en'?'Loading error.':'Σφάλμα φόρτωσης.'; });
 }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
 </body>
 </html>
