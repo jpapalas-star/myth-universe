@@ -377,6 +377,10 @@ window.soundChoice = function(enabled){
     lv2.addEventListener('canplay', onVidReady, {once:true});
     lv2.addEventListener('loadeddata', onVidReady, {once:true});
     setTimeout(function(){ if(!_videoUnlocked){ _videoUnlocked=true; _tryAutoStart(); } }, 3000);
+  } else {
+    // No launch video element — proceed immediately
+    _videoUnlocked = true;
+    _tryAutoStart();
   }
 
   // Play launch mp3
