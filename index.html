@@ -712,7 +712,7 @@ canvas.addEventListener('touchstart', function(e) {
     var t = e.touches[0];
     var rect = canvas.getBoundingClientRect();
     var sx = t.clientX - rect.left, sy = t.clientY - rect.top;
-    _t1 = { x: t.clientX, y: t.clientY, t: Date.now(), id: _pick(sx, sy), firstMove: true };
+    _t1 = { x: t.clientX, y: t.clientY, t: Date.now(), id: _pick(sx, sy), firstMove: true, dist: 0 };
 
   } else if (e.touches.length >= 2) {
     _multi = true; _t1 = null;
@@ -771,8 +771,8 @@ canvas.addEventListener('touchmove', function(e) {
       dmy2 = dmy2 * MAX_DELTA / rawSpeed;
     }
     _t1.firstMove = false;
-
-    if (rawSpeed > 10) _t1.id = null; // cancel tap
+    _t1.dist = (_t1.dist||0) + rawSpeed;
+    if (rawSpeed > 10) _t1.id = null; // cancel tap on planet
 
     if (focusedId) {
       // Focus orbit — store raw delta, inertia loop will apply
@@ -891,9 +891,8 @@ canvas.addEventListener('touchend', function(e) {
   if (!_multi && _t1) {
     var el = Date.now() - _t1.t;
     var id = _t1.id;
-    var moved = _t1.firstMove === false; // was it ever moved?
-    // Only register as tap if: short time AND finger barely moved (id null = moved too much)
-    if (el < 400 && !moved) {
+    // Tap if: short time AND total movement < 15px (real tap, not drag)
+    if (el < 400 && (_t1.dist||0) < 15) {
       _t1 = null; _multi = false;
       _doTap(id);
       return;
