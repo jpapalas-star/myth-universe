@@ -1015,9 +1015,9 @@ function _doTap(pickedId) {
   } else {
     if (focusedId) {
       resetFocus(false);
+    } else if(window._bhFocusActive) {
+      _closeBhAndReset();
     }
-    // Tap on empty space: close black hole card if open
-    if(window._bhFocusActive) _closeBhAndReset();
   }
 }
 
@@ -1688,16 +1688,19 @@ function showInfoBlackHole(){
 
   window._bhFocusActive = true;
 
-  // Speak first sentence
-  speakText();
+  // Speak first sentence directly
+  var firstSentence = (isEN ? d.FullText_EN : d.FullText).split('\n')[0];
+  var ttsBtn = document.getElementById('ttsStop');
+  if(ttsBtn) ttsBtn.style.display='block';
+  _elSpeakSentences(firstSentence, function(){ if(ttsBtn) ttsBtn.style.display='none'; });
 }
 
 function _closeBhAndReset(){
   window._bhFocusActive = false;
   stopSpeak();
-  var infoEl = document.getElementById('info');
-  if(infoEl){ infoEl.style.display='none'; }
   resetInfo();
+  var infoEl = document.getElementById('info');
+  if(infoEl){ infoEl.style.display='block'; infoEl.style.opacity='1'; }
 }
 
 function toggleSettings(e){
