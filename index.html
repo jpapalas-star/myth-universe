@@ -1016,7 +1016,8 @@ function _doTap(pickedId) {
     if (focusedId) {
       resetFocus(false);
     }
-    // Tap on empty space outside focus: do nothing
+    // Tap on empty space: close black hole card if open
+    if(window._bhFocusActive) _closeBhAndReset();
   }
 }
 
@@ -1674,18 +1675,29 @@ function showInfoBlackHole(){
   contentEl.innerHTML =
     '<h2 style="color:#a0c0ff;">'+name+'</h2>'+
     '<div style="margin-bottom:7px;display:flex;gap:8px;flex-wrap:wrap;">'+
-      '<button onclick="stopSpeak()" style="background:rgba(255,100,60,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:16px;color:#ff8866;padding:5px 12px;font-size:12px;cursor:pointer;">⏹ Stop</button>'+
+      '<button onclick="speakTextEL()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:5px 12px;font-size:12px;cursor:pointer;">🔊 '+(isEN?'Listen':'Ακρόαση')+'</button>'+
+      '<button id="ttsStop" onclick="stopSpeak()" style="background:rgba(255,100,60,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:16px;color:#ff8866;padding:5px 12px;font-size:12px;cursor:pointer;">⏹ Stop</button>'+
     '</div>'+
     '<div class="txt" id="infoFullText">'+fulltext+'</div>'+
     '<div style="margin-top:12px;">'+
-      '<button onclick="resetFocus(false)" style="background:rgba(100,180,255,0.12);border:1px solid rgba(100,180,255,0.4);border-radius:18px;color:#80c8ff;padding:9px 14px;font-size:13px;font-weight:bold;cursor:pointer;width:100%;">🚀 '+(isEN?'Take off':'Απογείωση')+'</button>'+
+      '<button onclick="_closeBhAndReset()" style="background:rgba(100,180,255,0.12);border:1px solid rgba(100,180,255,0.4);border-radius:18px;color:#80c8ff;padding:9px 14px;font-size:13px;font-weight:bold;cursor:pointer;width:100%;">🚀 '+(isEN?'Take off':'Απογείωση')+'</button>'+
     '</div>';
 
   var infoEl = document.getElementById('info');
   if(infoEl){ infoEl.style.display='block'; infoEl.style.opacity='1'; }
 
+  window._bhFocusActive = true;
+
   // Speak first sentence
   speakText();
+}
+
+function _closeBhAndReset(){
+  window._bhFocusActive = false;
+  stopSpeak();
+  var infoEl = document.getElementById('info');
+  if(infoEl){ infoEl.style.display='none'; }
+  resetInfo();
 }
 
 function toggleSettings(e){
