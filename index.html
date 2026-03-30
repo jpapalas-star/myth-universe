@@ -652,15 +652,18 @@ var _mdn   = null;  // mouse drag: {x,y,t,id,alpha,beta}
 
 function _pick(sx,sy){
   var p=scene.pick(sx,sy,function(m){
-    // Only pick actual sphere meshes, ignore labels/rings/connections
+    if(m.name==='blackhole_sphere'||m.name==='bh_glow') return true;
     return m.name && m.name.startsWith('sphere_');
   });
-  if(p&&p.hit&&p.pickedMesh&&p.pickedMesh.metadata) return p.pickedMesh.metadata.id;
+  if(p&&p.hit&&p.pickedMesh){
+    if(p.pickedMesh.name==='blackhole_sphere'||p.pickedMesh.name==='bh_glow') return 'BLACK_HOLE_001';
+    if(p.pickedMesh.metadata) return p.pickedMesh.metadata.id;
+  }
   // Fallback: pick anything with metadata
   var p2=scene.pick(sx,sy);
   if(!p2||!p2.hit||!p2.pickedMesh) return null;
   var m=p2.pickedMesh;
-  // Walk up parent chain to find sphere with metadata
+  if(m.name==='blackhole_sphere'||m.name==='bh_glow') return 'BLACK_HOLE_001';
   while(m){
     if(m.metadata&&m.metadata.id) return m.metadata.id;
     m=m.parent;
@@ -3700,65 +3703,63 @@ fetch('app-data.json',{cache:'default'})
     // ── CREATE BLACK HOLE ────────────────────────────────────────────
     (function(){
       var bhPos = new BABYLON.Vector3(-420, 80, 350);
-      var bh = BABYLON.MeshBuilder.CreateSphere('blackhole_sphere', {diameter:18, segments:16}, scene);
+
+      // Black center sphere
+      var bh = BABYLON.MeshBuilder.CreateSphere('blackhole_sphere', {diameter:20, segments:20}, scene);
       bh.position = bhPos;
       bh.renderingGroupId = 1;
-
-      // Black emissive material
       var bhMat = new BABYLON.StandardMaterial('bhMat', scene);
       bhMat.diffuseColor  = new BABYLON.Color3(0,0,0);
       bhMat.emissiveColor = new BABYLON.Color3(0,0,0);
       bhMat.specularColor = new BABYLON.Color3(0,0,0);
       bh.material = bhMat;
 
-      // Accretion disc — glowing orange/blue torus
-      var disc1 = BABYLON.MeshBuilder.CreateTorus('bh_disc1',{diameter:38,thickness:4,tessellation:48},scene);
-      disc1.rotation.x = Math.PI/2.2;
-      disc1.rotation.z = 0.3;
-      disc1.position = bhPos.clone();
-      disc1.renderingGroupId = 1;
-      var dMat1 = new BABYLON.StandardMaterial('bh_dmat1',scene);
-      dMat1.emissiveColor = new BABYLON.Color3(1.0,0.5,0.1);
-      dMat1.diffuseColor  = new BABYLON.Color3(0,0,0);
-      disc1.material = dMat1;
+      // Photon ring (accretion disc) — flat, tilted, orange/white glow
+      var disc = BABYLON.MeshBuilder.CreateTorus('bh_disc',{diameter:36,thickness:3.5,tessellation:64},scene);
+      disc.rotation.x = Math.PI/2.4;
+      disc.rotation.z = 0.25;
+      disc.position = bhPos.clone();
+      disc.renderingGroupId = 1;
+      var discMat = new BABYLON.StandardMaterial('bh_discMat',scene);
+      discMat.emissiveColor = new BABYLON.Color3(1.0,0.6,0.1);
+      discMat.diffuseColor  = new BABYLON.Color3(0,0,0);
+      disc.material = discMat;
 
-      var disc2 = BABYLON.MeshBuilder.CreateTorus('bh_disc2',{diameter:52,thickness:2.5,tessellation:48},scene);
-      disc2.rotation.x = Math.PI/2.2;
-      disc2.rotation.z = 0.3;
-      disc2.position = bhPos.clone();
-      disc2.renderingGroupId = 1;
-      var dMat2 = new BABYLON.StandardMaterial('bh_dmat2',scene);
-      dMat2.emissiveColor = new BABYLON.Color3(0.3,0.6,1.0);
-      dMat2.diffuseColor  = new BABYLON.Color3(0,0,0);
-      disc2.material = dMat2;
+      // Outer faint glow halo
+      var halo = BABYLON.MeshBuilder.CreateSphere('bh_glow',{diameter:30,segments:12},scene);
+      halo.position = bhPos.clone();
+      halo.renderingGroupId = 1;
+      var haloMat = new BABYLON.StandardMaterial('bh_haloMat',scene);
+      haloMat.diffuseColor  = new BABYLON.Color3(0,0,0);
+      haloMat.emissiveColor = new BABYLON.Color3(0.15,0.08,0.0);
+      haloMat.alpha = 0.18;
+      haloMat.backFaceCulling = false;
+      halo.material = haloMat;
 
-      // Glow ring
-      var disc3 = BABYLON.MeshBuilder.CreateTorus('bh_disc3',{diameter:28,thickness:3,tessellation:48},scene);
-      disc3.rotation.x = Math.PI/2.5;
-      disc3.rotation.z = -0.2;
-      disc3.position = bhPos.clone();
-      disc3.renderingGroupId = 1;
-      var dMat3 = new BABYLON.StandardMaterial('bh_dmat3',scene);
-      dMat3.emissiveColor = new BABYLON.Color3(0.8,0.3,1.0);
-      dMat3.diffuseColor  = new BABYLON.Color3(0,0,0);
-      disc3.material = dMat3;
+      // Distortion ring (Einstein ring effect)
+      var ring = BABYLON.MeshBuilder.CreateTorus('bh_ring',{diameter:26,thickness:1.2,tessellation:64},scene);
+      ring.rotation.x = Math.PI/2.4;
+      ring.rotation.z = 0.25;
+      ring.position = bhPos.clone();
+      ring.renderingGroupId = 1;
+      var ringMat = new BABYLON.StandardMaterial('bh_ringMat',scene);
+      ringMat.emissiveColor = new BABYLON.Color3(1.0,0.85,0.5);
+      ringMat.diffuseColor  = new BABYLON.Color3(0,0,0);
+      ring.material = ringMat;
 
-      // Animate slow spin
+      // Animate — only slow disc rotation, no color change
       var _bhT = 0;
       scene.registerBeforeRender(function(){
-        _bhT += 0.008;
-        disc1.rotation.y = _bhT * 1.2;
-        disc2.rotation.y = -_bhT * 0.7;
-        disc3.rotation.y = _bhT * 1.8;
-        // Pulse glow
-        var pulse = 0.7 + Math.sin(_bhT*3)*0.3;
-        dMat1.emissiveColor = new BABYLON.Color3(pulse,0.4*pulse,0.05);
-        dMat3.emissiveColor = new BABYLON.Color3(0.6*pulse,0.2,0.9*pulse);
+        _bhT += 0.004;
+        disc.rotation.y = _bhT;
+        ring.rotation.y = -_bhT * 0.6;
+        // Subtle pulse on photon ring brightness
+        var p = 0.85 + Math.sin(_bhT*4)*0.15;
+        discMat.emissiveColor = new BABYLON.Color3(p, p*0.6, p*0.1);
       });
 
-      // Store for pick detection
       window._blackHoleMesh = bh;
-      window._blackHoleDiscs = [disc1, disc2, disc3];
+      window._bhHalo = halo;
     })();
 
         saveOriginalPositions();
