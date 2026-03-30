@@ -652,18 +652,15 @@ var _mdn   = null;  // mouse drag: {x,y,t,id,alpha,beta}
 
 function _pick(sx,sy){
   var p=scene.pick(sx,sy,function(m){
-    if(m.name==='blackhole_sphere'||m.name==='bh_glow') return true;
+    // Only pick actual sphere meshes, ignore labels/rings/connections
     return m.name && m.name.startsWith('sphere_');
   });
-  if(p&&p.hit&&p.pickedMesh){
-    if(p.pickedMesh.name==='blackhole_sphere'||p.pickedMesh.name==='bh_glow') return 'BLACK_HOLE_001';
-    if(p.pickedMesh.metadata) return p.pickedMesh.metadata.id;
-  }
+  if(p&&p.hit&&p.pickedMesh&&p.pickedMesh.metadata) return p.pickedMesh.metadata.id;
   // Fallback: pick anything with metadata
   var p2=scene.pick(sx,sy);
   if(!p2||!p2.hit||!p2.pickedMesh) return null;
   var m=p2.pickedMesh;
-  if(m.name==='blackhole_sphere'||m.name==='bh_glow') return 'BLACK_HOLE_001';
+  // Walk up parent chain to find sphere with metadata
   while(m){
     if(m.metadata&&m.metadata.id) return m.metadata.id;
     m=m.parent;
@@ -977,32 +974,6 @@ function _doTap(pickedId) {
   if(gp) gp.style.display='none';
   if(panelOpen){ panelEl.style.display='none'; panelOpen=false; }
 
-  // Black hole tap
-  if(pickedId === 'BLACK_HOLE_001'){
-    stopSpeak();
-    window._ttsFocusToken = (window._ttsFocusToken||0)+1;
-    var infoEl = document.getElementById('info');
-    if(infoEl){ infoEl.style.display='block'; infoEl.style.opacity='1'; }
-    showInfoBlackHole();
-    // Camera zoom toward black hole
-    var bhPos = window._blackHoleMesh ? window._blackHoleMesh.position : new BABYLON.Vector3(-420,80,350);
-    _animToken++; var _bhTok=_animToken;
-    var sA=camera.alpha,sB=camera.beta,sR=camera.radius,sTx=camera.target.x,sTy=camera.target.y,sTz=camera.target.z;
-    var tA=Math.atan2(bhPos.z,bhPos.x)+Math.PI, tB=Math.PI/3.5, tR=120;
-    var dA=tA-sA; while(dA>Math.PI)dA-=Math.PI*2; while(dA<-Math.PI)dA+=Math.PI*2;
-    tA=sA+dA;
-    var fr=0,mxF=45;
-    function bhStep(){
-      if(_animToken!==_bhTok)return;
-      fr++; var p=Math.min(fr/mxF,1); var ep=p<0.5?2*p*p:1-2*(1-p)*(1-p);
-      camera.alpha=sA+(tA-sA)*ep; camera.beta=sB+(tB-sB)*ep; camera.radius=sR+(tR-sR)*ep;
-      camera.target.x=sTx+(bhPos.x-sTx)*ep; camera.target.y=sTy+(bhPos.y-sTy)*ep; camera.target.z=sTz+(bhPos.z-sTz)*ep;
-      if(fr<mxF)setTimeout(bhStep,16);
-    }
-    bhStep();
-    return;
-  }
-
   if (pickedId && nodes[pickedId]) {
     if (focusedId === pickedId) resetFocus(false);
     else if (!focusedId) enterFocusWithLanding(pickedId);
@@ -1015,9 +986,8 @@ function _doTap(pickedId) {
   } else {
     if (focusedId) {
       resetFocus(false);
-    } else if(window._bhFocusActive) {
-      _closeBhAndReset();
     }
+    // Tap on empty space outside focus: do nothing
   }
 }
 
@@ -1660,47 +1630,6 @@ function showInfo(d){
       <button onclick="resetFocus(false)" style="background:rgba(100,180,255,0.12);border:1px solid rgba(100,180,255,0.4);border-radius:18px;color:#80c8ff;padding:9px 14px;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;">🚀 ${appLang==='en'?'Take off':'Απογείωση'}</button>
     </div>`;
   bindInfoLinks();
-}
-
-
-function showInfoBlackHole(){
-  var d = _blackHoleData;
-  var isEN = appLang==='en';
-  var name = isEN ? d.Name_EN : d.Name;
-  var fulltext = isEN ? d.FullText_EN : d.FullText;
-  fulltext = fulltext.replace(/\n/g,'<br>');
-
-  var contentEl = document.getElementById('infoContent');
-  if(!contentEl) return;
-  contentEl.innerHTML =
-    '<h2 style="color:#a0c0ff;">'+name+'</h2>'+
-    '<div style="margin-bottom:7px;display:flex;gap:8px;flex-wrap:wrap;">'+
-      '<button onclick="speakTextEL()" style="background:rgba(255,220,60,0.15);border:1px solid rgba(255,220,60,0.4);border-radius:16px;color:#ffe040;padding:5px 12px;font-size:12px;cursor:pointer;">🔊 '+(isEN?'Listen':'Ακρόαση')+'</button>'+
-      '<button id="ttsStop" onclick="stopSpeak()" style="background:rgba(255,100,60,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:16px;color:#ff8866;padding:5px 12px;font-size:12px;cursor:pointer;">⏹ Stop</button>'+
-    '</div>'+
-    '<div class="txt" id="infoFullText">'+fulltext+'</div>'+
-    '<div style="margin-top:12px;">'+
-      '<button onclick="_closeBhAndReset()" style="background:rgba(100,180,255,0.12);border:1px solid rgba(100,180,255,0.4);border-radius:18px;color:#80c8ff;padding:9px 14px;font-size:13px;font-weight:bold;cursor:pointer;width:100%;">🚀 '+(isEN?'Take off':'Απογείωση')+'</button>'+
-    '</div>';
-
-  var infoEl = document.getElementById('info');
-  if(infoEl){ infoEl.style.display='block'; infoEl.style.opacity='1'; }
-
-  window._bhFocusActive = true;
-
-  // Speak first sentence directly
-  var firstSentence = (isEN ? d.FullText_EN : d.FullText).split('\n')[0];
-  var ttsBtn = document.getElementById('ttsStop');
-  if(ttsBtn) ttsBtn.style.display='block';
-  _elSpeakSentences(firstSentence, function(){ if(ttsBtn) ttsBtn.style.display='none'; });
-}
-
-function _closeBhAndReset(){
-  window._bhFocusActive = false;
-  stopSpeak();
-  resetInfo();
-  var infoEl = document.getElementById('info');
-  if(infoEl){ infoEl.style.display='block'; infoEl.style.opacity='1'; }
 }
 
 function toggleSettings(e){
@@ -2606,20 +2535,6 @@ function _pickN(arr, n){
 // ── INTRO SOUND EFFECTS ──────────────────────────────────────────────
 var _introSfxTracks = null; // cached from API
 var _introSfxAudio = null;
-
-// ── BLACK HOLE ────────────────────────────────────────────────────────────────
-var _blackHoleData = {
-  id: 'BLACK_HOLE_001',
-  Name: 'Μαύρη Τρύπα',
-  Name_EN: 'Black Hole',
-  FullText: 'Στην ελληνική μυθολογία, το Χάος — η αρχέγονη άβυσσος — είναι η πιο κοντινή αναλογία με τη μαύρη τρύπα.\nΟι μαύρες τρύπες δεν εκπέμπουν φως — τίποτα δεν δραπετεύει, ούτε καν το φως. Το όριο αυτό ονομάζεται ορίζοντας γεγονότων.\nΟι αρχαίοι Έλληνες φαντάζονταν τον Τάρταρο τόσο βαθύ που ένα χάλκινο αμόνι θα έπεφτε εννέα μέρες πριν αγγίξει τον πυθμένα.\nΗ σύγχρονη φυσική αποκαλύπτει ιδιομορφία στο κέντρο — σημείο όπου οι νόμοι της φυσικής παύουν. Όπως το αρχαίο Χάος πριν τη δημιουργία.',
-  FullText_EN: 'In Greek mythology, Chaos — the primordial void — is the closest analogy to a black hole. A point where matter and time collapse into infinity.\nBlack holes emit no light — nothing escapes their gravity, not even light. This boundary is called the event horizon.\nThe ancient Greeks imagined Tartarus so deep that a bronze anvil would fall nine days before reaching the floor. A world without bottom.\nModern physics reveals a singularity at the center — where the laws of physics cease to apply. Just as primordial Chaos existed before creation.',
-  photo: null,
-  focusPhoto: null,
-  Parents: '',
-  Partners: ''
-};
-
 
 function _loadIntroSfx(cb){
   if(_introSfxTracks){ cb(_introSfxTracks); return; }
@@ -3713,69 +3628,6 @@ fetch('app-data.json',{cache:'default'})
       createNode(d, Math.cos(a2)*r2, (Math.sin(a2*7.3+soloIdx*2.1)*0.5+Math.sin(a2*3.7)*0.5)*220, Math.sin(a2)*r2, null);
       soloIdx++;
     });
-
-
-    // ── CREATE BLACK HOLE ────────────────────────────────────────────
-    (function(){
-      var bhPos = new BABYLON.Vector3(-420, 80, 350);
-
-      // Black center sphere
-      var bh = BABYLON.MeshBuilder.CreateSphere('blackhole_sphere', {diameter:20, segments:20}, scene);
-      bh.position = bhPos;
-      bh.renderingGroupId = 1;
-      var bhMat = new BABYLON.StandardMaterial('bhMat', scene);
-      bhMat.diffuseColor  = new BABYLON.Color3(0,0,0);
-      bhMat.emissiveColor = new BABYLON.Color3(0,0,0);
-      bhMat.specularColor = new BABYLON.Color3(0,0,0);
-      bh.material = bhMat;
-
-      // Photon ring (accretion disc) — flat, tilted, orange/white glow
-      var disc = BABYLON.MeshBuilder.CreateTorus('bh_disc',{diameter:36,thickness:3.5,tessellation:64},scene);
-      disc.rotation.x = Math.PI/2.4;
-      disc.rotation.z = 0.25;
-      disc.position = bhPos.clone();
-      disc.renderingGroupId = 1;
-      var discMat = new BABYLON.StandardMaterial('bh_discMat',scene);
-      discMat.emissiveColor = new BABYLON.Color3(1.0,0.6,0.1);
-      discMat.diffuseColor  = new BABYLON.Color3(0,0,0);
-      disc.material = discMat;
-
-      // Outer faint glow halo
-      var halo = BABYLON.MeshBuilder.CreateSphere('bh_glow',{diameter:30,segments:12},scene);
-      halo.position = bhPos.clone();
-      halo.renderingGroupId = 1;
-      var haloMat = new BABYLON.StandardMaterial('bh_haloMat',scene);
-      haloMat.diffuseColor  = new BABYLON.Color3(0,0,0);
-      haloMat.emissiveColor = new BABYLON.Color3(0.15,0.08,0.0);
-      haloMat.alpha = 0.18;
-      haloMat.backFaceCulling = false;
-      halo.material = haloMat;
-
-      // Distortion ring (Einstein ring effect)
-      var ring = BABYLON.MeshBuilder.CreateTorus('bh_ring',{diameter:26,thickness:1.2,tessellation:64},scene);
-      ring.rotation.x = Math.PI/2.4;
-      ring.rotation.z = 0.25;
-      ring.position = bhPos.clone();
-      ring.renderingGroupId = 1;
-      var ringMat = new BABYLON.StandardMaterial('bh_ringMat',scene);
-      ringMat.emissiveColor = new BABYLON.Color3(1.0,0.85,0.5);
-      ringMat.diffuseColor  = new BABYLON.Color3(0,0,0);
-      ring.material = ringMat;
-
-      // Animate — only slow disc rotation, no color change
-      var _bhT = 0;
-      scene.registerBeforeRender(function(){
-        _bhT += 0.004;
-        disc.rotation.y = _bhT;
-        ring.rotation.y = -_bhT * 0.6;
-        // Subtle pulse on photon ring brightness
-        var p = 0.85 + Math.sin(_bhT*4)*0.15;
-        discMat.emissiveColor = new BABYLON.Color3(p, p*0.6, p*0.1);
-      });
-
-      window._blackHoleMesh = bh;
-      window._bhHalo = halo;
-    })();
 
         saveOriginalPositions();
     // Set camera upper radius limit to 2x the farthest planet
